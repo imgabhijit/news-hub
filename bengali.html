@@ -8,10 +8,8 @@
   <meta name="theme-color" content="#3a86ff">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
     body { font-family: 'Segoe UI', sans-serif; background: #0f1117; color: #e0e0e0; min-height: 100vh; }
 
-    /* ── nav ── */
     nav {
       background: #1a1d27; border-bottom: 2px solid #3a86ff;
       padding: 0 24px; display: flex; align-items: center;
@@ -20,7 +18,6 @@
     .nav-brand  { font-size: 1.1rem; font-weight: 700; color: #3a86ff; text-decoration: none; }
     .nav-sep    { color: #444; }
     .nav-region { font-size: 0.95rem; color: #aaa; }
-
     .nav-subscribe {
       margin-left: auto; background: #3a86ff; border: none; color: #fff;
       padding: 6px 14px; border-radius: 6px; cursor: pointer;
@@ -29,7 +26,6 @@
     }
     .nav-subscribe:hover { background: #2563eb; }
 
-    /* ── tab bar ── */
     .tabbar {
       background: #1a1d27; border-bottom: 1px solid #2a2d3a;
       padding: 0 24px; display: flex; align-items: center; gap: 4px;
@@ -44,24 +40,28 @@
     .tab-btn.active { color: #fff; font-weight: 600; border-bottom-color: #3a86ff; }
 
     /* ── toolbar ── */
-    .toolbar {
-      background: #13151f; padding: 10px 24px;
-      display: flex; align-items: center; gap: 8px;
-      flex-wrap: wrap; border-bottom: 1px solid #1e2130;
+    .toolbar-wrap {
+      background: #13151f; border-bottom: 1px solid #1e2130;
+      padding: 10px 24px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
     }
-    .filter-btn {
-      background: #2a2d3a; border: 1px solid #3a3d4a; color: #ccc;
-      padding: 5px 14px; border-radius: 20px; cursor: pointer;
-      font-size: 0.82rem; transition: all 0.2s; white-space: nowrap;
-    }
-    .filter-btn:hover  { background: #3a3d4a; color: #fff; }
-    .filter-btn.active { background: #3a86ff; border-color: #3a86ff; color: #fff; font-weight: 600; }
-    .meta-info { font-size: 0.78rem; color: #555; margin-left: 4px; }
+    .toolbar-label { font-size: 0.72rem; color: #555; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; }
 
-    /* ── tab panels ── */
+    .toolbar-select {
+      background: #2a2d3a; border: 1px solid #3a3d4a; color: #e0e0e0;
+      padding: 6px 32px 6px 12px; border-radius: 8px; cursor: pointer;
+      font-size: 0.85rem; outline: none; appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 10px center;
+      transition: border-color 0.2s;
+    }
+    .toolbar-select:hover  { border-color: #3a86ff; }
+    .toolbar-select:focus  { border-color: #3a86ff; }
+
+    .meta-info { font-size: 0.75rem; color: #555; margin-left: auto; }
+
+    /* ── panels ── */
     .tab-panel { display: none; padding: 24px; }
     .tab-panel.active { display: block; }
-
     .section-label {
       font-size: 0.78rem; font-weight: 600; color: #666;
       text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 16px;
@@ -69,7 +69,6 @@
 
     /* ── video grid ── */
     .video-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 18px; }
-
     .video-card {
       background: #1a1d27; border: 1px solid #2a2d3a; border-radius: 10px;
       overflow: hidden; cursor: pointer; transition: transform 0.2s, border-color 0.2s;
@@ -82,66 +81,43 @@
 
     .rank-badge {
       position: absolute; top: 7px; left: 7px;
-      background: #3a86ff; color: #fff;
-      font-size: 0.7rem; font-weight: 700; padding: 2px 7px; border-radius: 4px;
+      background: #3a86ff; color: #fff; font-size: 0.7rem; font-weight: 700;
+      padding: 2px 7px; border-radius: 4px;
     }
-    /* keep LIVE red — it's universally understood */
     .live-badge {
       position: absolute; top: 7px; left: 7px;
-      background: #e63946; color: #fff;
-      font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 4px;
-      display: flex; align-items: center; gap: 4px;
+      background: #e63946; color: #fff; font-size: 0.7rem; font-weight: 700;
+      padding: 2px 8px; border-radius: 4px; display: flex; align-items: center; gap: 4px;
     }
     .live-dot { width: 6px; height: 6px; background: #fff; border-radius: 50%; animation: pulse 1.2s infinite; }
     @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
 
-    .card-body { padding: 11px; }
-    .card-channel {
-      font-size: 0.72rem; color: #3a86ff; font-weight: 600;
-      text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 4px;
-    }
-    .card-title {
-      font-size: 0.88rem; color: #e0e0e0; line-height: 1.4;
-      display: -webkit-box; -webkit-line-clamp: 2;
-      -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 8px;
-    }
-    .card-meta { display: flex; justify-content: space-between; font-size: 0.74rem; color: #777; }
-    .card-views { color: #aaa; font-weight: 600; }
+    .card-body    { padding: 11px; }
+    .card-channel { font-size: 0.72rem; color: #3a86ff; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 4px; }
+    .card-title   { font-size: 0.88rem; color: #e0e0e0; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 8px; }
+    .card-meta    { display: flex; justify-content: space-between; font-size: 0.74rem; color: #777; }
+    .card-views   { color: #aaa; font-weight: 600; }
 
-    /* ── show more ── */
     .show-more-wrap { text-align: center; margin-top: 28px; }
-    .show-more-btn {
-      background: #2a2d3a; border: 1px solid #3a3d4a; color: #ccc;
-      padding: 10px 32px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; transition: all 0.2s;
-    }
+    .show-more-btn  { background: #2a2d3a; border: 1px solid #3a3d4a; color: #ccc; padding: 10px 32px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; transition: all 0.2s; }
     .show-more-btn:hover { background: #3a3d4a; color: #fff; }
 
-    /* ── by channel ── */
-    .channel-row { margin-bottom: 36px; }
-    .channel-header {
-      display: flex; align-items: center; gap: 10px;
-      margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #2a2d3a;
-    }
+    .channel-row   { margin-bottom: 36px; }
+    .channel-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #2a2d3a; }
     .channel-name  { font-size: 0.95rem; font-weight: 700; color: #fff; }
     .channel-count { font-size: 0.75rem; color: #555; background: #2a2d3a; padding: 2px 8px; border-radius: 10px; }
-    .video-row {
-      display: flex; gap: 12px; overflow-x: auto; padding-bottom: 6px;
-      scrollbar-width: thin; scrollbar-color: #3a3d4a transparent;
-    }
+    .video-row { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 6px; scrollbar-width: thin; scrollbar-color: #3a3d4a transparent; }
     .video-row::-webkit-scrollbar { height: 3px; }
     .video-row::-webkit-scrollbar-thumb { background: #3a3d4a; border-radius: 2px; }
     .video-row .video-card { flex: 0 0 210px; }
     .video-row .card-channel { display: none; }
 
-    /* ── live grid ── */
     .live-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 18px; }
 
-    /* ── empty state ── */
     .empty-state { text-align: center; padding: 80px 20px; color: #444; }
     .empty-state h3 { font-size: 1.1rem; margin-bottom: 8px; color: #555; }
     .empty-state p  { font-size: 0.88rem; }
 
-    /* ── toast ── */
     #toast {
       position: fixed; bottom: 24px; right: 24px;
       background: #1a1d27; border: 1px solid #3a3d4a; color: #e0e0e0;
@@ -150,75 +126,39 @@
     }
     #toast.show { opacity: 1; }
 
-    /* ── Player Modal ── */
-    .modal-overlay {
-      display: none; position: fixed; inset: 0;
-      background: rgba(0,0,0,0.92); z-index: 1000;
-      align-items: center; justify-content: center; padding: 16px;
-    }
+    /* ── modal ── */
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 1000; align-items: center; justify-content: center; padding: 16px; }
     .modal-overlay.open { display: flex; }
-    .modal-box {
-      position: relative; width: 100%; max-width: 900px;
-      background: #1a1d27; border-radius: 12px; overflow: hidden;
-      box-shadow: 0 24px 80px rgba(0,0,0,0.6);
-    }
-    .modal-close {
-      position: absolute; top: 10px; right: 10px; z-index: 20;
-      background: rgba(0,0,0,0.7); border: none; color: #fff;
-      width: 34px; height: 34px; border-radius: 50%; cursor: pointer; font-size: 1rem;
-    }
+    .modal-box { position: relative; width: 100%; max-width: 900px; background: #1a1d27; border-radius: 12px; overflow: hidden; box-shadow: 0 24px 80px rgba(0,0,0,0.6); }
+    .modal-close { position: absolute; top: 10px; right: 10px; z-index: 20; background: rgba(0,0,0,0.7); border: none; color: #fff; width: 34px; height: 34px; border-radius: 50%; cursor: pointer; font-size: 1rem; }
     .modal-close:hover { background: #3a86ff; }
-
     .player-wrap { position: relative; width: 100%; padding-top: 56.25%; background: #000; }
     #ytPlayerDiv { position: absolute; inset: 0; width: 100%; height: 100%; }
 
-    /* ── next video overlay ── */
-    .next-overlay {
-      display: none; position: absolute; inset: 0;
-      background: rgba(15,17,23,0.93);
-      flex-direction: column; align-items: center; justify-content: center;
-      gap: 12px; text-align: center; padding: 24px; z-index: 10;
-    }
+    .next-overlay { display: none; position: absolute; inset: 0; background: rgba(15,17,23,0.93); flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center; padding: 24px; z-index: 10; }
     .next-overlay.show { display: flex; }
     .next-label   { font-size: 0.75rem; color: #888; text-transform: uppercase; letter-spacing: 0.08em; }
     .next-thumb   { width: 180px; border-radius: 8px; }
     .next-ch-name { font-size: 0.8rem; color: #3a86ff; font-weight: 700; text-transform: uppercase; }
     .next-count   { font-size: 1.1rem; color: #aaa; }
     .next-count span { color: #fff; font-weight: 700; font-size: 1.4rem; }
-    .next-cancel  {
-      background: #2a2d3a; border: 1px solid #3a3d4a; color: #ccc;
-      padding: 8px 24px; border-radius: 6px; cursor: pointer; font-size: 0.85rem;
-    }
-    .next-cancel:hover { background: #3a3d4a; }
+    .next-cancel  { background: #2a2d3a; border: 1px solid #3a3d4a; color: #ccc; padding: 8px 24px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; }
 
-    /* ── subscribe bar ── */
-    .subscribe-bar {
-      padding: 12px 20px; display: flex; align-items: center;
-      justify-content: space-between; gap: 16px;
-      border-top: 1px solid #2a2d3a; background: #13151f; flex-wrap: wrap;
-    }
+    .subscribe-bar { padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; border-top: 1px solid #2a2d3a; background: #13151f; flex-wrap: wrap; }
     .subscribe-bar p { font-size: 0.85rem; color: #aaa; }
-    .sub-btn {
-      background: #3a86ff; border: none; color: #fff;
-      padding: 8px 20px; border-radius: 6px; cursor: pointer;
-      font-size: 0.85rem; font-weight: 700; text-decoration: none;
-    }
+    .sub-btn { background: #3a86ff; border: none; color: #fff; padding: 8px 20px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 700; text-decoration: none; }
     .sub-btn:hover { background: #2563eb; }
   </style>
 </head>
 <body>
 
-<!-- nav -->
 <nav>
   <a class="nav-brand" href="index.html">🔵 News Portal</a>
   <span class="nav-sep">/</span>
   <span class="nav-region">Bengali News</span>
-  <a class="nav-subscribe" href="https://www.youtube.com/@YOUR_CHANNEL" target="_blank" id="navSubBtn" style="display:none">
-    ▶ Subscribe
-  </a>
+  <a class="nav-subscribe" href="https://www.youtube.com/@YOUR_CHANNEL" target="_blank" id="navSubBtn" style="display:none">▶ Subscribe</a>
 </nav>
 
-<!-- tab bar -->
 <div class="tabbar">
   <button class="tab-btn" id="btn-top"      onclick="switchTab('top')">📰 Top News</button>
   <button class="tab-btn" id="btn-opinion"  onclick="switchTab('opinion')">💬 Opinion</button>
@@ -226,25 +166,34 @@
   <button class="tab-btn" id="btn-channels" onclick="switchTab('channels')">📺 By Channel</button>
 </div>
 
-<!-- toolbar -->
-<div class="toolbar" id="toolbar">
-  <button class="filter-btn" data-filter="lastnight" onclick="setFilter('lastnight')">Last Night</button>
-  <button class="filter-btn" data-filter="today"     onclick="setFilter('today')">Today</button>
-  <button class="filter-btn" data-filter="tonight"   onclick="setFilter('tonight')">Tonight</button>
-  <button class="filter-btn" data-filter="1h"        onclick="setFilter('1h')">1h</button>
-  <button class="filter-btn" data-filter="3h"        onclick="setFilter('3h')">3h</button>
-  <button class="filter-btn" data-filter="5h"        onclick="setFilter('5h')">5h</button>
-  <button class="filter-btn" data-filter="24h"       onclick="setFilter('24h')">24h</button>
+<div class="toolbar-wrap" id="toolbarWrap">
+  <span class="toolbar-label">Time</span>
+  <select class="toolbar-select" id="filterSelect" onchange="setFilter(this.value)">
+    <option value="today">Today</option>
+    <option value="tonight">Tonight</option>
+    <option value="lastnight">Last Night</option>
+    <option value="24h">24 hours</option>
+    <option value="5h">5 hours</option>
+    <option value="3h">3 hours</option>
+    <option value="1h">1 hour</option>
+  </select>
+
+  <span class="toolbar-label">Sort</span>
+  <select class="toolbar-select" id="sortSelect" onchange="setSort(this.value)">
+    <option value="views">👁 Views</option>
+    <option value="velocity">⚡ Velocity</option>
+    <option value="normalized">📊 Trending</option>
+    <option value="newest">🕐 Newest</option>
+  </select>
+
   <span class="meta-info" id="metaInfo">Loading…</span>
 </div>
 
-<!-- tab panels -->
 <div class="tab-panel" id="panel-top"></div>
 <div class="tab-panel" id="panel-opinion"></div>
 <div class="tab-panel" id="panel-live"></div>
 <div class="tab-panel" id="panel-channels"></div>
 
-<!-- player modal -->
 <div class="modal-overlay" id="playerModal" onclick="onModalClick(event)">
   <div class="modal-box">
     <button class="modal-close" onclick="closePlayer()">✕</button>
@@ -260,15 +209,12 @@
     </div>
     <div class="subscribe-bar">
       <p>Enjoying the content? Support our channel!</p>
-      <a class="sub-btn" href="https://www.youtube.com/@YOUR_CHANNEL" target="_blank" id="modalSubBtn" style="display:none">
-        ▶ Subscribe on YouTube
-      </a>
+      <a class="sub-btn" href="#" target="_blank" id="modalSubBtn" style="display:none">▶ Subscribe on YouTube</a>
     </div>
   </div>
 </div>
 
 <div id="toast"></div>
-
 <script src="https://www.youtube.com/iframe_api"></script>
 
 <script>
@@ -277,50 +223,50 @@ const MY_CHANNEL_URL    = '';
 const MY_CHANNEL_NAME   = '';
 const MY_CHANNEL_VIDEOS = [];
 
-// ── Filter definitions ────────────────────────────────────────────────────────
-const FILTERS = ['lastnight','today','tonight','1h','3h','5h','24h'];
+// ── Filter & sort setup ───────────────────────────────────────────────────────
 
-// Default filter per tab
-const TAB_DEFAULTS = { top:'today', opinion:'today', live:'1h', channels:'today' };
+// Today = 6am today → now  (feels like "today", not since midnight)
+// Last Night = yesterday 8pm → today 6am (covers the gap)
+const TAB_DEFAULTS = { top: 'today', opinion: 'today', live: '1h', channels: 'today' };
+const SORT_DEFAULTS = { top: 'normalized', opinion: 'normalized', live: 'newest', channels: 'views' };
 
-// Minimum views threshold per filter (to avoid noise)
+// View threshold to suppress low-noise videos (not applied to By Channel or Newest sort)
 const THRESHOLDS = {
-  lastnight: 20000,
-  today:     30000,
-  tonight:   10000,
-  '1h':       2000,
-  '3h':       5000,
-  '5h':      10000,
-  '24h':     50000,
+  lastnight: 20000, today: 20000, tonight: 5000,
+  '1h': 1000, '3h': 3000, '5h': 5000, '24h': 30000,
 };
 
 // ── State ─────────────────────────────────────────────────────────────────────
-const params     = new URLSearchParams(location.search);
-let currentTab   = params.get('tab')    || 'top';
-let currentFilter = params.get('filter') || TAB_DEFAULTS[currentTab];
-let allData      = null;
-let ytPlayer     = null;
-let ytPlayerReady = false;
+const params       = new URLSearchParams(location.search);
+let currentTab     = params.get('tab')    || 'top';
+let currentFilter  = params.get('filter') || TAB_DEFAULTS[currentTab];
+let currentSort    = params.get('sort')   || SORT_DEFAULTS[currentTab];
+let allData        = null;
+let ytPlayer       = null;
+let ytPlayerReady  = false;
 let pendingVideoId = null;
 let countdownTimer = null;
 
-// ── Time range calculator ─────────────────────────────────────────────────────
+// ── Time ranges ───────────────────────────────────────────────────────────────
 function getTimeRange(filter) {
   const now = Date.now() / 1000;
   const d   = new Date();
 
   switch (filter) {
     case 'lastnight': {
-      const today6am  = new Date(d); today6am.setHours(6, 0, 0, 0);
-      const yest8pm   = new Date(today6am);
+      // Yesterday 8pm → today 6am
+      const today6am = new Date(d); today6am.setHours(6, 0, 0, 0);
+      const yest8pm  = new Date(today6am);
       yest8pm.setDate(yest8pm.getDate() - 1); yest8pm.setHours(20, 0, 0, 0);
       return [yest8pm.getTime() / 1000, today6am.getTime() / 1000];
     }
     case 'today': {
-      const midnight = new Date(d); midnight.setHours(0, 0, 0, 0);
-      return [midnight.getTime() / 1000, now];
+      // 6am today → now  (not midnight — feels more natural)
+      const today6am = new Date(d); today6am.setHours(6, 0, 0, 0);
+      return [today6am.getTime() / 1000, now];
     }
     case 'tonight': {
+      // 6pm today → now
       const pm6 = new Date(d); pm6.setHours(18, 0, 0, 0);
       return [pm6.getTime() / 1000, now];
     }
@@ -337,48 +283,73 @@ function filterByRange(videos, filter) {
   return videos.filter(v => v.timestamp >= start && v.timestamp <= end);
 }
 
-// ── Scoring ───────────────────────────────────────────────────────────────────
-// Improved: views/subscribers + time decay for short windows
-// Time decay rewards videos gaining views quickly (velocity signal)
-function computeScore(v, filter) {
-  const thr = THRESHOLDS[filter] || 10000;
-  if (v.view_count < thr || !v.subscribers) return 0;
+// ── Sorting ───────────────────────────────────────────────────────────────────
+// 1. Absolute Views — raw popularity
+// 2. Velocity      — views per hour since upload (rewards fast risers)
+// 3. Trending      — views/subscribers with time decay (viral relative to channel size)
+// 4. Newest        — chronological, no threshold
 
-  const base     = v.view_count / v.subscribers;
-  const ageHours = Math.max(0.25, (Date.now() / 1000 - v.timestamp) / 3600);
+function sortedVideos(videos, filter, sort) {
+  const now = Date.now() / 1000;
 
-  // Apply time decay only for short windows — rewards velocity
-  const useDecay = ['1h', '3h', '5h', 'tonight'].includes(filter);
-  const decay    = useDecay ? 1 / Math.sqrt(ageHours) : 1;
+  switch (sort) {
+    case 'views':
+      return [...videos].sort((a, b) => b.view_count - a.view_count);
 
-  return base * decay;
+    case 'velocity': {
+      return [...videos]
+        .map(v => {
+          const ageH = Math.max(0.25, (now - v.timestamp) / 3600);
+          return { ...v, _val: v.view_count / ageH };
+        })
+        .sort((a, b) => b._val - a._val);
+    }
+
+    case 'normalized': {
+      const useDecay = ['1h', '3h', '5h', 'tonight'].includes(filter);
+      return [...videos]
+        .map(v => {
+          if (!v.subscribers) return { ...v, _val: 0 };
+          const base  = v.view_count / v.subscribers;
+          const ageH  = Math.max(0.25, (now - v.timestamp) / 3600);
+          const decay = useDecay ? 1 / Math.sqrt(ageH) : 1;
+          return { ...v, _val: base * decay };
+        })
+        .filter(v => v._val > 0)
+        .sort((a, b) => b._val - a._val);
+    }
+
+    case 'newest':
+      return [...videos].sort((a, b) => b.timestamp - a.timestamp);
+
+    default:
+      return videos;
+  }
 }
 
-function topVideos(videos, filter, n = 100) {
-  return filterByRange(videos, filter)
-    .filter(v => v.live_broadcast !== 'live')
-    .map(v => ({ ...v, _score: computeScore(v, filter) }))
-    .filter(v => v._score > 0)
-    .sort((a, b) => b._score - a._score)
-    .slice(0, n);
+function getVideos(videos, filter, sort, n = 100) {
+  let pool = filterByRange(videos, filter)
+    .filter(v => v.live_broadcast !== 'live');
+
+  // Apply view threshold for all sorts except Newest (chronological feed)
+  if (sort !== 'newest') {
+    const thr = THRESHOLDS[filter] || 5000;
+    pool = pool.filter(v => v.view_count >= thr);
+  }
+
+  return sortedVideos(pool, filter, sort).slice(0, n);
 }
 
-function liveVideos(videos) {
-  return videos.filter(v => v.live_broadcast === 'live');
-}
-
-function topPerChannel(videos, filter, n = 10) {
-  const byChannel = {};
-  filterByRange(videos, filter)
-    .filter(v => v.live_broadcast !== 'live')
-    .forEach(v => {
-      const s = computeScore(v, filter);
-      if (!s) return;
-      (byChannel[v.channel_name] = byChannel[v.channel_name] || []).push({ ...v, _score: s });
-    });
+function getVideosPerChannel(videos, filter, sort, n = 10) {
+  // By Channel: no threshold — always show each channel's best
+  const pool       = filterByRange(videos, filter).filter(v => v.live_broadcast !== 'live');
+  const byChannel  = {};
+  pool.forEach(v => {
+    (byChannel[v.channel_name] = byChannel[v.channel_name] || []).push(v);
+  });
   const result = {};
   Object.entries(byChannel).forEach(([name, vids]) => {
-    result[name] = vids.sort((a, b) => b._score - a._score).slice(0, n);
+    result[name] = sortedVideos(vids, filter, sort).slice(0, n);
   });
   return result;
 }
@@ -398,17 +369,21 @@ function formatAgo(ts) {
   return `${Math.floor(d / 86400)}d ago`;
 }
 
+function filterLabel() {
+  const m = { lastnight:'Last Night', today:'Today', tonight:'Tonight', '1h':'1h', '3h':'3h', '5h':'5h', '24h':'24h' };
+  return m[currentFilter] || currentFilter;
+}
+
 // ── Card builder ──────────────────────────────────────────────────────────────
 function cardHtml(v, rank, isLive, hidden) {
   const badge = isLive
     ? `<span class="live-badge"><span class="live-dot"></span> LIVE</span>`
     : rank ? `<span class="rank-badge">#${rank}</span>` : '';
-  const safeTitle = v.title.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+  const safe = v.title.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
   return `
-    <div class="video-card${hidden ? ' hidden' : ''}" onclick="openPlayer('${v.video_id}','${safeTitle}')">
+    <div class="video-card${hidden ? ' hidden' : ''}" onclick="openPlayer('${v.video_id}','${safe}')">
       <div class="thumb-wrap">
-        <img src="${v.thumbnail}" alt=""
-             onerror="this.src='https://i.ytimg.com/vi/${v.video_id}/mqdefault.jpg'">
+        <img src="${v.thumbnail}" alt="" onerror="this.src='https://i.ytimg.com/vi/${v.video_id}/mqdefault.jpg'">
         ${badge}
       </div>
       <div class="card-body">
@@ -437,57 +412,39 @@ function renderAll() {
 
 function renderTop() {
   const panel = document.getElementById('panel-top');
-  const top   = topVideos(allData.bengali || [], currentFilter);
-  if (!top.length) {
-    panel.innerHTML = emptyState('No stories in this window', 'Try a wider time filter or wait for the next refresh.');
-    return;
-  }
+  const top   = getVideos(allData.bengali || [], currentFilter, currentSort);
+  if (!top.length) { panel.innerHTML = emptyState('No stories in this window', 'Try a wider filter or different sort.'); return; }
   const cards = top.map((v, i) => cardHtml(v, i + 1, false, i >= 30)).join('');
   const more  = top.length > 30
-    ? `<div class="show-more-wrap" id="smTop">
-         <button class="show-more-btn" onclick="showMore('topGrid','smTop')">${top.length - 30} more stories</button>
-       </div>` : '';
-  panel.innerHTML = `<p class="section-label">Top ${top.length} stories · ${filterLabel()}</p>
-    <div class="video-grid" id="topGrid">${cards}</div>${more}`;
+    ? `<div class="show-more-wrap" id="smTop"><button class="show-more-btn" onclick="showMore('topGrid','smTop')">${top.length - 30} more stories</button></div>` : '';
+  panel.innerHTML = `<p class="section-label">Top ${top.length} stories · ${filterLabel()}</p><div class="video-grid" id="topGrid">${cards}</div>${more}`;
 }
 
 function renderOpinion() {
   const panel   = document.getElementById('panel-opinion');
-  const opinion = topVideos(allData.opinion || [], currentFilter);
-  if (!opinion.length) {
-    panel.innerHTML = emptyState('No opinion videos in this window', 'Try a wider time filter.');
-    return;
-  }
+  const opinion = getVideos(allData.opinion || [], currentFilter, currentSort);
+  if (!opinion.length) { panel.innerHTML = emptyState('No opinion videos in this window', 'Try a wider filter.'); return; }
   const cards = opinion.map((v, i) => cardHtml(v, i + 1, false, i >= 30)).join('');
   const more  = opinion.length > 30
-    ? `<div class="show-more-wrap" id="smOp">
-         <button class="show-more-btn" onclick="showMore('opinionGrid','smOp')">${opinion.length - 30} more videos</button>
-       </div>` : '';
-  panel.innerHTML = `<p class="section-label">Top ${opinion.length} opinion videos · ${filterLabel()}</p>
-    <div class="video-grid" id="opinionGrid">${cards}</div>${more}`;
+    ? `<div class="show-more-wrap" id="smOp"><button class="show-more-btn" onclick="showMore('opinionGrid','smOp')">${opinion.length - 30} more</button></div>` : '';
+  panel.innerHTML = `<p class="section-label">Top ${opinion.length} opinion videos · ${filterLabel()}</p><div class="video-grid" id="opinionGrid">${cards}</div>${more}`;
 }
 
 function renderLive() {
   const panel = document.getElementById('panel-live');
   const all   = (allData.bengali || []).concat(allData.opinion || []);
-  const live  = liveVideos(all);
-  if (!live.length) {
-    panel.innerHTML = emptyState('No live streams right now', 'Check back soon.');
-    return;
-  }
+  const live  = all.filter(v => v.live_broadcast === 'live');
+  if (!live.length) { panel.innerHTML = emptyState('No live streams right now', 'Check back soon.'); return; }
   const cards = live.map(v => cardHtml(v, null, true, false)).join('');
-  panel.innerHTML = `<p class="section-label">${live.length} channel(s) currently live</p>
-    <div class="live-grid">${cards}</div>`;
+  panel.innerHTML = `<p class="section-label">${live.length} channel(s) currently live</p><div class="live-grid">${cards}</div>`;
 }
 
 function renderChannels() {
   const panel     = document.getElementById('panel-channels');
-  const byChannel = topPerChannel(allData.bengali || [], currentFilter);
-  if (!Object.keys(byChannel).length) {
-    panel.innerHTML = emptyState('No channel data in this window', 'Try a wider time filter.');
-    return;
-  }
+  const byChannel = getVideosPerChannel(allData.bengali || [], currentFilter, currentSort);
+  if (!Object.keys(byChannel).length) { panel.innerHTML = emptyState('No channel data in this window', 'Try a wider filter.'); return; }
   const rows = Object.entries(byChannel).map(([name, vids]) => {
+    if (!vids.length) return '';
     const cards = vids.map((v, i) => cardHtml(v, i + 1, false, false)).join('');
     return `<div class="channel-row">
       <div class="channel-header">
@@ -500,32 +457,23 @@ function renderChannels() {
   panel.innerHTML = rows;
 }
 
-// ── Tab & filter controls ─────────────────────────────────────────────────────
-function filterLabel() {
-  const labels = {
-    lastnight: 'Last Night', today: 'Today', tonight: 'Tonight',
-    '1h': 'last 1h', '3h': 'last 3h', '5h': 'last 5h', '24h': 'last 24h',
-  };
-  return labels[currentFilter] || currentFilter;
-}
-
+// ── Controls ──────────────────────────────────────────────────────────────────
 function switchTab(name, push = true) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
   document.getElementById(`panel-${name}`).classList.add('active');
   document.getElementById(`btn-${name}`).classList.add('active');
+  currentTab = name;
 
-  // Apply tab-specific default filter only when switching tabs
   if (push) {
     currentFilter = TAB_DEFAULTS[name];
+    currentSort   = SORT_DEFAULTS[name];
     renderAll();
+    updateUrl();
   }
 
-  // Live tab hides time filter bar (live = always current)
-  document.getElementById('toolbar').style.display = name === 'live' ? 'none' : 'flex';
-
-  currentTab = name;
-  if (push) updateUrl();
+  // Live tab needs no filter/sort toolbar
+  document.getElementById('toolbarWrap').style.display = name === 'live' ? 'none' : 'block';
   renderToolbar();
 }
 
@@ -536,14 +484,20 @@ function setFilter(f) {
   updateUrl();
 }
 
+function setSort(s) {
+  currentSort = s;
+  renderToolbar();
+  renderAll();
+  updateUrl();
+}
+
 function renderToolbar() {
-  document.querySelectorAll('.filter-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.filter === currentFilter);
-  });
+  document.getElementById('filterSelect').value = currentFilter;
+  document.getElementById('sortSelect').value   = currentSort;
 }
 
 function updateUrl() {
-  history.replaceState(null, '', `?tab=${currentTab}&filter=${currentFilter}`);
+  history.replaceState(null, '', `?tab=${currentTab}&filter=${currentFilter}&sort=${currentSort}`);
 }
 
 function showMore(gridId, wrapperId) {
@@ -553,8 +507,7 @@ function showMore(gridId, wrapperId) {
 
 function showToast(msg, ms = 3500) {
   const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
+  t.textContent = msg; t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), ms);
 }
 
@@ -573,22 +526,17 @@ function onYouTubeIframeAPIReady() {
 
 function openPlayer(videoId) {
   document.getElementById('playerModal').classList.add('open');
-  document.body.style.overflow = 'hidden';
-  cancelCountdown();
-  if (ytPlayerReady) ytPlayer.loadVideoById(videoId);
-  else pendingVideoId = videoId;
+  document.body.style.overflow = 'hidden'; cancelCountdown();
+  if (ytPlayerReady) ytPlayer.loadVideoById(videoId); else pendingVideoId = videoId;
 }
 
 function closePlayer() {
   document.getElementById('playerModal').classList.remove('open');
-  document.body.style.overflow = '';
-  cancelCountdown();
+  document.body.style.overflow = ''; cancelCountdown();
   if (ytPlayerReady) ytPlayer.stopVideo();
 }
 
-function onModalClick(e) {
-  if (e.target === document.getElementById('playerModal')) closePlayer();
-}
+function onModalClick(e) { if (e.target === document.getElementById('playerModal')) closePlayer(); }
 
 function startCountdown() {
   if (!MY_CHANNEL_VIDEOS.length) return;
@@ -596,32 +544,25 @@ function startCountdown() {
   document.getElementById('nextThumb').src = `https://i.ytimg.com/vi/${nextId}/mqdefault.jpg`;
   document.getElementById('nextChName').textContent = MY_CHANNEL_NAME || 'Our Channel';
   document.getElementById('nextOverlay').classList.add('show');
-  let n = 5;
-  document.getElementById('countNum').textContent = n;
+  let n = 5; document.getElementById('countNum').textContent = n;
   countdownTimer = setInterval(() => {
-    n--;
-    document.getElementById('countNum').textContent = n;
-    if (n <= 0) {
-      clearInterval(countdownTimer);
-      document.getElementById('nextOverlay').classList.remove('show');
-      ytPlayer.loadVideoById(nextId);
-    }
+    n--; document.getElementById('countNum').textContent = n;
+    if (n <= 0) { clearInterval(countdownTimer); document.getElementById('nextOverlay').classList.remove('show'); ytPlayer.loadVideoById(nextId); }
   }, 1000);
 }
 
 function cancelCountdown() {
-  clearInterval(countdownTimer);
-  countdownTimer = null;
+  clearInterval(countdownTimer); countdownTimer = null;
   document.getElementById('nextOverlay').classList.remove('show');
 }
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
 window.addEventListener('DOMContentLoaded', async () => {
   if (MY_CHANNEL_URL) {
-    document.getElementById('navSubBtn').href   = MY_CHANNEL_URL;
-    document.getElementById('modalSubBtn').href = MY_CHANNEL_URL;
-    document.getElementById('navSubBtn').style.display   = 'flex';
-    document.getElementById('modalSubBtn').style.display = 'inline-block';
+    ['navSubBtn','modalSubBtn'].forEach(id => {
+      const el = document.getElementById(id);
+      el.href = MY_CHANNEL_URL; el.style.display = 'flex';
+    });
   }
 
   switchTab(currentTab, false);
@@ -630,14 +571,14 @@ window.addEventListener('DOMContentLoaded', async () => {
   try {
     const r = await fetch('data/videos.json');
     allData  = await r.json();
-  } catch (e) {
+  } catch {
     allData = { last_updated: null, bengali: [], opinion: [] };
-    showToast('Could not load data. Run fetch.py first.');
+    showToast('Could not load data.');
   }
 
-  const ts  = allData.last_updated;
-  const bn  = (allData.bengali  || []).length;
-  const op  = (allData.opinion  || []).length;
+  const ts = allData.last_updated;
+  const bn = (allData.bengali  || []).length;
+  const op = (allData.opinion  || []).length;
   document.getElementById('metaInfo').textContent =
     `Refreshed: ${ts ? formatAgo(new Date(ts).getTime() / 1000) : 'never'} | ${bn} news · ${op} opinion`;
 
