@@ -231,10 +231,14 @@ def main():
         "opinion": [],
     }
 
+    cutoff_24h = int(datetime.datetime.now(datetime.timezone.utc).timestamp()) - 86400
+
     for region, channels in REGIONS.items():
         print(f"\n[fetch] === {region.upper()} ({len(channels)} channels) ===")
-        output[region] = fetch_region(youtube, region, channels, meta_channels)
-        print(f"[fetch] {region}: {len(output[region])} total videos")
+        videos = fetch_region(youtube, region, channels, meta_channels)
+        purged = [v for v in videos if v["timestamp"] >= cutoff_24h]
+        print(f"[fetch] {region}: {len(purged)} videos (last 24h)")
+        output[region] = purged
 
     DATA_DIR.mkdir(exist_ok=True)
     VIDEOS_FILE.write_text(json.dumps(output, ensure_ascii=False), encoding="utf-8")

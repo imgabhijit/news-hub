@@ -187,7 +187,7 @@
     <option value="oldest">🕰 Oldest</option>
   </select>
 
-  <span class="meta-info" id="metaInfo">Loading…</span>
+  <span id="metaInfo" style="display:none"></span>
 </div>
 
 <div class="tab-panel" id="panel-top"></div>
@@ -440,9 +440,11 @@ function renderOpinion() {
 function renderLive() {
   const panel = document.getElementById('panel-live');
   const all   = (allData.bengali || []).concat(allData.opinion || []);
-  const live  = all.filter(v => v.live_broadcast === 'live');
+  const live  = all
+    .filter(v => v.live_broadcast === 'live')
+    .sort((a, b) => b.view_count - a.view_count);
   if (!live.length) { panel.innerHTML = emptyState('No live streams right now', 'Check back soon.'); return; }
-  const cards = live.map(v => cardHtml(v, null, true, false)).join('');
+  const cards = live.map((v, i) => cardHtml(v, i + 1, true, false)).join('');
   panel.innerHTML = `<p class="section-label">${live.length} channel(s) currently live</p><div class="live-grid">${cards}</div>`;
 }
 
