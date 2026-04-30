@@ -1,9 +1,9 @@
 const CACHE_NAME = 'news-portal-v1';
 const STATIC_ASSETS = [
-  '/',
-  '/index.html',
-  '/bengali.html',
-  '/manifest.json',
+  '/news-hub/',
+  '/news-hub/index.html',
+  '/news-hub/bengali.html',
+  '/news-hub/manifest.json',
 ];
 
 // Cache static assets on install
