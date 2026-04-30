@@ -184,6 +184,7 @@
     <option value="velocity">⚡ Velocity</option>
     <option value="normalized">📊 Trending</option>
     <option value="newest">🕐 Newest</option>
+    <option value="oldest">🕰 Oldest</option>
   </select>
 
   <span class="meta-info" id="metaInfo">Loading…</span>
@@ -227,13 +228,18 @@ const MY_CHANNEL_VIDEOS = [];
 
 // Today = 6am today → now  (feels like "today", not since midnight)
 // Last Night = yesterday 8pm → today 6am (covers the gap)
-const TAB_DEFAULTS = { top: 'today', opinion: 'today', live: '1h', channels: 'today' };
-const SORT_DEFAULTS = { top: 'normalized', opinion: 'normalized', live: 'newest', channels: 'views' };
+const TAB_DEFAULTS  = { top: 'today',  opinion: 'today', live: '1h', channels: '24h'  };
+const SORT_DEFAULTS = { top: 'velocity', opinion: 'views', live: 'views', channels: 'views' };
 
-// View threshold to suppress low-noise videos (not applied to By Channel or Newest sort)
+// View thresholds — applied to all sorts including Newest/Oldest
 const THRESHOLDS = {
-  lastnight: 20000, today: 20000, tonight: 5000,
-  '1h': 1000, '3h': 3000, '5h': 5000, '24h': 30000,
+  lastnight: 40000,
+  today:     25000,
+  tonight:   8000,
+  '1h':      3000,
+  '3h':      5000,
+  '5h':      10000,
+  '24h':     50000,
 };
 
 // ── State ─────────────────────────────────────────────────────────────────────
@@ -322,6 +328,9 @@ function sortedVideos(videos, filter, sort) {
     case 'newest':
       return [...videos].sort((a, b) => b.timestamp - a.timestamp);
 
+    case 'oldest':
+      return [...videos].sort((a, b) => a.timestamp - b.timestamp);
+
     default:
       return videos;
   }
@@ -331,11 +340,9 @@ function getVideos(videos, filter, sort, n = 100) {
   let pool = filterByRange(videos, filter)
     .filter(v => v.live_broadcast !== 'live');
 
-  // Apply view threshold for all sorts except Newest (chronological feed)
-  if (sort !== 'newest') {
-    const thr = THRESHOLDS[filter] || 5000;
-    pool = pool.filter(v => v.view_count >= thr);
-  }
+  // Threshold applied to all sorts
+  const thr = THRESHOLDS[filter] || 5000;
+  pool = pool.filter(v => v.view_count >= thr);
 
   return sortedVideos(pool, filter, sort).slice(0, n);
 }
