@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>News Portal</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#e63946">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #0f1117;
+      color: #e0e0e0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    nav {
+      background: #1a1d27;
+      border-bottom: 2px solid #e63946;
+      padding: 0 32px;
+      height: 56px;
+      display: flex;
+      align-items: center;
+    }
+    .nav-brand {
+      font-size: 1.2rem;
+      font-weight: 700;
+      color: #e63946;
+      text-decoration: none;
+    }
+
+    .hero {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 60px 24px;
+      text-align: center;
+    }
+    .hero h1 { font-size: 2rem; font-weight: 700; color: #fff; margin-bottom: 8px; }
+    .hero p  { font-size: 1rem; color: #888; margin-bottom: 48px; }
+
+    .region-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 24px;
+      max-width: 860px;
+      width: 100%;
+    }
+
+    .region-tile {
+      background: #1a1d27;
+      border: 1px solid #2a2d3a;
+      border-radius: 14px;
+      padding: 36px 28px;
+      text-decoration: none;
+      color: inherit;
+      transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s;
+      position: relative;
+      overflow: hidden;
+    }
+    .region-tile.active:hover {
+      transform: translateY(-5px);
+      border-color: #e63946;
+      box-shadow: 0 8px 32px rgba(230,57,70,0.15);
+    }
+    .region-tile.inactive { opacity: 0.45; cursor: not-allowed; }
+
+    .tile-icon  { font-size: 2.4rem; margin-bottom: 16px; display: block; }
+    .tile-title { font-size: 1.1rem; font-weight: 700; color: #fff; margin-bottom: 6px; }
+    .tile-desc  { font-size: 0.85rem; color: #888; line-height: 1.5; }
+    .tile-badge {
+      position: absolute;
+      top: 14px; right: 14px;
+      font-size: 0.7rem; font-weight: 700;
+      padding: 3px 10px; border-radius: 20px;
+      letter-spacing: 0.05em; text-transform: uppercase;
+    }
+    .badge-live { background: #e63946; color: #fff; }
+    .badge-soon { background: #2a2d3a; color: #666; }
+
+    .tile-accent-bengali  { border-top: 3px solid #e63946; }
+    .tile-accent-national { border-top: 3px solid #3a86ff; }
+    .tile-accent-world    { border-top: 3px solid #2dc653; }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" href="/">🔴 News Portal</a>
+</nav>
+
+<div class="hero">
+  <h1>Choose a Region</h1>
+  <p>Select a news region to explore top stories</p>
+
+  <div class="region-grid">
+    <a class="region-tile active tile-accent-bengali" href="bengali.html">
+      <span class="tile-icon">🗞️</span>
+      <div class="tile-title">Bengali News</div>
+      <div class="tile-desc">Top stories from West Bengal — TV channels, newspapers & political commentary</div>
+      <span class="tile-badge badge-live">Live</span>
+    </a>
+
+    <div class="region-tile inactive tile-accent-national">
+      <span class="tile-icon">🇮🇳</span>
+      <div class="tile-title">National News</div>
+      <div class="tile-desc">Top stories from India's leading national news channels</div>
+      <span class="tile-badge badge-soon">Coming Soon</span>
+    </div>
+
+    <div class="region-tile inactive tile-accent-world">
+      <span class="tile-icon">🌐</span>
+      <div class="tile-title">World News</div>
+      <div class="tile-desc">International news from global broadcasters</div>
+      <span class="tile-badge badge-soon">Coming Soon</span>
+    </div>
+  </div>
+</div>
+
+<script>
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.register('sw.js');
+  }
+</script>
+</body>
+</html>

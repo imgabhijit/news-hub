@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Bengali News Portal</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#e63946">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body { font-family: 'Segoe UI', sans-serif; background: #0f1117; color: #e0e0e0; min-height: 100vh; }
+
+    /* ── nav ── */
+    nav {
+      background: #1a1d27; border-bottom: 2px solid #e63946;
+      padding: 0 24px; display: flex; align-items: center;
+      height: 56px; position: sticky; top: 0; z-index: 200; gap: 16px;
+    }
+    .nav-brand  { font-size: 1.1rem; font-weight: 700; color: #e63946; text-decoration: none; }
+    .nav-sep    { color: #444; }
+    .nav-region { font-size: 0.95rem; color: #aaa; }
+
+    /* ── subscribe button in nav ── */
+    .nav-subscribe {
+      margin-left: auto;
+      background: #e63946; border: none; color: #fff;
+      padding: 6px 14px; border-radius: 6px; cursor: pointer;
+      font-size: 0.82rem; font-weight: 700; text-decoration: none;
+      display: flex; align-items: center; gap: 6px;
+      transition: background 0.2s;
+    }
+    .nav-subscribe:hover { background: #c1121f; }
+
+    /* ── tab bar ── */
+    .tabbar {
+      background: #1a1d27; border-bottom: 1px solid #2a2d3a;
+      padding: 0 24px; display: flex; align-items: center; gap: 4px;
+      position: sticky; top: 56px; z-index: 100;
+    }
+    .tab-btn {
+      background: none; border: none; border-bottom: 3px solid transparent;
+      color: #888; padding: 14px 18px; font-size: 0.9rem; cursor: pointer;
+      transition: color 0.2s, border-color 0.2s; white-space: nowrap;
+    }
+    .tab-btn:hover  { color: #ccc; }
+    .tab-btn.active { color: #fff; font-weight: 600; border-bottom-color: #e63946; }
+
+    /* ── toolbar ── */
+    .toolbar {
+      background: #13151f; padding: 10px 24px;
+      display: flex; align-items: center; gap: 10px;
+      flex-wrap: wrap; border-bottom: 1px solid #1e2130;
+    }
+    .time-btn {
+      background: #2a2d3a; border: 1px solid #3a3d4a; color: #ccc;
+      padding: 5px 14px; border-radius: 20px; cursor: pointer;
+      font-size: 0.82rem; transition: all 0.2s;
+    }
+    .time-btn:hover  { background: #3a3d4a; color: #fff; }
+    .time-btn.active { background: #e63946; border-color: #e63946; color: #fff; font-weight: 600; }
+    .meta-info { font-size: 0.78rem; color: #555; margin-left: 4px; }
+
+    /* ── tab panels ── */
+    .tab-panel { display: none; padding: 24px; }
+    .tab-panel.active { display: block; }
+
+    .section-label {
+      font-size: 0.78rem; font-weight: 600; color: #666;
+      text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 16px;
+    }
+
+    /* ── video grid ── */
+    .video-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+      gap: 18px;
+    }
+    .video-card {
+      background: #1a1d27; border: 1px solid #2a2d3a; border-radius: 10px;
+      overflow: hidden; cursor: pointer; transition: transform 0.2s, border-color 0.2s;
+    }
+    .video-card:hover { transform: translateY(-3px); border-color: #e63946; }
+    .video-card.hidden { display: none; }
+
+    .thumb-wrap { position: relative; width: 100%; padding-top: 56.25%; background: #111; }
+    .thumb-wrap img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+
+    .rank-badge {
+      position: absolute; top: 7px; left: 7px;
+      background: #e63946; color: #fff;
+      font-size: 0.7rem; font-weight: 700; padding: 2px 7px; border-radius: 4px;
+    }
+    .live-badge {
+      position: absolute; top: 7px; left: 7px;
+      background: #e63946; color: #fff;
+      font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 4px;
+      display: flex; align-items: center; gap: 4px;
+    }
+    .live-dot {
+      width: 6px; height: 6px; background: #fff; border-radius: 50%;
+      animation: pulse 1.2s infinite;
+    }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+    .card-body { padding: 11px; }
+    .card-channel {
+      font-size: 0.72rem; color: #e63946; font-weight: 600;
+      text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 4px;
+    }
+    .card-title {
+      font-size: 0.88rem; color: #e0e0e0; line-height: 1.4;
+      display: -webkit-box; -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 8px;
+    }
+    .card-meta { display: flex; justify-content: space-between; font-size: 0.74rem; color: #777; }
+    .card-views { color: #aaa; font-weight: 600; }
+
+    /* ── show more ── */
+    .show-more-wrap { text-align: center; margin-top: 28px; }
+    .show-more-btn {
+      background: #2a2d3a; border: 1px solid #3a3d4a; color: #ccc;
+      padding: 10px 32px; border-radius: 6px; cursor: pointer;
+      font-size: 0.9rem; transition: all 0.2s;
+    }
+    .show-more-btn:hover { background: #3a3d4a; color: #fff; }
+
+    /* ── by channel rows ── */
+    .channel-row { margin-bottom: 36px; }
+    .channel-header {
+      display: flex; align-items: center; gap: 10px;
+      margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #2a2d3a;
+    }
+    .channel-name  { font-size: 0.95rem; font-weight: 700; color: #fff; }
+    .channel-count {
+      font-size: 0.75rem; color: #555; background: #2a2d3a;
+      padding: 2px 8px; border-radius: 10px;
+    }
+    .video-row {
+      display: flex; gap: 12px; overflow-x: auto; padding-bottom: 6px;
+      scrollbar-width: thin; scrollbar-color: #3a3d4a transparent;
+    }
+    .video-row::-webkit-scrollbar { height: 3px; }
+    .video-row::-webkit-scrollbar-thumb { background: #3a3d4a; border-radius: 2px; }
+    .video-row .video-card { flex: 0 0 210px; }
+    .video-row .card-channel { display: none; }
+
+    /* ── live grid ── */
+    .live-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 18px; }
+
+    /* ── empty state ── */
+    .empty-state { text-align: center; padding: 80px 20px; color: #444; }
+    .empty-state h3 { font-size: 1.1rem; margin-bottom: 8px; color: #555; }
+    .empty-state p  { font-size: 0.88rem; }
+
+    /* ── toast ── */
+    #toast {
+      position: fixed; bottom: 24px; right: 24px;
+      background: #1a1d27; border: 1px solid #3a3d4a; color: #e0e0e0;
+      padding: 12px 20px; border-radius: 8px; font-size: 0.88rem;
+      opacity: 0; transition: opacity 0.3s; z-index: 2000; pointer-events: none;
+    }
+    #toast.show { opacity: 1; }
+
+    /* ── Player Modal ── */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.92); z-index: 1000;
+      align-items: center; justify-content: center; padding: 16px;
+    }
+    .modal-overlay.open { display: flex; }
+
+    .modal-box {
+      position: relative; width: 100%; max-width: 900px;
+      background: #1a1d27; border-radius: 12px; overflow: hidden;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.6);
+    }
+
+    .modal-close {
+      position: absolute; top: 10px; right: 10px; z-index: 20;
+      background: rgba(0,0,0,0.7); border: none; color: #fff;
+      width: 34px; height: 34px; border-radius: 50%; cursor: pointer;
+      font-size: 1rem; line-height: 1;
+    }
+    .modal-close:hover { background: #e63946; }
+
+    .player-wrap { position: relative; width: 100%; padding-top: 56.25%; background: #000; }
+    #ytPlayerDiv { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+    /* ── Next video overlay ── */
+    .next-overlay {
+      display: none; position: absolute; inset: 0;
+      background: rgba(15,17,23,0.93);
+      flex-direction: column; align-items: center; justify-content: center;
+      gap: 12px; text-align: center; padding: 24px; z-index: 10;
+    }
+    .next-overlay.show { display: flex; }
+    .next-label   { font-size: 0.75rem; color: #888; text-transform: uppercase; letter-spacing: 0.08em; }
+    .next-thumb   { width: 180px; border-radius: 8px; }
+    .next-ch-name { font-size: 0.8rem; color: #e63946; font-weight: 700; text-transform: uppercase; }
+    .next-count   { font-size: 1.1rem; color: #aaa; }
+    .next-count span { color: #fff; font-weight: 700; font-size: 1.4rem; }
+    .next-cancel  {
+      background: #2a2d3a; border: 1px solid #3a3d4a; color: #ccc;
+      padding: 8px 24px; border-radius: 6px; cursor: pointer; font-size: 0.85rem;
+    }
+    .next-cancel:hover { background: #3a3d4a; }
+
+    /* ── Subscribe bar ── */
+    .subscribe-bar {
+      padding: 12px 20px; display: flex; align-items: center;
+      justify-content: space-between; gap: 16px;
+      border-top: 1px solid #2a2d3a; background: #13151f; flex-wrap: wrap;
+    }
+    .subscribe-bar p { font-size: 0.85rem; color: #aaa; }
+    .sub-btn {
+      background: #e63946; border: none; color: #fff;
+      padding: 8px 20px; border-radius: 6px; cursor: pointer;
+      font-size: 0.85rem; font-weight: 700; text-decoration: none;
+    }
+    .sub-btn:hover { background: #c1121f; }
+  </style>
+</head>
+<body>
+
+<!-- ── nav ── -->
+<nav>
+  <a class="nav-brand" href="index.html">🔴 News Portal</a>
+  <span class="nav-sep">/</span>
+  <span class="nav-region">Bengali News</span>
+  <!-- Replace MY_CHANNEL_URL with your YouTube channel URL -->
+  <a class="nav-subscribe" href="https://www.youtube.com/@YOUR_CHANNEL" target="_blank" id="navSubBtn" style="display:none">
+    ▶ Subscribe
+  </a>
+</nav>
+
+<!-- ── tab bar ── -->
+<div class="tabbar">
+  <button class="tab-btn" id="btn-top"      onclick="switchTab('top')">📰 Top News</button>
+  <button class="tab-btn" id="btn-opinion"  onclick="switchTab('opinion')">💬 Opinion</button>
+  <button class="tab-btn" id="btn-live"     onclick="switchTab('live')">🔴 Live</button>
+  <button class="tab-btn" id="btn-channels" onclick="switchTab('channels')">📺 By Channel</button>
+</div>
+
+<!-- ── toolbar ── -->
+<div class="toolbar">
+  <button class="time-btn" onclick="setHours(1)">1h</button>
+  <button class="time-btn" onclick="setHours(3)">3h</button>
+  <button class="time-btn" onclick="setHours(5)">5h</button>
+  <button class="time-btn" onclick="setHours(8)">8h</button>
+  <button class="time-btn" onclick="setHours(12)">12h</button>
+  <button class="time-btn" onclick="setHours(24)">24h</button>
+  <span class="meta-info" id="metaInfo">Loading…</span>
+</div>
+
+<!-- ── tab panels ── -->
+<div class="tab-panel" id="panel-top"></div>
+<div class="tab-panel" id="panel-opinion"></div>
+<div class="tab-panel" id="panel-live"></div>
+<div class="tab-panel" id="panel-channels"></div>
+
+<!-- ── Player Modal ── -->
+<div class="modal-overlay" id="playerModal" onclick="onModalClick(event)">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closePlayer()">✕</button>
+
+    <div class="player-wrap">
+      <div id="ytPlayerDiv"></div>
+      <div class="next-overlay" id="nextOverlay">
+        <div class="next-label">Up Next from</div>
+        <div class="next-ch-name" id="nextChName"></div>
+        <img class="next-thumb" id="nextThumb" src="" alt="">
+        <div class="next-count">Playing in <span id="countNum">5</span>s</div>
+        <button class="next-cancel" onclick="cancelCountdown()">Cancel</button>
+      </div>
+    </div>
+
+    <div class="subscribe-bar">
+      <p>Enjoying the content? Support our channel!</p>
+      <!-- Replace with your YouTube channel URL -->
+      <a class="sub-btn" href="https://www.youtube.com/@YOUR_CHANNEL" target="_blank" id="modalSubBtn" style="display:none">
+        ▶ Subscribe on YouTube
+      </a>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<!-- YouTube IFrame API -->
+<script src="https://www.youtube.com/iframe_api"></script>
+
+<script>
+// ── CONFIG — fill in your channel details when you create it ──────────────────
+const MY_CHANNEL_URL    = '';          // e.g. 'https://www.youtube.com/@YourChannel'
+const MY_CHANNEL_NAME   = '';          // e.g. 'Your Channel Name'
+const MY_CHANNEL_VIDEOS = [];          // e.g. ['dQw4w9WgXcQ', 'abc123'] — your video IDs
+
+// ── Scoring constants (mirrors scorer.py) ────────────────────────────────────
+const THRESHOLDS   = {1:2000, 3:5000, 5:10000, 8:20000, 12:30000, 24:50000};
+const TIME_WINDOWS = [1, 3, 5, 8, 12, 24];
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let allData        = null;
+let hours          = parseInt(new URLSearchParams(location.search).get('hours')) || 5;
+let currentTab     = new URLSearchParams(location.search).get('tab') || 'top';
+let ytPlayer       = null;
+let ytPlayerReady  = false;
+let pendingVideoId = null;
+let countdownTimer = null;
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', async () => {
+  // Show subscribe buttons if channel is configured
+  if (MY_CHANNEL_URL) {
+    document.getElementById('navSubBtn').href   = MY_CHANNEL_URL;
+    document.getElementById('modalSubBtn').href = MY_CHANNEL_URL;
+    document.getElementById('navSubBtn').style.display   = 'flex';
+    document.getElementById('modalSubBtn').style.display = 'inline-block';
+  }
+
+  renderToolbar();
+  switchTab(currentTab, false);
+
+  try {
+    const r = await fetch('data/videos.json');
+    allData  = await r.json();
+  } catch(e) {
+    allData = {last_updated: null, bengali: [], opinion: []};
+    showToast('Could not load data. Run fetch.py first.');
+  }
+
+  const ts = allData.last_updated;
+  const bengaliCount = (allData.bengali||[]).length;
+  const opinionCount = (allData.opinion||[]).length;
+  document.getElementById('metaInfo').textContent =
+    `Refreshed: ${ts ? formatAgo(new Date(ts).getTime()/1000) : 'never'} | ${bengaliCount} news · ${opinionCount} opinion`;
+
+  renderAll();
+});
+
+// ── Scoring ───────────────────────────────────────────────────────────────────
+function score(v, h) {
+  const thr = THRESHOLDS[h] || 10000;
+  if (v.view_count < thr || !v.subscribers) return 0;
+  return v.view_count / v.subscribers;
+}
+
+function filterWindow(videos, h) {
+  const cutoff = Date.now()/1000 - h*3600;
+  return videos.filter(v => v.timestamp >= cutoff);
+}
+
+function topVideos(videos, h, n=100) {
+  return filterWindow(videos, h)
+    .filter(v => v.live_broadcast !== 'live')
+    .map(v => ({...v, _score: score(v, h)}))
+    .filter(v => v._score > 0)
+    .sort((a,b) => b._score - a._score)
+    .slice(0, n);
+}
+
+function liveVideos(videos) {
+  return videos.filter(v => v.live_broadcast === 'live');
+}
+
+function topPerChannel(videos, h, n=10) {
+  const byChannel = {};
+  filterWindow(videos, h)
+    .filter(v => v.live_broadcast !== 'live')
+    .forEach(v => {
+      const s = score(v, h);
+      if (!s) return;
+      (byChannel[v.channel_name] = byChannel[v.channel_name]||[]).push({...v, _score:s});
+    });
+  const result = {};
+  Object.entries(byChannel).forEach(([name, vids]) => {
+    result[name] = vids.sort((a,b)=>b._score-a._score).slice(0, n);
+  });
+  return result;
+}
+
+// ── Formatters ────────────────────────────────────────────────────────────────
+function fmtViews(n) {
+  if (n>=1e6) return `${(n/1e6).toFixed(1)}M`;
+  if (n>=1e3) return `${(n/1e3).toFixed(1)}K`;
+  return String(n);
+}
+
+function formatAgo(ts) {
+  const d = Math.floor(Date.now()/1000 - ts);
+  if (d<60)    return `${d}s ago`;
+  if (d<3600)  return `${Math.floor(d/60)}m ago`;
+  if (d<86400) return `${Math.floor(d/3600)}h ago`;
+  return `${Math.floor(d/86400)}d ago`;
+}
+
+// ── Card HTML builder ─────────────────────────────────────────────────────────
+function cardHtml(v, rank, isLive, hidden) {
+  const badge = isLive
+    ? `<span class="live-badge"><span class="live-dot"></span> LIVE</span>`
+    : rank ? `<span class="rank-badge">#${rank}</span>` : '';
+  const safeTitle = v.title.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+  return `
+    <div class="video-card${hidden?' hidden':''}" onclick="openPlayer('${v.video_id}','${safeTitle}')">
+      <div class="thumb-wrap">
+        <img src="${v.thumbnail}" alt=""
+             onerror="this.src='https://i.ytimg.com/vi/${v.video_id}/mqdefault.jpg'">
+        ${badge}
+      </div>
+      <div class="card-body">
+        <div class="card-channel">${v.channel_name}</div>
+        <div class="card-title">${v.title}</div>
+        <div class="card-meta">
+          <span class="card-views">👁 ${fmtViews(v.view_count)}</span>
+          <span>${formatAgo(v.timestamp)}</span>
+        </div>
+      </div>
+    </div>`;
+}
+
+function emptyState(title, sub) {
+  return `<div class="empty-state"><h3>${title}</h3><p>${sub}</p></div>`;
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+function renderAll() {
+  if (!allData) return;
+  renderTop();
+  renderOpinion();
+  renderLive();
+  renderChannels();
+}
+
+function renderTop() {
+  const panel = document.getElementById('panel-top');
+  const top   = topVideos(allData.bengali||[], hours);
+  if (!top.length) { panel.innerHTML = emptyState('No stories yet','Data refreshes hourly.'); return; }
+  const cards = top.map((v,i) => cardHtml(v, i+1, false, i>=30)).join('');
+  const more  = top.length>30
+    ? `<div class="show-more-wrap" id="smTop">
+         <button class="show-more-btn" onclick="showMore('topGrid','smTop')">
+           ${top.length-30} more stories
+         </button></div>` : '';
+  panel.innerHTML = `<p class="section-label">Top ${top.length} stories · last ${hours}h</p>
+    <div class="video-grid" id="topGrid">${cards}</div>${more}`;
+}
+
+function renderOpinion() {
+  const panel   = document.getElementById('panel-opinion');
+  const opinion = topVideos(allData.opinion||[], hours);
+  if (!opinion.length) { panel.innerHTML = emptyState('No opinion videos yet','Data refreshes hourly.'); return; }
+  const cards = opinion.map((v,i) => cardHtml(v, i+1, false, i>=30)).join('');
+  const more  = opinion.length>30
+    ? `<div class="show-more-wrap" id="smOp">
+         <button class="show-more-btn" onclick="showMore('opinionGrid','smOp')">
+           ${opinion.length-30} more videos
+         </button></div>` : '';
+  panel.innerHTML = `<p class="section-label">Top ${opinion.length} opinion videos · last ${hours}h</p>
+    <div class="video-grid" id="opinionGrid">${cards}</div>${more}`;
+}
+
+function renderLive() {
+  const panel = document.getElementById('panel-live');
+  const all   = (allData.bengali||[]).concat(allData.opinion||[]);
+  const live  = liveVideos(all);
+  if (!live.length) { panel.innerHTML = emptyState('No live streams right now','Check back later.'); return; }
+  const cards = live.map(v => cardHtml(v, null, true, false)).join('');
+  panel.innerHTML = `<p class="section-label">${live.length} channel(s) currently live</p>
+    <div class="live-grid">${cards}</div>`;
+}
+
+function renderChannels() {
+  const panel  = document.getElementById('panel-channels');
+  const byChannel = topPerChannel(allData.bengali||[], hours);
+  if (!Object.keys(byChannel).length) {
+    panel.innerHTML = emptyState('No channel data yet','Data refreshes hourly.');
+    return;
+  }
+  const rows = Object.entries(byChannel).map(([name, vids]) => {
+    const cards = vids.map((v,i) => cardHtml(v, i+1, false, false)).join('');
+    return `<div class="channel-row">
+      <div class="channel-header">
+        <span class="channel-name">${name}</span>
+        <span class="channel-count">${vids.length} videos</span>
+      </div>
+      <div class="video-row">${cards}</div>
+    </div>`;
+  }).join('');
+  panel.innerHTML = rows;
+}
+
+// ── Tab & toolbar ─────────────────────────────────────────────────────────────
+function switchTab(name, pushState=true) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById(`panel-${name}`).classList.add('active');
+  document.getElementById(`btn-${name}`).classList.add('active');
+  currentTab = name;
+  if (pushState) history.replaceState(null,'',`?tab=${name}&hours=${hours}`);
+}
+
+function renderToolbar() {
+  document.querySelectorAll('.time-btn').forEach((btn, i) => {
+    const w = TIME_WINDOWS[i];
+    btn.classList.toggle('active', w === hours);
+  });
+}
+
+function setHours(h) {
+  hours = h;
+  renderToolbar();
+  renderAll();
+  history.replaceState(null,'',`?tab=${currentTab}&hours=${hours}`);
+}
+
+function showMore(gridId, wrapperId) {
+  document.querySelectorAll(`#${gridId} .video-card.hidden`).forEach(c => c.classList.remove('hidden'));
+  document.getElementById(wrapperId).style.display = 'none';
+}
+
+// ── Toast ─────────────────────────────────────────────────────────────────────
+function showToast(msg, ms=3500) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), ms);
+}
+
+// ── YouTube Player ────────────────────────────────────────────────────────────
+function onYouTubeIframeAPIReady() {
+  ytPlayer = new YT.Player('ytPlayerDiv', {
+    height: '100%', width: '100%',
+    playerVars: {rel:0, modestbranding:1, playsinline:1},
+    events: {
+      onReady()        { ytPlayerReady = true; if (pendingVideoId) { ytPlayer.loadVideoById(pendingVideoId); pendingVideoId = null; } },
+      onStateChange(e) { if (e.data === YT.PlayerState.ENDED) startCountdown(); },
+      onError()        { showToast('This video cannot be embedded. Opening on YouTube…'); }
+    }
+  });
+}
+
+function openPlayer(videoId) {
+  document.getElementById('playerModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+  cancelCountdown();
+
+  if (ytPlayerReady) {
+    ytPlayer.loadVideoById(videoId);
+  } else {
+    pendingVideoId = videoId;
+  }
+}
+
+function closePlayer() {
+  document.getElementById('playerModal').classList.remove('open');
+  document.body.style.overflow = '';
+  cancelCountdown();
+  if (ytPlayerReady) ytPlayer.stopVideo();
+}
+
+function onModalClick(e) {
+  if (e.target === document.getElementById('playerModal')) closePlayer();
+}
+
+// ── Countdown to own channel video ───────────────────────────────────────────
+function startCountdown() {
+  if (!MY_CHANNEL_VIDEOS.length) return;
+
+  const nextId = MY_CHANNEL_VIDEOS[Math.floor(Math.random() * MY_CHANNEL_VIDEOS.length)];
+  document.getElementById('nextThumb').src  = `https://i.ytimg.com/vi/${nextId}/mqdefault.jpg`;
+  document.getElementById('nextChName').textContent = MY_CHANNEL_NAME || 'Our Channel';
+  document.getElementById('nextOverlay').classList.add('show');
+
+  let n = 5;
+  document.getElementById('countNum').textContent = n;
+
+  countdownTimer = setInterval(() => {
+    n--;
+    document.getElementById('countNum').textContent = n;
+    if (n <= 0) {
+      clearInterval(countdownTimer);
+      document.getElementById('nextOverlay').classList.remove('show');
+      ytPlayer.loadVideoById(nextId);
+    }
+  }, 1000);
+}
+
+function cancelCountdown() {
+  clearInterval(countdownTimer);
+  countdownTimer = null;
+  document.getElementById('nextOverlay').classList.remove('show');
+}
+
+// ── Service worker ────────────────────────────────────────────────────────────
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js');
+}
+</script>
+</body>
+</html>
