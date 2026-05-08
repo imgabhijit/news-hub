@@ -19,7 +19,7 @@ from dotenv import load_dotenv
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
-from channels import BENGALI_CHANNELS, OPINION_CHANNELS, NATIONAL_ENGLISH_CHANNELS, NATIONAL_HINDI_CHANNELS
+from channels import BENGALI_CHANNELS, BENGALI_OPINION_CHANNELS, NATIONAL_ENGLISH_CHANNELS, NATIONAL_HINDI_CHANNELS
 
 load_dotenv(dotenv_path=Path(__file__).parent.parent / ".env")
 
@@ -32,7 +32,7 @@ META_STALE_DAYS = 7
 
 REGIONS = {
     "bengali":          BENGALI_CHANNELS,
-    "opinion":          OPINION_CHANNELS,
+    "opinion":          BENGALI_OPINION_CHANNELS,
     "national_english": NATIONAL_ENGLISH_CHANNELS,
     "national_hindi":   NATIONAL_HINDI_CHANNELS,
 }

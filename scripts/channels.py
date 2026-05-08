@@ -78,14 +78,14 @@ BENGALI_CHANNELS = [
     {"id": "UCpthbAb5DDRfcG68VMn6q0g",  "name": "Indian Express Bangla"},
 ]
 
-OPINION_CHANNELS = [
+BENGALI_OPINION_CHANNELS = [
     {"id": "UCWWq6nFnUjje9RvGwYlIGTg", "name": "Arambagh TV"},
-    {"id": "UCrp7axFgr0WTbFWybKFKZIQ", "name": "Campaigncalling Media"},
+    {"id": "UCrp7axFgr0WTbFWybKFKZlQ", "name": "Campaigncalling Media"},
     {"id": "UC9YivGoN6UKWkl0k-8G1qyQ", "name": "Hothat Jodi Uthlo Kotha"},
     {"id": "UCEQSkASTH0bkG0AZ1kH8bhw", "name": "The News Bangla"},
     {"id": "UCefT7v-iDwAzbqQToY36mJw", "name": "Bongo TV"},
     {"id": "UCtODtHGNwmdSv7i5hekjrgA", "name": "Songe Adwitiya"},
-    {"id": "UCvlgNfsMR3NfHYYLdikgUNA", "name": "Priyo Bandhu Media"},
+    {"id": "UCvIgNfsMR3NfHYYLdikgUNA", "name": "Priyo Bandhu Media"},
     {"id": "UCqWuDZeimaWOI9TiDvZixAw", "name": "Madhyom"},
     {"id": "UCMi9LIv1yzHfGAIqnKZUfGA", "name": "Sanmoy Banerjee"},
     {"id": "UCkrE4tdQ4k8CLLOLAMQcftg", "name": "Jukti Tarko Songe Arka"},
@@ -102,9 +102,9 @@ OPINION_CHANNELS = [
     {"id": "UCAjdUae-6-STu4AUY9VwBbw", "name": "News 16 Bharat"},
     {"id": "UCQFKW0TwxonvjVNz-vLjXWg", "name": "Speak U Bengal"},
     {"id": "UC_I5ulyzUKzgzqF46yR2WdA", "name": "The Digital Virus"},
-    {"id": "UCTzlSKaQSIjrTTruodTJJMQ", "name": "CM News Media"},
+    {"id": "UCTzlSKaQSljrTTruodTJJMQ", "name": "CM News Media"},
     {"id": "UC2V1Hw_vCqWUbsUT_P-Xmpg", "name": "Nabanna Nimantran"},
-    {"id": "UCxhf49woOiJeWiUzkBfuAEcQ", "name": "The Wall News"},
+    {"id": "UCxhf49wOiJeWiUzkBfuAEcQ", "name": "The Wall News"},
     {"id": "UCcsSoLkRobqNFfkS8TDg5qw", "name": "Sanmoy Speaks"},
     {"id": "UCdbT6v89UrmdKIob0tGUEXw", "name": "Bibidho News"},
     {"id": "UCPxBRy06Xut2pZ_Wgl528yg", "name": "Political Guru"},
