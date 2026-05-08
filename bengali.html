@@ -498,9 +498,10 @@ function renderOpinion() {
 function renderLive() {
   const panel = document.getElementById('panel-live');
   const all   = (allData.bengali || []).concat(allData.opinion || []);
-  const live  = all
-    .filter(v => v.live_broadcast === 'live')
-    .sort((a, b) => b.view_count - a.view_count);
+  let live = all.filter(v => v.live_broadcast === 'live');
+  live = live.filter(v => v.view_count >= getMinViewsNum(currentFilter));
+  live = live.filter(v => matchesDuration(v));
+  live = sortedVideos(live, currentFilter, currentSort);
   if (!live.length) { panel.innerHTML = emptyState('No live streams right now', 'Check back soon.'); return; }
   const cards = live.map((v, i) => cardHtml(v, i + 1, true, false)).join('');
   panel.innerHTML = `<p class="section-label">${live.length} channel(s) currently live</p><div class="live-grid">${cards}</div>`;
@@ -539,8 +540,6 @@ function switchTab(name, push = true) {
     updateUrl();
   }
 
-  // Live tab needs no filter/sort toolbar
-  document.getElementById('toolbarWrap').style.display = name === 'live' ? 'none' : 'block';
   renderToolbar();
 }
 
