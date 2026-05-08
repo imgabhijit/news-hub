@@ -19,7 +19,7 @@ from dotenv import load_dotenv
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
-from channels import BENGALI_CHANNELS, OPINION_CHANNELS
+from channels import BENGALI_CHANNELS, OPINION_CHANNELS, NATIONAL_ENGLISH_CHANNELS, NATIONAL_HINDI_CHANNELS
 
 load_dotenv(dotenv_path=Path(__file__).parent.parent / ".env")
 
@@ -31,8 +31,10 @@ MIN_DURATION   = 60
 META_STALE_DAYS = 7
 
 REGIONS = {
-    "bengali": BENGALI_CHANNELS,
-    "opinion": OPINION_CHANNELS,
+    "bengali":          BENGALI_CHANNELS,
+    "opinion":          OPINION_CHANNELS,
+    "national_english": NATIONAL_ENGLISH_CHANNELS,
+    "national_hindi":   NATIONAL_HINDI_CHANNELS,
 }
 
 
@@ -153,7 +155,7 @@ def fetch_video_details(youtube, video_ids):
 
 def fetch_region(youtube, region, channels, meta_channels):
     videos = []
-    channel_type = "opinion" if region == "opinion" else "news"
+    channel_type = region  # "bengali", "opinion", "national_english", "national_hindi"
 
     for ch in channels:
         cid     = ch["id"]
@@ -226,9 +228,11 @@ def main():
 
     meta_channels = meta.get("channels", {})
     output = {
-        "last_updated": datetime.datetime.now(datetime.timezone.utc).isoformat(),
-        "bengali": [],
-        "opinion": [],
+        "last_updated":    datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        "bengali":         [],
+        "opinion":         [],
+        "national_english": [],
+        "national_hindi":   [],
     }
 
     cutoff_24h = int(datetime.datetime.now(datetime.timezone.utc).timestamp()) - 86400
@@ -242,7 +246,7 @@ def main():
 
     DATA_DIR.mkdir(exist_ok=True)
     VIDEOS_FILE.write_text(json.dumps(output, ensure_ascii=False), encoding="utf-8")
-    total = sum(len(output[r]) for r in ["bengali", "opinion"])
+    total = sum(len(output[r]) for r in ["bengali", "opinion", "national_english", "national_hindi"])
     print(f"\n[done] {total} videos saved to {VIDEOS_FILE}")
 
 
