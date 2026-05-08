@@ -57,6 +57,16 @@
     .toolbar-select:hover  { border-color: #3a86ff; }
     .toolbar-select:focus  { border-color: #3a86ff; }
 
+    .toolbar-input {
+      background: #2a2d3a; border: 1px solid #3a3d4a; color: #e0e0e0;
+      padding: 6px 12px; border-radius: 8px; font-size: 0.85rem; outline: none;
+      width: 96px; -moz-appearance: textfield;
+    }
+    .toolbar-input::-webkit-outer-spin-button,
+    .toolbar-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .toolbar-input:focus { border-color: #3a86ff; }
+    .toolbar-input::placeholder { color: #555; }
+
     .meta-info { font-size: 0.75rem; color: #555; margin-left: auto; }
 
     /* ── panels ── */
@@ -187,6 +197,33 @@
     <option value="oldest">🕰 Oldest</option>
   </select>
 
+  <span class="toolbar-label">Min Views</span>
+  <select class="toolbar-select" id="viewsSelect" onchange="setMinViews(this.value)">
+    <option value="auto">Auto</option>
+    <option value="0">Any</option>
+    <option value="1000">1K+</option>
+    <option value="5000">5K+</option>
+    <option value="10000">10K+</option>
+    <option value="25000">25K+</option>
+    <option value="50000">50K+</option>
+    <option value="100000">100K+</option>
+    <option value="500000">500K+</option>
+    <option value="custom">Custom…</option>
+  </select>
+  <input type="number" id="customViewsInput" class="toolbar-input"
+         placeholder="e.g. 75000" min="0" step="1000"
+         oninput="applyCustomViews(this.value)" style="display:none">
+
+  <span class="toolbar-label">Duration</span>
+  <select class="toolbar-select" id="durationSelect" onchange="setDuration(this.value)">
+    <option value="all">All</option>
+    <option value="short">Under 1 min</option>
+    <option value="1to3">1–3 min</option>
+    <option value="3to15">3–15 min</option>
+    <option value="15to30">15–30 min</option>
+    <option value="long">30+ min</option>
+  </select>
+
   <span id="metaInfo" style="display:none"></span>
 </div>
 
@@ -244,10 +281,13 @@ const THRESHOLDS = {
 
 // ── State ─────────────────────────────────────────────────────────────────────
 const params       = new URLSearchParams(location.search);
-let currentTab     = params.get('tab')    || 'top';
-let currentFilter  = params.get('filter') || TAB_DEFAULTS[currentTab];
-let currentSort    = params.get('sort')   || SORT_DEFAULTS[currentTab];
-let allData        = null;
+let currentTab      = params.get('tab')    || 'top';
+let currentFilter   = params.get('filter') || TAB_DEFAULTS[currentTab];
+let currentSort     = params.get('sort')   || SORT_DEFAULTS[currentTab];
+let currentMinViews = 'auto';
+let customMinViews  = 0;
+let currentDuration = 'all';
+let allData         = null;
 let ytPlayer       = null;
 let ytPlayerReady  = false;
 let pendingVideoId = null;
@@ -336,20 +376,38 @@ function sortedVideos(videos, filter, sort) {
   }
 }
 
+function getMinViewsNum(filter) {
+  if (currentMinViews === 'auto')   return THRESHOLDS[filter] || 5000;
+  if (currentMinViews === 'custom') return customMinViews || 0;
+  return parseInt(currentMinViews) || 0;
+}
+
+function matchesDuration(v) {
+  const d = v.duration || 0;
+  switch (currentDuration) {
+    case 'short':  return d < 60;
+    case '1to3':   return d >= 60   && d < 180;
+    case '3to15':  return d >= 180  && d < 900;
+    case '15to30': return d >= 900  && d < 1800;
+    case 'long':   return d >= 1800;
+    default:       return true;
+  }
+}
+
 function getVideos(videos, filter, sort, n = 100) {
   let pool = filterByRange(videos, filter)
     .filter(v => v.live_broadcast !== 'live');
 
-  // Threshold applied to all sorts
-  const thr = THRESHOLDS[filter] || 5000;
-  pool = pool.filter(v => v.view_count >= thr);
+  pool = pool.filter(v => v.view_count >= getMinViewsNum(filter));
+  pool = pool.filter(v => matchesDuration(v));
 
   return sortedVideos(pool, filter, sort).slice(0, n);
 }
 
 function getVideosPerChannel(videos, filter, sort, n = 10) {
-  // By Channel: no threshold — always show each channel's best
-  const pool       = filterByRange(videos, filter).filter(v => v.live_broadcast !== 'live');
+  const pool       = filterByRange(videos, filter)
+    .filter(v => v.live_broadcast !== 'live')
+    .filter(v => matchesDuration(v));
   const byChannel  = {};
   pool.forEach(v => {
     (byChannel[v.channel_name] = byChannel[v.channel_name] || []).push(v);
@@ -500,9 +558,32 @@ function setSort(s) {
   updateUrl();
 }
 
+function setMinViews(val) {
+  currentMinViews = val;
+  const inp = document.getElementById('customViewsInput');
+  inp.style.display = val === 'custom' ? 'inline-block' : 'none';
+  if (val !== 'custom') { renderAll(); updateUrl(); }
+}
+
+function applyCustomViews(val) {
+  customMinViews = parseInt(val) || 0;
+  renderAll();
+}
+
+function setDuration(val) {
+  currentDuration = val;
+  renderAll();
+  updateUrl();
+}
+
 function renderToolbar() {
-  document.getElementById('filterSelect').value = currentFilter;
-  document.getElementById('sortSelect').value   = currentSort;
+  document.getElementById('filterSelect').value   = currentFilter;
+  document.getElementById('sortSelect').value     = currentSort;
+  document.getElementById('viewsSelect').value    = currentMinViews;
+  document.getElementById('durationSelect').value = currentDuration;
+  const inp = document.getElementById('customViewsInput');
+  inp.style.display = currentMinViews === 'custom' ? 'inline-block' : 'none';
+  if (currentMinViews === 'custom') inp.value = customMinViews || '';
 }
 
 function updateUrl() {
