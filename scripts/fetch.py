@@ -235,13 +235,13 @@ def main():
         "national_hindi":   [],
     }
 
-    cutoff_24h = int(datetime.datetime.now(datetime.timezone.utc).timestamp()) - 86400
+    cutoff_48h = int(datetime.datetime.now(datetime.timezone.utc).timestamp()) - 172800
 
     for region, channels in REGIONS.items():
         print(f"\n[fetch] === {region.upper()} ({len(channels)} channels) ===")
         videos = fetch_region(youtube, region, channels, meta_channels)
-        purged = [v for v in videos if v["timestamp"] >= cutoff_24h]
-        print(f"[fetch] {region}: {len(purged)} videos (last 24h)")
+        purged = [v for v in videos if v["timestamp"] >= cutoff_48h]
+        print(f"[fetch] {region}: {len(purged)} videos (last 48h)")
         output[region] = purged
 
     DATA_DIR.mkdir(exist_ok=True)
