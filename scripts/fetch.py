@@ -26,7 +26,7 @@ load_dotenv(dotenv_path=Path(__file__).parent.parent / ".env")
 DATA_DIR       = Path(__file__).parent.parent / "data"
 META_FILE      = DATA_DIR / "channels_meta.json"
 VIDEOS_FILE    = DATA_DIR / "videos.json"
-FETCH_DAYS     = 2
+FETCH_DAYS     = 1
 MIN_DURATION   = 60
 META_STALE_DAYS = 7
 
@@ -235,13 +235,13 @@ def main():
         "national_hindi":   [],
     }
 
-    cutoff_48h = int(datetime.datetime.now(datetime.timezone.utc).timestamp()) - 172800
+    cutoff_24h = int(datetime.datetime.now(datetime.timezone.utc).timestamp()) - 86400
 
     for region, channels in REGIONS.items():
         print(f"\n[fetch] === {region.upper()} ({len(channels)} channels) ===")
         videos = fetch_region(youtube, region, channels, meta_channels)
-        purged = [v for v in videos if v["timestamp"] >= cutoff_48h]
-        print(f"[fetch] {region}: {len(purged)} videos (last 48h)")
+        purged = [v for v in videos if v["timestamp"] >= cutoff_24h]
+        print(f"[fetch] {region}: {len(purged)} videos (last 24h)")
         output[region] = purged
 
     DATA_DIR.mkdir(exist_ok=True)
