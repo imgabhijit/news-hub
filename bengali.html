@@ -222,6 +222,7 @@
   <span class="toolbar-label">Duration</span>
   <select class="toolbar-select" id="durationSelect" onchange="setDuration(this.value)">
     <option value="all">All</option>
+    <option value="upto30">Up to 30 min</option>
     <option value="short">Under 1 min</option>
     <option value="1to3">1–3 min</option>
     <option value="3to15">3–15 min</option>
@@ -270,7 +271,8 @@ const MY_CHANNEL_VIDEOS = [];
 
 // Today = 6am today → now  (feels like "today", not since midnight)
 // Last Night = yesterday 8pm → today 6am (covers the gap)
-const TAB_DEFAULTS  = { top: 'today',  opinion: 'today', live: '1h', channels: '24h'  };
+const TAB_DEFAULTS      = { top: 'today',   opinion: 'today', live: '1h', channels: '24h' };
+const DURATION_DEFAULTS = { top: 'upto30', opinion: 'all',   live: 'all', channels: 'all' };
 const SORT_DEFAULTS = { top: 'velocity', opinion: 'views', live: 'views', channels: 'views' };
 
 // View thresholds — applied to all sorts including Newest/Oldest
@@ -291,7 +293,7 @@ let currentFilter   = params.get('filter') || TAB_DEFAULTS[currentTab];
 let currentSort     = params.get('sort')   || SORT_DEFAULTS[currentTab];
 let currentMinViews = 'auto';
 let customMinViews  = 0;
-let currentDuration = 'all';
+let currentDuration = DURATION_DEFAULTS[currentTab] || 'upto30';
 let allData         = null;
 let ytPlayer       = null;
 let ytPlayerReady  = false;
@@ -391,6 +393,7 @@ function getMinViewsNum(filter) {
 function matchesDuration(v) {
   const d = v.duration || 0;
   switch (currentDuration) {
+    case 'upto30': return d < 1800;
     case 'short':  return d < 60;
     case '1to3':   return d >= 60   && d < 180;
     case '3to15':  return d >= 180  && d < 900;
@@ -548,8 +551,9 @@ function switchTab(name, push = true) {
   currentTab = name;
 
   if (push) {
-    currentFilter = TAB_DEFAULTS[name];
-    currentSort   = SORT_DEFAULTS[name];
+    currentFilter   = TAB_DEFAULTS[name];
+    currentSort     = SORT_DEFAULTS[name];
+    currentDuration = DURATION_DEFAULTS[name] || 'all';
     renderAll();
     updateUrl();
   }
