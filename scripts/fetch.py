@@ -23,11 +23,12 @@ from channels import BENGALI_CHANNELS, BENGALI_OPINION_CHANNELS, NATIONAL_ENGLIS
 
 load_dotenv(dotenv_path=Path(__file__).parent.parent / ".env")
 
-DATA_DIR       = Path(__file__).parent.parent / "data"
-META_FILE      = DATA_DIR / "channels_meta.json"
-VIDEOS_FILE    = DATA_DIR / "videos.json"
-FETCH_DAYS     = 1
-MIN_DURATION   = 60
+DATA_DIR        = Path(__file__).parent.parent / "data"
+META_FILE       = DATA_DIR / "channels_meta.json"
+VIDEOS_FILE     = DATA_DIR / "videos.json"
+CACHE_FILE      = DATA_DIR / "video_id_cache.json"
+FETCH_DAYS      = 1
+MIN_DURATION    = 60
 META_STALE_DAYS = 7
 
 REGIONS = {
@@ -60,6 +61,36 @@ def is_stale(meta):
         return True
     age = datetime.datetime.now(datetime.timezone.utc) - datetime.datetime.fromisoformat(ts)
     return age.days >= META_STALE_DAYS
+
+
+def load_video_cache():
+    if CACHE_FILE.exists():
+        try:
+            return json.loads(CACHE_FILE.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+    return {}
+
+
+def purge_video_cache(cache):
+    cutoff = int(datetime.datetime.now(datetime.timezone.utc).timestamp()) - 86400
+    purged = 0
+    for cid in list(cache.keys()):
+        before = len(cache[cid])
+        cache[cid] = {vid: ts for vid, ts in cache[cid].items() if ts >= cutoff}
+        purged += before - len(cache[cid])
+        if not cache[cid]:
+            del cache[cid]
+    if purged:
+        print(f"[cache] Purged {purged} video IDs older than 24h")
+    return cache
+
+
+def save_video_cache(cache):
+    DATA_DIR.mkdir(exist_ok=True)
+    CACHE_FILE.write_text(json.dumps(cache, ensure_ascii=False), encoding="utf-8")
+    total = sum(len(v) for v in cache.values())
+    print(f"[cache] Saved {total} video IDs across {len(cache)} channels")
 
 
 def refresh_meta(youtube, meta):
@@ -107,7 +138,12 @@ def duration_to_seconds(iso):
     return d * 86400 + h * 3600 + mi * 60 + s
 
 
-def fetch_playlist_videos(youtube, playlist_id, days):
+def fetch_playlist_videos(youtube, playlist_id, days, known_ids=None):
+    """Fetch new video IDs from a channel's uploads playlist.
+
+    Stops early when a known (already-cached) video ID is encountered,
+    since the playlist is newest-first and everything after is already known.
+    """
     cutoff = (
         datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=days)
     ).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -127,10 +163,15 @@ def fetch_playlist_videos(youtube, playlist_id, days):
 
         for item in res.get("items", []):
             pub = item.get("contentDetails", {}).get("videoPublishedAt", "")
+            vid = item["contentDetails"]["videoId"]
+
+            if known_ids and vid in known_ids:
+                return video_ids  # hit a known ID — everything after is already cached
+
             if pub >= cutoff:
-                video_ids.append(item["contentDetails"]["videoId"])
+                video_ids.append(vid)
             else:
-                return video_ids
+                return video_ids  # hit a video older than our window
 
         next_token = res.get("nextPageToken")
         if not next_token:
@@ -153,13 +194,13 @@ def fetch_video_details(youtube, video_ids):
     return details
 
 
-def fetch_region(youtube, region, channels, meta_channels):
+def fetch_region(youtube, region, channels, meta_channels, video_cache):
     videos = []
     channel_type = region  # "bengali", "opinion", "national_english", "national_hindi"
 
     for ch in channels:
-        cid     = ch["id"]
-        ch_meta = meta_channels.get(cid, {})
+        cid         = ch["id"]
+        ch_meta     = meta_channels.get(cid, {})
         playlist_id = ch_meta.get("playlist_id")
         subscribers = ch_meta.get("subscribers", 0)
 
@@ -167,19 +208,24 @@ def fetch_region(youtube, region, channels, meta_channels):
             print(f"  {ch['name']}: no playlist ID in meta, skipping")
             continue
 
-        video_ids = fetch_playlist_videos(youtube, playlist_id, FETCH_DAYS)
-        if not video_ids:
+        # Known IDs for this channel (already cached, published within 24h)
+        known = video_cache.get(cid, {})
+        known_ids = set(known.keys())
+
+        # Only fetch IDs we haven't seen before; stop early on first known ID
+        new_ids = fetch_playlist_videos(youtube, playlist_id, FETCH_DAYS, known_ids)
+
+        # All IDs to fetch metadata for = new + cached (views need refreshing every run)
+        all_ids = new_ids + list(known_ids)
+        if not all_ids:
             print(f"  {ch['name']}: no videos in last {FETCH_DAYS}d")
             continue
 
-        details = fetch_video_details(youtube, video_ids)
+        details = fetch_video_details(youtube, all_ids)
         count = 0
         for vd in details:
             dur  = duration_to_seconds(vd.get("contentDetails", {}).get("duration", ""))
             live = vd["snippet"].get("liveBroadcastContent", "none")
-
-            if dur < MIN_DURATION and live != "live":
-                continue
 
             pub = vd["snippet"].get("publishedAt", "")
             try:
@@ -189,6 +235,14 @@ def fetch_region(youtube, region, channels, meta_channels):
                 timestamp = int(dt.timestamp())
             except Exception:
                 timestamp = 0
+
+            # Cache ALL video IDs (including shorts) so early-stop works correctly
+            if cid not in video_cache:
+                video_cache[cid] = {}
+            video_cache[cid][vd["id"]] = timestamp
+
+            if dur < MIN_DURATION and live != "live":
+                continue
 
             stats = vd.get("statistics", {})
             thumb = (
@@ -212,7 +266,7 @@ def fetch_region(youtube, region, channels, meta_channels):
             })
             count += 1
 
-        print(f"  {ch['name']}: {count} videos")
+        print(f"  {ch['name']}: {count} videos ({len(new_ids)} new, {len(known_ids)} cached)")
 
     return videos
 
@@ -227,10 +281,15 @@ def main():
         print(f"[meta] Using cached metadata (updated {meta.get('last_updated', '?')})")
 
     meta_channels = meta.get("channels", {})
+
+    # Load video ID cache and purge entries older than 24h
+    video_cache = load_video_cache()
+    video_cache = purge_video_cache(video_cache)
+
     output = {
-        "last_updated":    datetime.datetime.now(datetime.timezone.utc).isoformat(),
-        "bengali":         [],
-        "opinion":         [],
+        "last_updated":     datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        "bengali":          [],
+        "opinion":          [],
         "national_english": [],
         "national_hindi":   [],
     }
@@ -239,13 +298,17 @@ def main():
 
     for region, channels in REGIONS.items():
         print(f"\n[fetch] === {region.upper()} ({len(channels)} channels) ===")
-        videos = fetch_region(youtube, region, channels, meta_channels)
+        videos = fetch_region(youtube, region, channels, meta_channels, video_cache)
         purged = [v for v in videos if v["timestamp"] >= cutoff_24h]
         print(f"[fetch] {region}: {len(purged)} videos (last 24h)")
         output[region] = purged
 
     DATA_DIR.mkdir(exist_ok=True)
     VIDEOS_FILE.write_text(json.dumps(output, ensure_ascii=False), encoding="utf-8")
+
+    # Persist updated video ID cache
+    save_video_cache(video_cache)
+
     total = sum(len(output[r]) for r in ["bengali", "opinion", "national_english", "national_hindi"])
     print(f"\n[done] {total} videos saved to {VIDEOS_FILE}")
 
