@@ -1,3 +1,51 @@
+WORLD_NEWS_CHANNELS = [
+    # Wire Services
+    {"id": "UChqUTb7kYRX8-EiaN3XFrSQ", "name": "Reuters"},
+    {"id": "UC52X5wxOL_s5yw0dQk7NtgA", "name": "Associated Press"},
+    {"id": "UC86dbj-lbDks_hZ5gRKL49Q", "name": "AFP News Agency"},
+    # Global Broadcasters
+    {"id": "UC16niRr50-MSBwiO3YDb3RA", "name": "BBC News"},
+    {"id": "UCNye-wNBqNL5ZzHSJj3l8Bg", "name": "Al Jazeera English"},
+    {"id": "UCQfwfsi5VrQ8yKZ-UWmAEFg", "name": "France 24 English"},
+    {"id": "UCknLrEdhRCp1aegoMqRaCZg", "name": "DW News"},
+    {"id": "UCSrZ3UV4jOidv8ppoVuvW9Q", "name": "Euronews English"},
+    {"id": "UC7fWeaHhqgM4Ry-RMpM2YYw", "name": "TRT World"},
+    {"id": "UCoMdktPbSTixAyNGwb-UYkQ", "name": "Sky News"},
+    {"id": "UCTrQ7HXWRRxr7OsOtodr2_w", "name": "Channel 4 News"},
+    # USA
+    {"id": "UCBi2mrWuNuyYy4gbM6fU18Q", "name": "ABC News"},
+    {"id": "UC8p1vwvWtl6T73JiExfWs1g", "name": "CBS News"},
+    {"id": "UCIALMKvObZNtJ6AmdCLP7Lg", "name": "Bloomberg TV"},
+    {"id": "UC6ZFN9Tx6xh-skXCuRHCDpQ", "name": "PBS NewsHour"},
+    # Asia-Pacific
+    {"id": "UC83jt4dlz1Gjl58fzQrrKZg", "name": "CNA"},
+    {"id": "UCSPEjw8F2nQDtmUKPFNF7_A", "name": "NHK World"},
+    {"id": "UCzznO4xSV8BKnUBPyswtCUw", "name": "ARIRANG News"},
+    {"id": "UCVgO39Bk5sMo66-6o6Spn6Q", "name": "ABC News Australia"},
+    {"id": "UCO0akufu9MOzyz3nvGIXAAw", "name": "Sky News Australia"},
+    # Middle East
+    {"id": "UCvHDpsWKADrDia0c99X37vg", "name": "i24 News"},
+    {"id": "UCI8DegIWgK51cGakXcf1dOQ", "name": "Arab News"},
+    # Africa
+    {"id": "UCEXGDNclvmg6RW0vipJYsTQ", "name": "Channels TV"},
+    {"id": "UCgp4A6I8LCWrhUzn-5SbKvA", "name": "TVC News Nigeria"},
+    {"id": "UCKVsdeoHExltrWMuK0hOWmg", "name": "KTN News Kenya"},
+    {"id": "UCqBJ47FjJcl61fmSbcadAVg", "name": "NTV Kenya"},
+    {"id": "UC8yH-uI81UUtEMDsowQyx1g", "name": "SABC News"},
+    # Newspapers
+    {"id": "UCqnbDFdCpuN8CMEg0VuEBqA", "name": "New York Times"},
+    {"id": "UCHd62-u_v4DvJ8TCFtpi4GA", "name": "Washington Post"},
+    {"id": "UCK7tptUDHh-RYDsdxO1-5QQ", "name": "Wall Street Journal"},
+    {"id": "UCHpw8xwDNhU9gdohEcJu4aA", "name": "The Guardian"},
+    {"id": "UCoUxsWakJucWg46KW5RsvPw", "name": "Financial Times"},
+    {"id": "UCshwRhftzkiov5wKR7M_LsQ", "name": "The Independent"},
+    {"id": "UC0p5jTq6Xx_DosDFxVXnWaQ", "name": "The Economist"},
+    {"id": "UC4p_I9eiRewn2KoU-nawrDg", "name": "Straits Times"},
+    {"id": "UC4SUWizzKc1tptprBkWjX2Q", "name": "South China Morning Post"},
+    # South Asia
+    {"id": "UCuOtdpOPjHeoEAT4i44mVOg", "name": "Ada Derana English"},
+]
+
 NATIONAL_ENGLISH_CHANNELS = [
     {"id": "UCef1-8eOpJgud7szVPlZQAQ", "name": "CNN-News18"},
     {"id": "UCwqusr8YDwM-3mEYTDeJHzw", "name": "Republic World"},

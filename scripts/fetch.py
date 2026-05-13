@@ -19,7 +19,7 @@ from dotenv import load_dotenv
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
-from channels import BENGALI_CHANNELS, BENGALI_OPINION_CHANNELS, NATIONAL_ENGLISH_CHANNELS, NATIONAL_HINDI_CHANNELS
+from channels import BENGALI_CHANNELS, BENGALI_OPINION_CHANNELS, NATIONAL_ENGLISH_CHANNELS, NATIONAL_HINDI_CHANNELS, WORLD_NEWS_CHANNELS
 
 load_dotenv(dotenv_path=Path(__file__).parent.parent / ".env")
 
@@ -36,6 +36,7 @@ REGIONS = {
     "opinion":          BENGALI_OPINION_CHANNELS,
     "national_english": NATIONAL_ENGLISH_CHANNELS,
     "national_hindi":   NATIONAL_HINDI_CHANNELS,
+    "world_news":       WORLD_NEWS_CHANNELS,
 }
 
 
