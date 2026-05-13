@@ -258,6 +258,13 @@
     }
 
     /* PWA: safe area for notched phones */
+    /* Landscape on mobile — video takes left ~60%, right side free for talking head */
+    @media (orientation: landscape) and (max-height: 600px) {
+      .modal-overlay { justify-content: flex-start; align-items: center; padding: 6px; }
+      .modal-box     { max-width: 60%; margin-left: 4px; }
+      .modal-close   { top: -36px; right: 0; }
+    }
+
     @supports (padding: env(safe-area-inset-bottom)) {
       nav  { padding-left: max(12px, env(safe-area-inset-left)); padding-right: max(12px, env(safe-area-inset-right)); }
       body { padding-bottom: env(safe-area-inset-bottom); }
