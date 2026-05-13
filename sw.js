@@ -1,4 +1,4 @@
-const CACHE_NAME = 'news-portal-v8';
+const CACHE_NAME = 'news-portal-v9';
 const STATIC_ASSETS = [
   '/news-hub/',
   '/news-hub/index.html',
@@ -6,6 +6,8 @@ const STATIC_ASSETS = [
   '/news-hub/national.html',
   '/news-hub/world.html',
   '/news-hub/manifest.json',
+  '/news-hub/icons/icon-192.png',
+  '/news-hub/icons/icon-512.png',
   '/news-hub/data/geo-utils.js',
   '/news-hub/data/geo-districts.js',
   '/news-hub/data/geo-states.js',
