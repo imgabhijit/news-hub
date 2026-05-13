@@ -881,19 +881,7 @@ function renderCountryDetail(panel, { country, certain, uncertain }) {
     ${uncertainHtml}`;
 }
 
-// ── REGIONS DEFINITION ───────────────────────────────────────────────────────
-const REGIONS_DEF = [
-  { name: "South Asia",     icon: "🌏", countries: ["India","Pakistan","Bangladesh","Sri Lanka","Nepal","Bhutan","Maldives","Afghanistan"] },
-  { name: "Southeast Asia", icon: "🌏", countries: ["Indonesia","Malaysia","Thailand","Vietnam","Philippines","Singapore","Myanmar","Cambodia","Laos","Brunei","Timor-Leste"] },
-  { name: "East Asia",      icon: "🌏", countries: ["China","Japan","South Korea","North Korea","Taiwan","Mongolia"] },
-  { name: "Central Asia",   icon: "🌐", countries: ["Kazakhstan","Uzbekistan","Kyrgyzstan","Tajikistan","Turkmenistan","Azerbaijan"] },
-  { name: "Middle East",    icon: "🕌", countries: ["Saudi Arabia","United Arab Emirates","Iran","Iraq","Israel","Palestine","Jordan","Lebanon","Syria","Yemen","Oman","Kuwait","Qatar","Bahrain","Turkey"] },
-  { name: "Europe",         icon: "🏛️", countries: ["United Kingdom","France","Germany","Italy","Spain","Netherlands","Poland","Sweden","Norway","Denmark","Finland","Belgium","Austria","Switzerland","Portugal","Czech Republic","Hungary","Romania","Greece","Ireland","Serbia","Croatia","Ukraine","Russia","Belarus","Moldova","Georgia","North Macedonia","Slovenia","Slovakia","Montenegro","Albania","Bosnia and Herzegovina","Estonia","Latvia","Lithuania","Luxembourg","Malta","Iceland","Cyprus"] },
-  { name: "Africa",         icon: "🌍", countries: ["Nigeria","Kenya","South Africa","Egypt","Ethiopia","Sudan","Somalia","Tanzania","Ghana","Morocco","Libya","Algeria","DR Congo","Republic of Congo","Rwanda","Uganda","Cameroon","Zimbabwe","Mozambique","Zambia","Malawi","Angola","Senegal","Burkina Faso","Mali","Niger","Chad","Guinea","Sierra Leone","Liberia","Gambia","Benin","Togo","Gabon","Equatorial Guinea","Burundi","Central African Republic","Eritrea","Djibouti","Cape Verde","Lesotho","Eswatini","Botswana","Namibia","South Sudan","Mauritius","Madagascar"] },
-  { name: "North America",  icon: "🌎", countries: ["United States","Canada","Mexico"] },
-  { name: "Latin America",  icon: "🌎", countries: ["Brazil","Argentina","Colombia","Venezuela","Peru","Chile","Bolivia","Ecuador","Paraguay","Uruguay","Guyana","Cuba","Haiti","Dominican Republic","Jamaica","Trinidad and Tobago","Panama","Costa Rica","El Salvador","Honduras","Guatemala","Nicaragua","Barbados","Antigua and Barbuda","Grenada","Saint Lucia","Saint Vincent"] },
-  { name: "Oceania",        icon: "🌊", countries: ["Australia","New Zealand","Fiji","Papua New Guinea","Solomon Islands","Samoa","Tonga","Vanuatu"] }
-];
+// REGIONS_DEF loaded from data/geo-countries.js
 
 // ── REGION RENDERING ──────────────────────────────────────────────────────────
 function openRegionDetail(name) { currentRegionDetail = name; renderRegions(); }

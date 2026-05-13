@@ -40,9 +40,9 @@ const DISTRICTS_RAW = [
 ];
 
 const BENGAL_REGIONS = [
-  { name:"উত্তরবঙ্গ\nUttar Banga",   icon:"🏔️", color:"uttarbanga",  districts:["Darjeeling","Kalimpong","Jalpaiguri","Alipurduar","Cooch Behar"] },
-  { name:"গৌড়বঙ্গ\nGour Banga",      icon:"🏛️", color:"gourbanga",   districts:["Malda","Uttar Dinajpur","Dakshin Dinajpur","Murshidabad"] },
-  { name:"রাঢ়বঙ্গ\nRarh Banga",      icon:"🏜️", color:"rarhbanga",   districts:["Birbhum","Paschim Bardhaman","Purba Bardhaman","Bankura"] },
-  { name:"জঙ্গলমহল\nJangal Mahal",   icon:"🌲", color:"jangalmahal", districts:["Purulia","Jhargram","Paschim Medinipur"] },
-  { name:"দক্ষিণবঙ্গ\nDakshin Banga", icon:"🌊", color:"banga",       districts:["Kolkata","Howrah","Hooghly","North 24 Parganas","South 24 Parganas","Nadia","Purba Medinipur"] }
+  { name:"Uttar Banga",   bn:"উত্তরবঙ্গ", icon:"🏔️", color:"uttarbanga",  districts:["Darjeeling","Kalimpong","Jalpaiguri","Alipurduar","Cooch Behar"] },
+  { name:"Gour Banga",    bn:"গৌড়বঙ্গ",   icon:"🏛️", color:"gourbanga",   districts:["Malda","Uttar Dinajpur","Dakshin Dinajpur","Murshidabad"] },
+  { name:"Rarh Banga",    bn:"রাঢ়বঙ্গ",   icon:"🏜️", color:"rarhbanga",   districts:["Birbhum","Paschim Bardhaman","Purba Bardhaman","Bankura"] },
+  { name:"Jangal Mahal",  bn:"জঙ্গলমহল", icon:"🌲", color:"jangalmahal", districts:["Purulia","Jhargram","Paschim Medinipur"] },
+  { name:"Dakshin Banga", bn:"দক্ষিণবঙ্গ", icon:"🌊", color:"banga",       districts:["Kolkata","Howrah","Hooghly","North 24 Parganas","South 24 Parganas","Nadia","Purba Medinipur"] }
 ];

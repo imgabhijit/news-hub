@@ -922,7 +922,7 @@ function renderBengalRegions() {
     ).join('');
     return `<div class="region-tile-bengal" onclick="openBengalRegion('${sn}')">
       <div class="region-tile-icon">${r.icon}</div>
-      <div class="region-tile-name">${r.name}</div>
+      <div class="region-tile-name">${r.bn} · ${r.name}</div>
       <div class="region-dist-codes">${codes}</div>
       <div class="region-tile-stats">${fmtViews(r.totalViews)} views · ${r.distEntries.length} districts</div>
     </div>`;
@@ -950,7 +950,7 @@ function renderBengalRegionDetail(panel, region) {
     <div class="district-detail-header">
       <button class="back-btn" onclick="closeBengalRegion()">← Back</button>
       <span style="font-size:1.6rem;line-height:1">${region.icon}</span>
-      <span class="district-detail-name">${region.name.replace('\n', ' ')}</span>
+      <span class="district-detail-name">${region.bn} · ${region.name}</span>
       <span class="district-views-lg" style="margin-left:auto">${fmtViews(region.totalViews)} views</span>
     </div>
     ${rows}`;
