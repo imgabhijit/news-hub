@@ -227,6 +227,11 @@
     .region-state-code-badge { font-size: 0.6rem; font-weight: 800; color: #fff; padding: 2px 5px; border-radius: 3px; }
     .region-tile-stats { font-size: 0.72rem; color: #666; }
 
+    .ch-view-toggle { display: flex; gap: 8px; margin-bottom: 16px; }
+    .ch-view-btn { background: #2a2d3a; border: 1px solid #3a3d4a; color: #888; padding: 6px 16px; border-radius: 6px; cursor: pointer; font-size: 0.82rem; transition: all 0.2s; }
+    .ch-view-btn.active { background: #1a1000; border-color: #f4a261; color: #f4a261; }
+    .ch-view-btn:hover:not(.active) { color: #ccc; }
+
     /* ── Responsive & PWA ───────────────────────────────────────────────────── */
     html { -webkit-text-size-adjust: 100%; }
 
@@ -287,10 +292,10 @@
 <div class="tabbar">
   <button class="tab-btn" id="btn-english"  onclick="switchTab('english')">🇬🇧 English News</button>
   <button class="tab-btn" id="btn-hindi"    onclick="switchTab('hindi')">🇮🇳 Hindi News</button>
-  <button class="tab-btn" id="btn-live"     onclick="switchTab('live')">🔴 Live</button>
-  <button class="tab-btn" id="btn-channels" onclick="switchTab('channels')">📺 By Channel</button>
   <button class="tab-btn" id="btn-states"   onclick="switchTab('states')">🗺️ By State/UT</button>
   <button class="tab-btn" id="btn-regions"  onclick="switchTab('regions')">🌐 By Region</button>
+  <button class="tab-btn" id="btn-live"     onclick="switchTab('live')">🔴 Live</button>
+  <button class="tab-btn" id="btn-channels" onclick="switchTab('channels')">📺 By Channel</button>
 </div>
 
 <div class="toolbar-wrap" id="toolbarWrap">
@@ -417,6 +422,7 @@ let currentSort     = params.get('sort')   || SORT_DEFAULTS[currentTab];
 let currentMinViews = '0';
 let customMinViews  = 0;
 let currentDuration = DURATION_DEFAULTS[currentTab] || 'upto30';
+let channelView     = 'list';
 let currentSearch   = '';
 let allData         = null;
 let ytPlayer       = null;
@@ -685,17 +691,30 @@ function renderLive() {
   panel.innerHTML = `<p class="section-label">${live.length} channel(s) currently live</p><div class="live-grid">${cards}</div>`;
 }
 
-function renderChannels() {
-  const panel = document.getElementById('panel-channels');
-  const all   = (allData.national_english || []).concat(allData.national_hindi || []);
+function setChannelView(v) { channelView = v; renderChannels(); }
 
-  // Group by language first, then channel
+function renderChannels() {
+  const panel       = document.getElementById('panel-channels');
   const engChannels = getVideosPerChannel(allData.national_english || [], currentFilter, currentSort);
   const hinChannels = getVideosPerChannel(allData.national_hindi   || [], currentFilter, currentSort);
-
   const hasEng = Object.keys(engChannels).length > 0;
   const hasHin = Object.keys(hinChannels).length > 0;
   if (!hasEng && !hasHin) { panel.innerHTML = emptyState('No channel data in this window', 'Try a wider filter.'); return; }
+
+  const toggle = `<div class="ch-view-toggle">
+    <button class="ch-view-btn ${channelView==='list'?'active':''}" onclick="setChannelView('list')">☰ List</button>
+    <button class="ch-view-btn ${channelView==='grid'?'active':''}" onclick="setChannelView('grid')">⊞ Grid</button>
+  </div>`;
+
+  if (channelView === 'grid') {
+    const allVids = searchVideos(sortedVideos(
+      [...Object.values(engChannels).flat(), ...Object.values(hinChannels).flat()],
+      currentFilter, currentSort));
+    const cards = allVids.map((v, i) => cardHtml(v, i + 1, false, i >= 50, true)).join('');
+    const more  = allVids.length > 50 ? `<div class="show-more-wrap" id="smChG"><button class="show-more-btn" onclick="showMore('chGrid','smChG')">${allVids.length - 50} more</button></div>` : '';
+    panel.innerHTML = toggle + `<div class="video-grid" id="chGrid">${cards}</div>${more}`;
+    return;
+  }
 
   function buildRows(byChannel, langClass, langLabel) {
     return Object.entries(byChannel).map(([name, vids]) => {
@@ -713,7 +732,7 @@ function renderChannels() {
     }).join('');
   }
 
-  let html = '';
+  let html = toggle;
   if (hasEng) html += `<p class="section-label" style="margin-bottom:20px">English Channels</p>${buildRows(engChannels, 'eng', 'English')}`;
   if (hasHin) html += `<p class="section-label" style="margin-top:32px;margin-bottom:20px">Hindi Channels</p>${buildRows(hinChannels, 'hin', 'Hindi')}`;
   panel.innerHTML = html;

@@ -219,6 +219,11 @@
     /* ── Responsive & PWA ───────────────────────────────────────────────────── */
     html { -webkit-text-size-adjust: 100%; }
 
+    .ch-view-toggle { display: flex; gap: 8px; margin-bottom: 16px; }
+    .ch-view-btn { background: #2a2d3a; border: 1px solid #3a3d4a; color: #888; padding: 6px 16px; border-radius: 6px; cursor: pointer; font-size: 0.82rem; transition: all 0.2s; }
+    .ch-view-btn.active { background: #0a1a2a; border-color: #3a86ff; color: #3a86ff; }
+    .ch-view-btn:hover:not(.active) { color: #ccc; }
+
     /* Tab bar always scrollable — prevents overflow on any screen size */
     .tabbar { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
     .tabbar::-webkit-scrollbar { display: none; }
@@ -283,10 +288,10 @@
 <div class="tabbar">
   <button class="tab-btn" id="btn-top"       onclick="switchTab('top')">📰 Top News</button>
   <button class="tab-btn" id="btn-opinion"   onclick="switchTab('opinion')">💬 Opinion</button>
+  <button class="tab-btn" id="btn-regions"   onclick="switchTab('regions')">🌐 By Region</button>
+  <button class="tab-btn" id="btn-districts" onclick="switchTab('districts')">🗺️ By District</button>
   <button class="tab-btn" id="btn-live"      onclick="switchTab('live')">🔴 Live</button>
   <button class="tab-btn" id="btn-channels"  onclick="switchTab('channels')">📺 By Channel</button>
-  <button class="tab-btn" id="btn-districts" onclick="switchTab('districts')">🗺️ By District</button>
-  <button class="tab-btn" id="btn-regions"   onclick="switchTab('regions')">🌐 By Region</button>
 </div>
 
 <div class="toolbar-wrap" id="toolbarWrap">
@@ -417,6 +422,7 @@ let currentSort     = params.get('sort')   || SORT_DEFAULTS[currentTab];
 let currentMinViews = '0';
 let customMinViews  = 0;
 let currentDuration = DURATION_DEFAULTS[currentTab] || 'upto30';
+let channelView     = 'list';
 let currentSearch   = '';
 let allData         = null;
 let ytPlayer       = null;
@@ -690,10 +696,26 @@ function renderLive() {
   panel.innerHTML = `<p class="section-label">${live.length} channel(s) currently live</p><div class="live-grid">${cards}</div>`;
 }
 
+function setChannelView(v) { channelView = v; renderChannels(); }
+
 function renderChannels() {
   const panel     = document.getElementById('panel-channels');
   const byChannel = getVideosPerChannel(allData.bengali || [], currentFilter, currentSort);
   if (!Object.keys(byChannel).length) { panel.innerHTML = emptyState('No channel data in this window', 'Try a wider filter.'); return; }
+
+  const toggle = `<div class="ch-view-toggle">
+    <button class="ch-view-btn ${channelView==='list'?'active':''}" onclick="setChannelView('list')">☰ List</button>
+    <button class="ch-view-btn ${channelView==='grid'?'active':''}" onclick="setChannelView('grid')">⊞ Grid</button>
+  </div>`;
+
+  if (channelView === 'grid') {
+    const all    = searchVideos(sortedVideos(Object.values(byChannel).flat(), currentFilter, currentSort));
+    const cards  = all.map((v, i) => cardHtml(v, i + 1, false, i >= 50)).join('');
+    const more   = all.length > 50 ? `<div class="show-more-wrap" id="smChG"><button class="show-more-btn" onclick="showMore('chGrid','smChG')">${all.length - 50} more</button></div>` : '';
+    panel.innerHTML = toggle + `<div class="video-grid" id="chGrid">${cards}</div>${more}`;
+    return;
+  }
+
   const rows = Object.entries(byChannel).map(([name, vids]) => {
     const filtered = searchVideos(vids);
     if (!filtered.length) return '';
@@ -706,7 +728,7 @@ function renderChannels() {
       <div class="video-row">${cards}</div>
     </div>`;
   }).join('');
-  panel.innerHTML = rows || emptyState('No results', 'Try a different search.');
+  panel.innerHTML = toggle + (rows || emptyState('No results', 'Try a different search.'));
 }
 
 // ── Controls ──────────────────────────────────────────────────────────────────
