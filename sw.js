@@ -1,4 +1,4 @@
-const CACHE_NAME = 'news-portal-v7';
+const CACHE_NAME = 'news-portal-v8';
 const STATIC_ASSETS = [
   '/news-hub/',
   '/news-hub/index.html',
@@ -12,7 +12,12 @@ const STATIC_ASSETS = [
   '/news-hub/data/geo-countries.js',
 ];
 
-// Cache static assets on install
+// HTML pages — always fetch fresh, these change with every deploy
+const HTML_PAGES = [
+  '/news-hub/', '/news-hub/index.html',
+  '/news-hub/bengali.html', '/news-hub/national.html', '/news-hub/world.html',
+];
+
 self.addEventListener('install', e => {
   e.waitUntil(
     caches.open(CACHE_NAME).then(cache => cache.addAll(STATIC_ASSETS))
@@ -20,7 +25,6 @@ self.addEventListener('install', e => {
   self.skipWaiting();
 });
 
-// Remove old caches on activate
 self.addEventListener('activate', e => {
   e.waitUntil(
     caches.keys().then(keys =>
@@ -31,12 +35,14 @@ self.addEventListener('activate', e => {
 });
 
 // Fetch strategy:
-//   data/videos.json  → network first, fall back to cache
-//   everything else   → cache first, fall back to network
+//   HTML pages + videos.json → network first, cache fallback (always fresh)
+//   geo data / manifest      → cache first, network fallback (rarely changes)
 self.addEventListener('fetch', e => {
   const url = new URL(e.request.url);
+  const isHtml = HTML_PAGES.some(p => url.pathname === p || url.pathname.endsWith('.html'));
+  const isData = url.pathname.includes('videos.json') || url.pathname.includes('video_id_cache.json');
 
-  if (url.pathname.includes('videos.json')) {
+  if (isHtml || isData) {
     e.respondWith(
       fetch(e.request)
         .then(res => {
