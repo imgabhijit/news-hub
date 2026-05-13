@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -191,6 +191,40 @@
     .subscribe-bar p { font-size: 0.85rem; color: #aaa; }
     .sub-btn { background: #f4a261; border: none; color: #fff; padding: 8px 20px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 700; text-decoration: none; }
     .sub-btn:hover { background: #e08c4d; }
+
+    /* ── By State/UT ── */
+    .view-toggle { display: flex; gap: 8px; margin-bottom: 24px; }
+    .view-btn { background: #2a2d3a; border: 1px solid #3a3d4a; color: #888; padding: 7px 20px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; transition: all 0.2s; }
+    .view-btn.active { background: #2a1a0a; border-color: #f4a261; color: #f4a261; }
+    .view-btn:hover:not(.active) { color: #ccc; }
+
+    .state-tile-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; }
+    .state-tile { background: #1a1d27; border: 1px solid #2a2d3a; border-radius: 10px; padding: 14px 10px; cursor: pointer; text-align: center; transition: transform 0.2s, border-color 0.2s; }
+    .state-tile:hover { transform: translateY(-3px); border-color: #f4a261; }
+    .state-map-icon { width: 56px; height: 44px; border-radius: 6px; display: flex; align-items: center; justify-content: center; margin: 0 auto 8px; font-size: 1rem; font-weight: 800; color: #fff; letter-spacing: 0.5px; }
+    .state-tile-name  { font-size: 0.75rem; font-weight: 700; color: #e0e0e0; margin-bottom: 4px; line-height: 1.3; }
+    .state-tile-stats { font-size: 0.67rem; color: #666; }
+
+    .state-section { margin-bottom: 40px; }
+    .state-list-header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid #2a2d3a; }
+    .state-map-icon-sm { width: 38px; height: 30px; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 0.7rem; font-weight: 800; color: #fff; flex-shrink: 0; }
+    .state-name-lg { font-size: 1rem; font-weight: 700; color: #fff; }
+    .state-views-lg { font-size: 0.72rem; color: #f4a261; background: #2a1a0a; padding: 3px 10px; border-radius: 10px; margin-left: auto; }
+
+    .state-detail-header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #2a2d3a; }
+    .back-btn { background: #2a2d3a; border: 1px solid #3a3d4a; color: #ccc; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; transition: all 0.2s; white-space: nowrap; }
+    .back-btn:hover { border-color: #f4a261; color: #f4a261; }
+    .state-detail-name { font-size: 1.2rem; font-weight: 700; color: #fff; }
+
+    /* ── By Region ── */
+    .region-tile-grid-india { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 16px; }
+    .region-tile-india { background: #1a1d27; border: 1px solid #2a2d3a; border-radius: 10px; padding: 20px 16px; cursor: pointer; text-align: center; transition: transform 0.2s, border-color 0.2s; }
+    .region-tile-india:hover { transform: translateY(-3px); border-color: #f4a261; }
+    .region-tile-icon  { font-size: 2.2rem; margin-bottom: 10px; }
+    .region-tile-name  { font-size: 0.95rem; font-weight: 700; color: #fff; margin-bottom: 8px; }
+    .region-state-codes { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; margin-bottom: 8px; }
+    .region-state-code-badge { font-size: 0.6rem; font-weight: 800; color: #fff; padding: 2px 5px; border-radius: 3px; }
+    .region-tile-stats { font-size: 0.72rem; color: #666; }
   </style>
 </head>
 <body>
@@ -207,6 +241,8 @@
   <button class="tab-btn" id="btn-hindi"    onclick="switchTab('hindi')">🇮🇳 Hindi News</button>
   <button class="tab-btn" id="btn-live"     onclick="switchTab('live')">🔴 Live</button>
   <button class="tab-btn" id="btn-channels" onclick="switchTab('channels')">📺 By Channel</button>
+  <button class="tab-btn" id="btn-states"   onclick="switchTab('states')">🗺️ By State/UT</button>
+  <button class="tab-btn" id="btn-regions"  onclick="switchTab('regions')">🌐 By Region</button>
 </div>
 
 <div class="toolbar-wrap" id="toolbarWrap">
@@ -268,6 +304,8 @@
 <div class="tab-panel" id="panel-hindi"></div>
 <div class="tab-panel" id="panel-live"></div>
 <div class="tab-panel" id="panel-channels"></div>
+<div class="tab-panel" id="panel-states"></div>
+<div class="tab-panel" id="panel-regions"></div>
 
 <div class="modal-overlay" id="playerModal" onclick="onModalClick(event)">
   <div class="modal-box">
@@ -290,6 +328,8 @@
 </div>
 
 <div id="toast"></div>
+<script src="data/geo-utils.js"></script>
+<script src="data/geo-states.js"></script>
 <script src="https://www.youtube.com/iframe_api"></script>
 
 <script>
@@ -299,9 +339,9 @@ const MY_CHANNEL_NAME   = '';
 const MY_CHANNEL_VIDEOS = [];
 
 // ── Filter & sort setup ───────────────────────────────────────────────────────
-const TAB_DEFAULTS      = { english: 'today',   hindi: 'today', live: '1h', channels: '24h' };
-const DURATION_DEFAULTS = { english: 'upto30', hindi: 'upto30', live: 'all', channels: 'all' };
-const SORT_DEFAULTS = { english: 'velocity', hindi: 'velocity', live: 'views', channels: 'views' };
+const TAB_DEFAULTS      = { english: 'today', hindi: 'today', live: '1h', channels: '24h', states: '24h', regions: '24h' };
+const DURATION_DEFAULTS = { english: 'upto30', hindi: 'upto30', live: 'all', channels: 'all', states: 'all', regions: 'all' };
+const SORT_DEFAULTS     = { english: 'velocity', hindi: 'velocity', live: 'views', channels: 'views', states: 'views', regions: 'views' };
 
 const THRESHOLDS = {
   lastnight: 40000,
@@ -325,9 +365,12 @@ let currentSearch   = '';
 let allData         = null;
 let ytPlayer       = null;
 let ytPlayerReady  = false;
-let pendingVideoId = null;
-let currentVideoId = null;
-let countdownTimer = null;
+let pendingVideoId      = null;
+let currentVideoId      = null;
+let countdownTimer      = null;
+let currentStateDetail  = null;
+let currentRegionDetail = null;
+let currentViewMode     = localStorage.getItem('indiaStateView') || 'grid';
 
 // ── Time ranges ───────────────────────────────────────────────────────────────
 function getTimeRange(filter) {
@@ -550,6 +593,8 @@ function renderAll() {
   renderHindi();
   renderLive();
   renderChannels();
+  renderStates();
+  renderRegions();
 }
 
 function renderEnglish() {
@@ -625,11 +670,15 @@ function switchTab(name, push = true) {
   document.getElementById(`panel-${name}`).classList.add('active');
   document.getElementById(`btn-${name}`).classList.add('active');
   currentTab = name;
+  currentStateDetail  = null;
+  currentRegionDetail = null;
 
   if (push) {
-    currentFilter   = TAB_DEFAULTS[name];
-    currentSort     = SORT_DEFAULTS[name];
-    currentDuration = DURATION_DEFAULTS[name] || 'all';
+    if (name !== 'states' && name !== 'regions') {
+      currentFilter   = TAB_DEFAULTS[name];
+      currentSort     = SORT_DEFAULTS[name];
+      currentDuration = DURATION_DEFAULTS[name] || 'all';
+    }
     renderAll();
     updateUrl();
   }
@@ -752,6 +801,173 @@ function startCountdown() {
 function cancelCountdown() {
   clearInterval(countdownTimer); countdownTimer = null;
   document.getElementById('nextOverlay').classList.remove('show');
+}
+
+// ── STATE DETECTION (data from geo-utils.js + geo-states.js) ─────────────────
+const STATES_DB = STATES_RAW.map(s => ({
+  ...s,
+  color: STATE_REGION_COLORS[s.region],
+  nkw: s.kw.map(normStr)
+}));
+const STATE_BY_NAME = {};
+STATES_DB.forEach(s => { STATE_BY_NAME[s.name] = s; });
+
+function detectStates(title) {
+  const norm = normStr(title);
+  return STATES_DB.filter(s => s.nkw.some(nk => norm.includes(nk))).map(s => s.name);
+}
+
+function buildStateMap(videos) {
+  const map = {};
+  for (const v of videos) {
+    for (const sn of detectStates(v.title)) {
+      const sObj = STATE_BY_NAME[sn];
+      if (!sObj) continue;
+      if (!map[sn]) map[sn] = { state: sObj, videos: [], totalViews: 0 };
+      map[sn].videos.push(v);
+      map[sn].totalViews += v.view_count;
+    }
+  }
+  for (const e of Object.values(map)) e.videos.sort((a, b) => b.view_count - a.view_count);
+  return map;
+}
+
+function stateMapIcon(state, large = true) {
+  const cls = large ? 'state-map-icon' : 'state-map-icon-sm';
+  return `<div class="${cls}" style="background:${state.color}">${state.code}</div>`;
+}
+
+// ── BY STATE RENDERING ────────────────────────────────────────────────────────
+function setViewMode(mode) {
+  currentViewMode = mode;
+  localStorage.setItem('indiaStateView', mode);
+  currentStateDetail = null;
+  renderStates();
+}
+
+function openStateDetail(name)  { currentStateDetail = name; renderStates(); }
+function closeStateDetail()     { currentStateDetail = null; renderStates(); }
+function openRegionDetail(name) { currentRegionDetail = name; renderRegions(); }
+function closeRegionDetail()    { currentRegionDetail = null; renderRegions(); }
+
+function renderStates() {
+  if (!allData) return;
+  const panel  = document.getElementById('panel-states');
+  const videos = filterByRange((allData.national_english||[]).concat(allData.national_hindi||[]), '24h');
+  const map    = buildStateMap(videos);
+  const sorted = Object.values(map).sort((a, b) => b.totalViews - a.totalViews);
+
+  if (!sorted.length) { panel.innerHTML = emptyState('No state data', 'Check back soon.'); return; }
+
+  if (currentStateDetail && map[currentStateDetail]) {
+    renderStateDetail(panel, map[currentStateDetail]);
+    return;
+  }
+
+  const toggle = `<div class="view-toggle">
+    <button class="view-btn${currentViewMode==='list'?' active':''}" onclick="setViewMode('list')">☰ List</button>
+    <button class="view-btn${currentViewMode==='grid'?' active':''}" onclick="setViewMode('grid')">⊞ Grid</button>
+  </div>`;
+
+  if (currentViewMode === 'list') {
+    const rows = sorted.map(({ state, videos, totalViews }) => {
+      const cards = videos.slice(0, 10).map((v, i) => cardHtml(v, i+1, false, false, false)).join('');
+      return `<div class="state-section">
+        <div class="state-list-header">
+          ${stateMapIcon(state, false)}
+          <span class="state-name-lg">${state.name}</span>
+          <span class="state-views-lg">${fmtViews(totalViews)} views</span>
+        </div>
+        <div class="video-row">${cards}</div>
+      </div>`;
+    }).join('');
+    panel.innerHTML = `<p class="section-label">By State/UT · Last 24h</p>${toggle}${rows}`;
+  } else {
+    const tiles = sorted.map(({ state, videos, totalViews }) => {
+      const sn = state.name.replace(/'/g, "\\'");
+      return `<div class="state-tile" onclick="openStateDetail('${sn}')">
+        ${stateMapIcon(state, true)}
+        <div class="state-tile-name">${state.name}</div>
+        <div class="state-tile-stats">${fmtViews(totalViews)} · ${videos.length} video${videos.length!==1?'s':''}</div>
+      </div>`;
+    }).join('');
+    panel.innerHTML = `<p class="section-label">By State/UT · Last 24h</p>${toggle}<div class="state-tile-grid">${tiles}</div>`;
+  }
+}
+
+function renderStateDetail(panel, { state, videos }) {
+  const cards = videos.map((v, i) => cardHtml(v, i+1, false, i>=10, false)).join('');
+  const more  = videos.length > 10
+    ? `<div class="show-more-wrap" id="smState"><button class="show-more-btn" onclick="showMore('stateGrid','smState')">${videos.length-10} more videos</button></div>` : '';
+  panel.innerHTML = `
+    <div class="state-detail-header">
+      <button class="back-btn" onclick="closeStateDetail()">← Back</button>
+      ${stateMapIcon(state, false)}
+      <span class="state-detail-name">${state.name}</span>
+    </div>
+    <div class="video-grid" id="stateGrid">${cards}</div>${more}`;
+}
+
+// ── BY REGION (INDIA) ─────────────────────────────────────────────────────────
+function renderRegions() {
+  if (!allData) return;
+  const panel  = document.getElementById('panel-regions');
+  const videos = filterByRange((allData.national_english||[]).concat(allData.national_hindi||[]), '24h');
+  const smap   = buildStateMap(videos);
+
+  const regionData = INDIA_REGIONS.map(r => {
+    const stateEntries = r.states.map(sn => smap[sn]).filter(e => e && e.videos.length > 0);
+    const totalViews   = stateEntries.reduce((sum, e) => sum + e.totalViews, 0);
+    return { ...r, stateEntries, totalViews };
+  }).filter(r => r.stateEntries.length > 0).sort((a, b) => b.totalViews - a.totalViews);
+
+  if (!regionData.length) { panel.innerHTML = emptyState('No region data', 'Check back soon.'); return; }
+
+  if (currentRegionDetail) {
+    const r = regionData.find(r => r.name === currentRegionDetail);
+    if (r) { renderRegionDetail(panel, r); return; }
+  }
+
+  const tiles = regionData.map(r => {
+    const sn    = r.name.replace(/'/g, "\\'");
+    const rc    = STATE_REGION_COLORS[r.color];
+    const codes = r.stateEntries.slice(0, 8).map(e =>
+      `<span class="region-state-code-badge" style="background:${rc}">${e.state.code}</span>`
+    ).join('');
+    return `<div class="region-tile-india" onclick="openRegionDetail('${sn}')">
+      <div class="region-tile-icon">${r.icon}</div>
+      <div class="region-tile-name">${r.name}</div>
+      <div class="region-state-codes">${codes}</div>
+      <div class="region-tile-stats">${fmtViews(r.totalViews)} views · ${r.stateEntries.length} states</div>
+    </div>`;
+  }).join('');
+
+  panel.innerHTML = `<p class="section-label">By Region · Last 24h · sorted by total views</p><div class="region-tile-grid-india">${tiles}</div>`;
+}
+
+function renderRegionDetail(panel, region) {
+  const sorted = [...region.stateEntries].sort((a, b) => b.totalViews - a.totalViews);
+  const rc     = STATE_REGION_COLORS[region.color];
+  const rows   = sorted.map(({ state, videos, totalViews }) => {
+    const cards = videos.map((v, i) => cardHtml(v, i+1, false, false, false)).join('');
+    return `<div class="state-section">
+      <div class="state-list-header">
+        ${stateMapIcon(state, false)}
+        <span class="state-name-lg">${state.name}</span>
+        <span class="state-views-lg">${fmtViews(totalViews)} views</span>
+      </div>
+      <div class="video-row">${cards}</div>
+    </div>`;
+  }).join('');
+
+  panel.innerHTML = `
+    <div class="state-detail-header">
+      <button class="back-btn" onclick="closeRegionDetail()">← Back</button>
+      <span style="font-size:1.6rem;line-height:1">${region.icon}</span>
+      <span class="state-detail-name">${region.name}</span>
+      <span class="state-views-lg" style="margin-left:auto">${fmtViews(region.totalViews)} views</span>
+    </div>
+    ${rows}`;
 }
 
 // ── Boot ──────────────────────────────────────────────────────────────────────

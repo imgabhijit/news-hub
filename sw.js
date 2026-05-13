@@ -1,4 +1,4 @@
-const CACHE_NAME = 'news-portal-v5';
+const CACHE_NAME = 'news-portal-v7';
 const STATIC_ASSETS = [
   '/news-hub/',
   '/news-hub/index.html',
@@ -6,6 +6,10 @@ const STATIC_ASSETS = [
   '/news-hub/national.html',
   '/news-hub/world.html',
   '/news-hub/manifest.json',
+  '/news-hub/data/geo-utils.js',
+  '/news-hub/data/geo-districts.js',
+  '/news-hub/data/geo-states.js',
+  '/news-hub/data/geo-countries.js',
 ];
 
 // Cache static assets on install

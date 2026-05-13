@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="bn">
 <head>
   <meta charset="UTF-8">
@@ -181,6 +181,39 @@
     .subscribe-bar p { font-size: 0.85rem; color: #aaa; }
     .sub-btn { background: #3a86ff; border: none; color: #fff; padding: 8px 20px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 700; text-decoration: none; }
     .sub-btn:hover { background: #2563eb; }
+
+    /* ── By District / By Region ── */
+    .view-toggle { display: flex; gap: 8px; margin-bottom: 24px; }
+    .view-btn { background: #2a2d3a; border: 1px solid #3a3d4a; color: #888; padding: 7px 20px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; transition: all 0.2s; }
+    .view-btn.active { background: #0a1a2a; border-color: #3a86ff; color: #3a86ff; }
+    .view-btn:hover:not(.active) { color: #ccc; }
+
+    .district-tile-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 12px; }
+    .district-tile { background: #1a1d27; border: 1px solid #2a2d3a; border-radius: 10px; padding: 14px 10px; cursor: pointer; text-align: center; transition: transform 0.2s, border-color 0.2s; }
+    .district-tile:hover { transform: translateY(-3px); border-color: #3a86ff; }
+    .district-map-icon { width: 56px; height: 38px; border-radius: 6px; display: flex; align-items: center; justify-content: center; margin: 0 auto 8px; font-size: 0.85rem; font-weight: 800; color: #fff; letter-spacing: 0.5px; }
+    .district-tile-name  { font-size: 0.75rem; font-weight: 700; color: #e0e0e0; margin-bottom: 4px; line-height: 1.3; }
+    .district-tile-stats { font-size: 0.67rem; color: #666; }
+
+    .district-section { margin-bottom: 40px; }
+    .district-list-header { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid #2a2d3a; }
+    .district-map-icon-sm { width: 38px; height: 26px; border-radius: 5px; display: flex; align-items: center; justify-content: center; font-size: 0.68rem; font-weight: 800; color: #fff; flex-shrink: 0; }
+    .district-name-lg { font-size: 1rem; font-weight: 700; color: #fff; }
+    .district-views-lg { font-size: 0.72rem; color: #3a86ff; background: #0a1a2a; padding: 3px 10px; border-radius: 10px; margin-left: auto; }
+
+    .district-detail-header { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; padding-bottom: 16px; border-bottom: 1px solid #2a2d3a; }
+    .back-btn { background: #2a2d3a; border: 1px solid #3a3d4a; color: #ccc; padding: 8px 16px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; transition: all 0.2s; white-space: nowrap; }
+    .back-btn:hover { border-color: #3a86ff; color: #3a86ff; }
+    .district-detail-name { font-size: 1.2rem; font-weight: 700; color: #fff; }
+
+    .region-tile-grid-bengal { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; }
+    .region-tile-bengal { background: #1a1d27; border: 1px solid #2a2d3a; border-radius: 10px; padding: 20px 16px; cursor: pointer; text-align: center; transition: transform 0.2s, border-color 0.2s; }
+    .region-tile-bengal:hover { transform: translateY(-3px); border-color: #3a86ff; }
+    .region-tile-icon  { font-size: 2.2rem; margin-bottom: 10px; }
+    .region-tile-name  { font-size: 0.9rem; font-weight: 700; color: #fff; margin-bottom: 8px; line-height: 1.4; }
+    .region-dist-codes { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; margin-bottom: 8px; }
+    .region-dist-badge { font-size: 0.58rem; font-weight: 800; color: #fff; padding: 2px 4px; border-radius: 3px; }
+    .region-tile-stats { font-size: 0.72rem; color: #666; }
   </style>
 </head>
 <body>
@@ -193,10 +226,12 @@
 </nav>
 
 <div class="tabbar">
-  <button class="tab-btn" id="btn-top"      onclick="switchTab('top')">📰 Top News</button>
-  <button class="tab-btn" id="btn-opinion"  onclick="switchTab('opinion')">💬 Opinion</button>
-  <button class="tab-btn" id="btn-live"     onclick="switchTab('live')">🔴 Live</button>
-  <button class="tab-btn" id="btn-channels" onclick="switchTab('channels')">📺 By Channel</button>
+  <button class="tab-btn" id="btn-top"       onclick="switchTab('top')">📰 Top News</button>
+  <button class="tab-btn" id="btn-opinion"   onclick="switchTab('opinion')">💬 Opinion</button>
+  <button class="tab-btn" id="btn-live"      onclick="switchTab('live')">🔴 Live</button>
+  <button class="tab-btn" id="btn-channels"  onclick="switchTab('channels')">📺 By Channel</button>
+  <button class="tab-btn" id="btn-districts" onclick="switchTab('districts')">🗺️ By District</button>
+  <button class="tab-btn" id="btn-regions"   onclick="switchTab('regions')">🌐 By Region</button>
 </div>
 
 <div class="toolbar-wrap" id="toolbarWrap">
@@ -256,6 +291,8 @@
 
 <div class="tab-panel" id="panel-top"></div>
 <div class="tab-panel" id="panel-opinion"></div>
+<div class="tab-panel" id="panel-districts"></div>
+<div class="tab-panel" id="panel-regions"></div>
 <div class="tab-panel" id="panel-live"></div>
 <div class="tab-panel" id="panel-channels"></div>
 
@@ -280,6 +317,8 @@
 </div>
 
 <div id="toast"></div>
+<script src="data/geo-utils.js"></script>
+<script src="data/geo-districts.js"></script>
 <script src="https://www.youtube.com/iframe_api"></script>
 
 <script>
@@ -292,9 +331,9 @@ const MY_CHANNEL_VIDEOS = [];
 
 // Today = 6am today → now  (feels like "today", not since midnight)
 // Last Night = yesterday 8pm → today 6am (covers the gap)
-const TAB_DEFAULTS      = { top: 'today',   opinion: 'today', live: '1h', channels: '24h' };
-const DURATION_DEFAULTS = { top: 'upto30', opinion: 'all',   live: 'all', channels: 'all' };
-const SORT_DEFAULTS = { top: 'velocity', opinion: 'views', live: 'views', channels: 'views' };
+const TAB_DEFAULTS      = { top: 'today', opinion: 'today', live: '1h', channels: '24h', districts: '24h', regions: '24h' };
+const DURATION_DEFAULTS = { top: 'upto30', opinion: 'all', live: 'all', channels: 'all', districts: 'all', regions: 'all' };
+const SORT_DEFAULTS     = { top: 'velocity', opinion: 'views', live: 'views', channels: 'views', districts: 'views', regions: 'views' };
 
 // View thresholds — applied to all sorts including Newest/Oldest
 const THRESHOLDS = {
@@ -319,8 +358,11 @@ let currentSearch   = '';
 let allData         = null;
 let ytPlayer       = null;
 let ytPlayerReady  = false;
-let pendingVideoId = null;
-let currentVideoId = null;
+let pendingVideoId        = null;
+let currentVideoId        = null;
+let currentDistrictDetail = null;
+let currentBengalRegion   = null;
+let currentDistrictView   = localStorage.getItem('bengalDistrictView') || 'grid';
 let countdownTimer = null;
 
 // ── Time ranges ───────────────────────────────────────────────────────────────
@@ -549,6 +591,8 @@ function renderAll() {
   renderOpinion();
   renderLive();
   renderChannels();
+  renderDistricts();
+  renderBengalRegions();
 }
 
 function renderTop() {
@@ -609,11 +653,15 @@ function switchTab(name, push = true) {
   document.getElementById(`panel-${name}`).classList.add('active');
   document.getElementById(`btn-${name}`).classList.add('active');
   currentTab = name;
+  currentDistrictDetail = null;
+  currentBengalRegion   = null;
 
   if (push) {
-    currentFilter   = TAB_DEFAULTS[name];
-    currentSort     = SORT_DEFAULTS[name];
-    currentDuration = DURATION_DEFAULTS[name] || 'all';
+    if (name !== 'districts' && name !== 'regions') {
+      currentFilter   = TAB_DEFAULTS[name];
+      currentSort     = SORT_DEFAULTS[name];
+      currentDuration = DURATION_DEFAULTS[name] || 'all';
+    }
     renderAll();
     updateUrl();
   }
@@ -736,6 +784,176 @@ function startCountdown() {
 function cancelCountdown() {
   clearInterval(countdownTimer); countdownTimer = null;
   document.getElementById('nextOverlay').classList.remove('show');
+}
+
+const DISTRICTS_DB = DISTRICTS_RAW.map(d => ({
+  ...d,
+  color: DIST_REGION_COLORS[d.region],
+  engKw: d.kw.filter(k => !/[ঀ-৿]/.test(k)).map(k => ' ' + k.toLowerCase() + ' '),
+  bnKw:  d.kw.filter(k =>  /[ঀ-৿]/.test(k)).map(k => k)
+}));
+const DISTRICT_BY_NAME = {};
+DISTRICTS_DB.forEach(d => { DISTRICT_BY_NAME[d.name] = d; });
+
+function detectDistricts(title) {
+  const norm = bNormStr(title);
+  return DISTRICTS_DB.filter(d =>
+    d.engKw.some(k => norm.includes(k)) ||
+    d.bnKw.some(k => norm.includes(k))
+  ).map(d => d.name);
+}
+
+function buildDistrictMap(videos) {
+  const map = {};
+  for (const v of videos) {
+    for (const dn of detectDistricts(v.title)) {
+      const dObj = DISTRICT_BY_NAME[dn];
+      if (!dObj) continue;
+      if (!map[dn]) map[dn] = { district: dObj, videos: [], totalViews: 0 };
+      map[dn].videos.push(v);
+      map[dn].totalViews += v.view_count;
+    }
+  }
+  for (const e of Object.values(map)) e.videos.sort((a, b) => b.view_count - a.view_count);
+  return map;
+}
+
+function districtIcon(d, large = true) {
+  const cls = large ? 'district-map-icon' : 'district-map-icon-sm';
+  return `<div class="${cls}" style="background:${d.color}">${d.code}</div>`;
+}
+
+// ── BY DISTRICT RENDERING ─────────────────────────────────────────────────────
+function setDistrictView(mode) {
+  currentDistrictView = mode;
+  localStorage.setItem('bengalDistrictView', mode);
+  currentDistrictDetail = null;
+  renderDistricts();
+}
+
+function openDistrictDetail(name)  { currentDistrictDetail = name; renderDistricts(); }
+function closeDistrictDetail()     { currentDistrictDetail = null; renderDistricts(); }
+function openBengalRegion(name)    { currentBengalRegion   = name; renderBengalRegions(); }
+function closeBengalRegion()       { currentBengalRegion   = null; renderBengalRegions(); }
+
+function renderDistricts() {
+  if (!allData) return;
+  const panel   = document.getElementById('panel-districts');
+  const videos  = filterByRange((allData.bengali||[]).concat(allData.opinion||[]), '24h');
+  const map     = buildDistrictMap(videos);
+  const sorted  = Object.values(map).sort((a, b) => b.totalViews - a.totalViews);
+
+  if (!sorted.length) { panel.innerHTML = emptyState('No district data', 'Check back soon.'); return; }
+
+  if (currentDistrictDetail && map[currentDistrictDetail]) {
+    renderDistrictDetail(panel, map[currentDistrictDetail]);
+    return;
+  }
+
+  const toggle = `<div class="view-toggle">
+    <button class="view-btn${currentDistrictView==='list'?' active':''}" onclick="setDistrictView('list')">☰ List</button>
+    <button class="view-btn${currentDistrictView==='grid'?' active':''}" onclick="setDistrictView('grid')">⊞ Grid</button>
+  </div>`;
+
+  if (currentDistrictView === 'list') {
+    const rows = sorted.map(({ district, videos, totalViews }) => {
+      const cards = videos.slice(0, 10).map((v, i) => cardHtml(v, i+1, false, false)).join('');
+      return `<div class="district-section">
+        <div class="district-list-header">
+          ${districtIcon(district, false)}
+          <span class="district-name-lg">${district.name}</span>
+          <span class="district-views-lg">${fmtViews(totalViews)} views</span>
+        </div>
+        <div class="video-row">${cards}</div>
+      </div>`;
+    }).join('');
+    panel.innerHTML = `<p class="section-label">By District · Last 24h</p>${toggle}${rows}`;
+  } else {
+    const tiles = sorted.map(({ district, videos, totalViews }) => {
+      const sn = district.name.replace(/'/g, "\\'");
+      return `<div class="district-tile" onclick="openDistrictDetail('${sn}')">
+        ${districtIcon(district, true)}
+        <div class="district-tile-name">${district.name}</div>
+        <div class="district-tile-stats">${fmtViews(totalViews)} · ${videos.length} video${videos.length!==1?'s':''}</div>
+      </div>`;
+    }).join('');
+    panel.innerHTML = `<p class="section-label">By District · Last 24h</p>${toggle}<div class="district-tile-grid">${tiles}</div>`;
+  }
+}
+
+function renderDistrictDetail(panel, { district, videos }) {
+  const cards = videos.map((v, i) => cardHtml(v, i+1, false, i>=10)).join('');
+  const more  = videos.length > 10
+    ? `<div class="show-more-wrap" id="smDist"><button class="show-more-btn" onclick="showMore('distGrid','smDist')">${videos.length-10} more videos</button></div>` : '';
+  panel.innerHTML = `
+    <div class="district-detail-header">
+      <button class="back-btn" onclick="closeDistrictDetail()">← Back</button>
+      ${districtIcon(district, false)}
+      <span class="district-detail-name">${district.name}</span>
+    </div>
+    <div class="video-grid" id="distGrid">${cards}</div>${more}`;
+}
+
+// ── BY REGION (BENGAL) ────────────────────────────────────────────────────────
+function renderBengalRegions() {
+  if (!allData) return;
+  const panel  = document.getElementById('panel-regions');
+  const videos = filterByRange((allData.bengali||[]).concat(allData.opinion||[]), '24h');
+  const dmap   = buildDistrictMap(videos);
+
+  const regionData = BENGAL_REGIONS.map(r => {
+    const distEntries = r.districts.map(dn => dmap[dn]).filter(e => e && e.videos.length > 0);
+    const totalViews  = distEntries.reduce((s, e) => s + e.totalViews, 0);
+    return { ...r, distEntries, totalViews };
+  }).filter(r => r.distEntries.length > 0).sort((a, b) => b.totalViews - a.totalViews);
+
+  if (!regionData.length) { panel.innerHTML = emptyState('No region data', 'Check back soon.'); return; }
+
+  if (currentBengalRegion) {
+    const r = regionData.find(r => r.name === currentBengalRegion);
+    if (r) { renderBengalRegionDetail(panel, r); return; }
+  }
+
+  const tiles = regionData.map(r => {
+    const sn = r.name.replace(/'/g, "\\'");
+    const rc = DIST_REGION_COLORS[r.color];
+    const codes = r.distEntries.slice(0, 8).map(e =>
+      `<span class="region-dist-badge" style="background:${rc}">${e.district.code}</span>`
+    ).join('');
+    return `<div class="region-tile-bengal" onclick="openBengalRegion('${sn}')">
+      <div class="region-tile-icon">${r.icon}</div>
+      <div class="region-tile-name">${r.name}</div>
+      <div class="region-dist-codes">${codes}</div>
+      <div class="region-tile-stats">${fmtViews(r.totalViews)} views · ${r.distEntries.length} districts</div>
+    </div>`;
+  }).join('');
+
+  panel.innerHTML = `<p class="section-label">By Region · Last 24h · sorted by total views</p><div class="region-tile-grid-bengal">${tiles}</div>`;
+}
+
+function renderBengalRegionDetail(panel, region) {
+  const sorted = [...region.distEntries].sort((a, b) => b.totalViews - a.totalViews);
+  const rc     = DIST_REGION_COLORS[region.color];
+  const rows   = sorted.map(({ district, videos, totalViews }) => {
+    const cards = videos.map((v, i) => cardHtml(v, i+1, false, false)).join('');
+    return `<div class="district-section">
+      <div class="district-list-header">
+        ${districtIcon(district, false)}
+        <span class="district-name-lg">${district.name}</span>
+        <span class="district-views-lg">${fmtViews(totalViews)} views</span>
+      </div>
+      <div class="video-row">${cards}</div>
+    </div>`;
+  }).join('');
+
+  panel.innerHTML = `
+    <div class="district-detail-header">
+      <button class="back-btn" onclick="closeBengalRegion()">← Back</button>
+      <span style="font-size:1.6rem;line-height:1">${region.icon}</span>
+      <span class="district-detail-name">${region.name.replace('\n', ' ')}</span>
+      <span class="district-views-lg" style="margin-left:auto">${fmtViews(region.totalViews)} views</span>
+    </div>
+    ${rows}`;
 }
 
 // ── Boot ──────────────────────────────────────────────────────────────────────
