@@ -69,6 +69,24 @@
 
     .meta-info { font-size: 0.75rem; color: #555; margin-left: auto; }
 
+    .toolbar-search {
+      background: #2a2d3a; border: 1px solid #3a3d4a; color: #e0e0e0;
+      padding: 6px 12px 6px 34px; border-radius: 8px; font-size: 0.85rem; outline: none;
+      width: 200px; transition: border-color 0.2s, width 0.2s;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: 10px center;
+    }
+    .toolbar-search:focus { border-color: #3a86ff; width: 260px; }
+    .toolbar-search::placeholder { color: #555; }
+
+    .yt-open-btn {
+      background: none; border: 1px solid #3a3d4a; color: #aaa;
+      padding: 7px 14px; border-radius: 6px; cursor: pointer;
+      font-size: 0.82rem; text-decoration: none; display: inline-flex;
+      align-items: center; gap: 6px; transition: border-color 0.2s, color 0.2s;
+    }
+    .yt-open-btn:hover { border-color: #ff0000; color: #ff4444; }
+
     /* ── panels ── */
     .tab-panel { display: none; padding: 24px; }
     .tab-panel.active { display: block; }
@@ -230,6 +248,8 @@
     <option value="long">30+ min</option>
   </select>
 
+  <input type="search" id="searchInput" class="toolbar-search" placeholder="Search title or channel…"
+         oninput="setSearch(this.value)">
   <span id="metaInfo" style="display:none"></span>
 </div>
 
@@ -252,6 +272,7 @@
       </div>
     </div>
     <div class="subscribe-bar">
+      <a class="yt-open-btn" id="ytOpenBtn" href="#" target="_blank">▶ Open in YouTube</a>
       <p>Enjoying the content? Support our channel!</p>
       <a class="sub-btn" href="#" target="_blank" id="modalSubBtn" style="display:none">▶ Subscribe on YouTube</a>
     </div>
@@ -294,6 +315,7 @@ let currentSort     = params.get('sort')   || SORT_DEFAULTS[currentTab];
 let currentMinViews = 'auto';
 let customMinViews  = 0;
 let currentDuration = DURATION_DEFAULTS[currentTab] || 'upto30';
+let currentSearch   = '';
 let allData         = null;
 let ytPlayer       = null;
 let ytPlayerReady  = false;
@@ -442,6 +464,20 @@ function fmtDuration(s) {
   return `${m}:${String(sec).padStart(2,'0')}`;
 }
 
+function searchVideos(videos) {
+  if (!currentSearch) return videos;
+  const q = currentSearch.toLowerCase();
+  return videos.filter(v =>
+    v.title.toLowerCase().includes(q) ||
+    v.channel_name.toLowerCase().includes(q)
+  );
+}
+
+function setSearch(val) {
+  currentSearch = val.trim();
+  renderAll();
+}
+
 function formatAgo(ts) {
   const d = Math.floor(Date.now() / 1000 - ts);
   if (d < 60)    return `${d}s ago`;
@@ -465,7 +501,7 @@ function cardHtml(v, rank, isLive, hidden) {
   return `
     <div class="video-card${hidden ? ' hidden' : ''}" onclick="openPlayer('${v.video_id}','${safe}')">
       <div class="thumb-wrap">
-        <img src="${v.thumbnail}" alt="" onerror="this.src='https://i.ytimg.com/vi/${v.video_id}/mqdefault.jpg'">
+        <img src="${v.thumbnail}" alt="" loading="lazy" onerror="this.src='https://i.ytimg.com/vi/${v.video_id}/mqdefault.jpg'">
         ${badge}${dur}
       </div>
       <div class="card-body">
@@ -494,8 +530,8 @@ function renderAll() {
 
 function renderTop() {
   const panel = document.getElementById('panel-top');
-  const top   = getVideos(allData.bengali || [], currentFilter, currentSort);
-  if (!top.length) { panel.innerHTML = emptyState('No stories in this window', 'Try a wider filter or different sort.'); return; }
+  const top   = searchVideos(getVideos(allData.bengali || [], currentFilter, currentSort));
+  if (!top.length) { panel.innerHTML = emptyState('No stories found', currentSearch ? 'Try a different search.' : 'Try a wider filter or different sort.'); return; }
   const cards = top.map((v, i) => cardHtml(v, i + 1, false, i >= 30)).join('');
   const more  = top.length > 30
     ? `<div class="show-more-wrap" id="smTop"><button class="show-more-btn" onclick="showMore('topGrid','smTop')">${top.length - 30} more stories</button></div>` : '';
@@ -504,8 +540,8 @@ function renderTop() {
 
 function renderOpinion() {
   const panel   = document.getElementById('panel-opinion');
-  const opinion = getVideos(allData.opinion || [], currentFilter, currentSort);
-  if (!opinion.length) { panel.innerHTML = emptyState('No opinion videos in this window', 'Try a wider filter.'); return; }
+  const opinion = searchVideos(getVideos(allData.opinion || [], currentFilter, currentSort));
+  if (!opinion.length) { panel.innerHTML = emptyState('No opinion videos found', currentSearch ? 'Try a different search.' : 'Try a wider filter.'); return; }
   const cards = opinion.map((v, i) => cardHtml(v, i + 1, false, i >= 30)).join('');
   const more  = opinion.length > 30
     ? `<div class="show-more-wrap" id="smOp"><button class="show-more-btn" onclick="showMore('opinionGrid','smOp')">${opinion.length - 30} more</button></div>` : '';
@@ -518,7 +554,7 @@ function renderLive() {
   let live = all.filter(v => v.live_broadcast === 'live');
   live = live.filter(v => v.view_count >= getMinViewsNum(currentFilter));
   live = live.filter(v => matchesDuration(v));
-  live = sortedVideos(live, currentFilter, currentSort);
+  live = searchVideos(sortedVideos(live, currentFilter, currentSort));
   if (!live.length) { panel.innerHTML = emptyState('No live streams right now', 'Check back soon.'); return; }
   const cards = live.map((v, i) => cardHtml(v, i + 1, true, false)).join('');
   panel.innerHTML = `<p class="section-label">${live.length} channel(s) currently live</p><div class="live-grid">${cards}</div>`;
@@ -529,17 +565,18 @@ function renderChannels() {
   const byChannel = getVideosPerChannel(allData.bengali || [], currentFilter, currentSort);
   if (!Object.keys(byChannel).length) { panel.innerHTML = emptyState('No channel data in this window', 'Try a wider filter.'); return; }
   const rows = Object.entries(byChannel).map(([name, vids]) => {
-    if (!vids.length) return '';
-    const cards = vids.map((v, i) => cardHtml(v, i + 1, false, false)).join('');
+    const filtered = searchVideos(vids);
+    if (!filtered.length) return '';
+    const cards = filtered.map((v, i) => cardHtml(v, i + 1, false, false)).join('');
     return `<div class="channel-row">
       <div class="channel-header">
         <span class="channel-name">${name}</span>
-        <span class="channel-count">${vids.length} videos</span>
+        <span class="channel-count">${filtered.length} videos</span>
       </div>
       <div class="video-row">${cards}</div>
     </div>`;
   }).join('');
-  panel.innerHTML = rows;
+  panel.innerHTML = rows || emptyState('No results', 'Try a different search.');
 }
 
 // ── Controls ──────────────────────────────────────────────────────────────────
@@ -640,6 +677,7 @@ function onYouTubeIframeAPIReady() {
 
 function openPlayer(videoId) {
   currentVideoId = videoId;
+  document.getElementById('ytOpenBtn').href = `https://www.youtube.com/watch?v=${videoId}`;
   document.getElementById('playerModal').classList.add('open');
   document.body.style.overflow = 'hidden'; cancelCountdown();
   if (ytPlayerReady) ytPlayer.loadVideoById(videoId); else pendingVideoId = videoId;
@@ -698,7 +736,22 @@ window.addEventListener('DOMContentLoaded', async () => {
     `Refreshed: ${ts ? formatAgo(new Date(ts).getTime() / 1000) : 'never'} | ${bn} news · ${op} opinion`;
 
   renderAll();
+  scheduleAutoRefresh();
 });
+
+async function scheduleAutoRefresh() {
+  setInterval(async () => {
+    try {
+      const r    = await fetch(`data/videos.json?t=${Date.now()}`);
+      const data = await r.json();
+      if (data.last_updated !== allData?.last_updated) {
+        allData = data;
+        renderAll();
+        showToast('News updated');
+      }
+    } catch {}
+  }, 30 * 60 * 1000);
+}
 
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
 </script>
