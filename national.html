@@ -228,6 +228,7 @@
     <option value="normalized">📊 Trending</option>
     <option value="newest">🕐 Newest</option>
     <option value="oldest">🕰 Oldest</option>
+    <option value="outlier">🔥 Outlier</option>
   </select>
 
   <span class="toolbar-label">Min Views</span>
@@ -282,7 +283,6 @@
       </div>
     </div>
     <div class="subscribe-bar">
-      <a class="yt-open-btn" id="ytOpenBtn" href="#" target="_blank">▶ Open in YouTube</a>
       <p>Enjoying the content? Support our channel!</p>
       <a class="sub-btn" href="#" target="_blank" id="modalSubBtn" style="display:none">▶ Subscribe on YouTube</a>
     </div>
@@ -363,6 +363,13 @@ function filterByRange(videos, filter) {
 }
 
 // ── Sorting ───────────────────────────────────────────────────────────────────
+function median(arr) {
+  if (!arr.length) return 1;
+  const s = [...arr].sort((a, b) => a - b);
+  const m = Math.floor(s.length / 2);
+  return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2 || 1;
+}
+
 function sortedVideos(videos, filter, sort) {
   const now = Date.now() / 1000;
 
@@ -390,6 +397,21 @@ function sortedVideos(videos, filter, sort) {
           return { ...v, _val: base * decay };
         })
         .filter(v => v._val > 0)
+        .sort((a, b) => b._val - a._val);
+    }
+
+    case 'outlier': {
+      const byChannel = {};
+      videos.forEach(v => {
+        if (!byChannel[v.channel_id]) byChannel[v.channel_id] = [];
+        byChannel[v.channel_id].push(v.view_count);
+      });
+      const channelMedian = {};
+      Object.entries(byChannel).forEach(([cid, views]) => {
+        channelMedian[cid] = median(views);
+      });
+      return [...videos]
+        .map(v => ({ ...v, _val: v.view_count / (channelMedian[v.channel_id] || 1) }))
         .sort((a, b) => b._val - a._val);
     }
 
@@ -423,11 +445,14 @@ function matchesDuration(v) {
   }
 }
 
-function getVideos(videos, filter, sort, n = 100) {
+function getVideos(videos, filter, sort, n = Infinity) {
   let pool = filterByRange(videos, filter)
-    .filter(v => v.live_broadcast !== 'live');
-  pool = pool.filter(v => v.view_count >= getMinViewsNum(filter));
-  pool = pool.filter(v => matchesDuration(v));
+    .filter(v => v.live_broadcast !== 'live')
+    .filter(v => matchesDuration(v));
+
+  const withThreshold = pool.filter(v => v.view_count >= getMinViewsNum(filter));
+  pool = withThreshold.length > 0 ? withThreshold : pool;
+
   return sortedVideos(pool, filter, sort).slice(0, n);
 }
 
@@ -530,20 +555,20 @@ function renderAll() {
 function renderEnglish() {
   const panel  = document.getElementById('panel-english');
   const videos = searchVideos(getVideos(allData.national_english || [], currentFilter, currentSort));
-  if (!videos.length) { panel.innerHTML = emptyState('No English stories found', currentSearch ? 'Try a different search.' : 'Try a wider filter or different sort.'); return; }
-  const cards = videos.map((v, i) => cardHtml(v, i + 1, false, i >= 30, false)).join('');
-  const more  = videos.length > 30
-    ? `<div class="show-more-wrap" id="smEng"><button class="show-more-btn" onclick="showMore('engGrid','smEng')">${videos.length - 30} more stories</button></div>` : '';
+  if (!videos.length) { panel.innerHTML = emptyState('No English stories found', currentSearch ? 'Try a different search.' : 'Try a wider time filter.'); return; }
+  const cards = videos.map((v, i) => cardHtml(v, i + 1, false, i >= 20, false)).join('');
+  const more  = videos.length > 20
+    ? `<div class="show-more-wrap" id="smEng"><button class="show-more-btn" onclick="showMore('engGrid','smEng')">${videos.length - 20} more stories</button></div>` : '';
   panel.innerHTML = `<p class="section-label">Top ${videos.length} English stories · ${filterLabel()}</p><div class="video-grid" id="engGrid">${cards}</div>${more}`;
 }
 
 function renderHindi() {
   const panel  = document.getElementById('panel-hindi');
   const videos = searchVideos(getVideos(allData.national_hindi || [], currentFilter, currentSort));
-  if (!videos.length) { panel.innerHTML = emptyState('No Hindi stories found', currentSearch ? 'Try a different search.' : 'Try a wider filter or different sort.'); return; }
-  const cards = videos.map((v, i) => cardHtml(v, i + 1, false, i >= 30, false)).join('');
-  const more  = videos.length > 30
-    ? `<div class="show-more-wrap" id="smHin"><button class="show-more-btn" onclick="showMore('hinGrid','smHin')">${videos.length - 30} more stories</button></div>` : '';
+  if (!videos.length) { panel.innerHTML = emptyState('No Hindi stories found', currentSearch ? 'Try a different search.' : 'Try a wider time filter.'); return; }
+  const cards = videos.map((v, i) => cardHtml(v, i + 1, false, i >= 20, false)).join('');
+  const more  = videos.length > 20
+    ? `<div class="show-more-wrap" id="smHin"><button class="show-more-btn" onclick="showMore('hinGrid','smHin')">${videos.length - 20} more stories</button></div>` : '';
   panel.innerHTML = `<p class="section-label">Top ${videos.length} Hindi stories · ${filterLabel()}</p><div class="video-grid" id="hinGrid">${cards}</div>${more}`;
 }
 
@@ -659,8 +684,15 @@ function updateUrl() {
 }
 
 function showMore(gridId, wrapperId) {
-  document.querySelectorAll(`#${gridId} .video-card.hidden`).forEach(c => c.classList.remove('hidden'));
-  document.getElementById(wrapperId).style.display = 'none';
+  const hidden = [...document.querySelectorAll(`#${gridId} .video-card.hidden`)];
+  hidden.slice(0, 20).forEach(c => c.classList.remove('hidden'));
+  const remaining = hidden.length - 20;
+  const wrapper = document.getElementById(wrapperId);
+  if (remaining <= 0) {
+    wrapper.style.display = 'none';
+  } else {
+    wrapper.querySelector('button').textContent = `${remaining} more stories`;
+  }
 }
 
 function showToast(msg, ms = 3500) {
@@ -691,7 +723,6 @@ function onYouTubeIframeAPIReady() {
 
 function openPlayer(videoId) {
   currentVideoId = videoId;
-  document.getElementById('ytOpenBtn').href = `https://www.youtube.com/watch?v=${videoId}`;
   document.getElementById('playerModal').classList.add('open');
   document.body.style.overflow = 'hidden'; cancelCountdown();
   if (ytPlayerReady) ytPlayer.loadVideoById(videoId); else pendingVideoId = videoId;
