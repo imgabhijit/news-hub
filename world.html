@@ -419,7 +419,7 @@ let currentSort     = params.get('sort')   || SORT_DEFAULTS[currentTab];
 let currentMinViews = '0';
 let customMinViews  = 0;
 let currentDuration = DURATION_DEFAULTS[currentTab] || 'upto30';
-let channelView     = 'list';
+let channelView     = 'grid';
 let selectedChannel = null;
 let currentSearch   = '';
 let allData         = null;
@@ -688,20 +688,22 @@ function renderChannels() {
   </div>`;
 
   if (channelView === 'grid') {
+    const allByChannel = getVideosPerChannel(allData.world_news || [], currentFilter, currentSort, Infinity);
     if (selectedChannel) {
-      const vids  = byChannel[selectedChannel] || [];
-      const cards = searchVideos(sortedVideos(vids, currentFilter, currentSort))
-                      .map((v, i) => cardHtml(v, i + 1, false, false)).join('');
+      const vids   = allByChannel[selectedChannel] || [];
+      const sorted = searchVideos(sortedVideos(vids, currentFilter, currentSort));
+      const cards  = sorted.map((v, i) => cardHtml(v, i + 1, false, i >= 30)).join('');
+      const more   = sorted.length > 30 ? `<div class="show-more-wrap" id="smChD"><button class="show-more-btn" onclick="showMore('chDetGrid','smChD')">${sorted.length - 30} more</button></div>` : '';
       panel.innerHTML = toggle +
         `<div class="ch-detail-header">
           <button class="ch-view-btn" onclick="setSelectedChannel(null)">← Back</button>
           <span style="font-size:1rem;font-weight:700;color:#fff">${selectedChannel}</span>
-          <span class="channel-count" style="margin-left:auto">${vids.length} videos</span>
+          <span class="channel-count" style="margin-left:auto">${sorted.length} videos</span>
         </div>
-        <div class="video-grid">${cards}</div>`;
+        <div class="video-grid" id="chDetGrid">${cards}</div>${more}`;
       return;
     }
-    const stats = Object.entries(byChannel)
+    const stats = Object.entries(allByChannel)
       .map(([name, vids]) => ({ name, totalViews: vids.reduce((s,v)=>s+v.view_count,0), count: vids.length, thumb: vids[0]?.thumbnail||'' }))
       .sort((a,b) => b.totalViews - a.totalViews);
     const cards = stats.map(ch => {
