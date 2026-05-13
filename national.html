@@ -225,6 +225,47 @@
     .region-state-codes { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; margin-bottom: 8px; }
     .region-state-code-badge { font-size: 0.6rem; font-weight: 800; color: #fff; padding: 2px 5px; border-radius: 3px; }
     .region-tile-stats { font-size: 0.72rem; color: #666; }
+
+    /* ── Responsive & PWA ───────────────────────────────────────────────────── */
+    html { -webkit-text-size-adjust: 100%; }
+
+    .tabbar { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+    .tabbar::-webkit-scrollbar { display: none; }
+
+    @media (max-width: 768px) {
+      nav { padding: 0 12px; gap: 10px; }
+      .nav-region { font-size: 0.85rem; }
+      .tab-btn { padding: 12px 12px; font-size: 0.82rem; }
+      .toolbar-wrap { padding: 8px 12px; gap: 10px; }
+      .toolbar-label { font-size: 0.63rem; }
+      .toolbar-select { font-size: 0.8rem; padding: 5px 26px 5px 9px; }
+      .toolbar-search { width: 140px; }
+      .toolbar-search:focus { width: 170px; }
+      .toolbar-input { width: 80px; }
+      .video-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+      .live-grid  { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); gap: 12px; }
+      .tab-panel  { padding: 16px 12px; }
+      .card-body  { padding: 9px; }
+      .card-title { font-size: 0.82rem; }
+      .next-thumb { width: 130px; }
+    }
+
+    @media (max-width: 480px) {
+      .video-grid { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+      .live-grid  { grid-template-columns: repeat(2, 1fr); gap: 10px; }
+      .tab-panel  { padding: 12px 10px; }
+      .card-body  { padding: 8px; }
+      .card-title   { font-size: 0.78rem; }
+      .card-channel { font-size: 0.65rem; }
+      .toolbar-search { width: 110px; }
+      .toolbar-search:focus { width: 140px; }
+      .show-more-btn { padding: 8px 20px; }
+    }
+
+    @supports (padding: env(safe-area-inset-bottom)) {
+      nav  { padding-left: max(12px, env(safe-area-inset-left)); padding-right: max(12px, env(safe-area-inset-right)); }
+      body { padding-bottom: env(safe-area-inset-bottom); }
+    }
   </style>
 </head>
 <body>

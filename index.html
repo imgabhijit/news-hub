@@ -87,6 +87,26 @@
     .tile-accent-bengali  { border-top: 3px solid #e63946; }
     .tile-accent-national { border-top: 3px solid #3a86ff; }
     .tile-accent-world    { border-top: 3px solid #2dc653; }
+
+    /* ── Responsive & PWA ───────────────────────────────────────────────────── */
+    html { -webkit-text-size-adjust: 100%; }
+
+    @media (max-width: 480px) {
+      nav { padding: 0 16px; }
+      .hero { padding: 36px 16px; }
+      .hero h1 { font-size: 1.5rem; }
+      .hero p  { font-size: 0.9rem; margin-bottom: 32px; }
+      .region-grid { gap: 16px; }
+      .region-tile { padding: 24px 18px; }
+      .tile-icon   { font-size: 2rem; margin-bottom: 12px; }
+      .tile-title  { font-size: 1rem; }
+      .tile-desc   { font-size: 0.8rem; }
+    }
+
+    @supports (padding: env(safe-area-inset-bottom)) {
+      nav  { padding-left: max(16px, env(safe-area-inset-left)); padding-right: max(16px, env(safe-area-inset-right)); }
+      body { padding-bottom: env(safe-area-inset-bottom); }
+    }
   </style>
 </head>
 <body>
