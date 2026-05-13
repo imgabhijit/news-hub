@@ -231,6 +231,15 @@
     .ch-view-btn { background: #2a2d3a; border: 1px solid #3a3d4a; color: #888; padding: 6px 16px; border-radius: 6px; cursor: pointer; font-size: 0.82rem; transition: all 0.2s; }
     .ch-view-btn.active { background: #1a1000; border-color: #f4a261; color: #f4a261; }
     .ch-view-btn:hover:not(.active) { color: #ccc; }
+    .channel-card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 14px; }
+    .channel-card { background: #1a1d27; border: 1px solid #2a2d3a; border-radius: 10px; overflow: hidden; cursor: pointer; transition: transform 0.2s, border-color 0.2s; }
+    .channel-card:hover { transform: translateY(-3px); border-color: #f4a261; }
+    .channel-card-thumb { width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block; }
+    .channel-card-info { padding: 10px 12px; }
+    .channel-card-name { font-size: 0.85rem; font-weight: 700; color: #fff; margin-bottom: 5px; }
+    .channel-card-views { font-size: 0.78rem; color: #f4a261; font-weight: 600; }
+    .channel-card-count { font-size: 0.68rem; color: #666; margin-top: 3px; }
+    .ch-detail-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #2a2d3a; }
 
     /* ── Responsive & PWA ───────────────────────────────────────────────────── */
     html { -webkit-text-size-adjust: 100%; }
@@ -423,6 +432,7 @@ let currentMinViews = '0';
 let customMinViews  = 0;
 let currentDuration = DURATION_DEFAULTS[currentTab] || 'upto30';
 let channelView     = 'list';
+let selectedChannel = null;
 let currentSearch   = '';
 let allData         = null;
 let ytPlayer       = null;
@@ -691,28 +701,54 @@ function renderLive() {
   panel.innerHTML = `<p class="section-label">${live.length} channel(s) currently live</p><div class="live-grid">${cards}</div>`;
 }
 
-function setChannelView(v) { channelView = v; renderChannels(); }
+function setChannelView(v) { if (v === 'list') selectedChannel = null; channelView = v; renderChannels(); }
+function setSelectedChannel(name) { selectedChannel = name; renderChannels(); }
 
 function renderChannels() {
   const panel       = document.getElementById('panel-channels');
   const engChannels = getVideosPerChannel(allData.national_english || [], currentFilter, currentSort);
   const hinChannels = getVideosPerChannel(allData.national_hindi   || [], currentFilter, currentSort);
+  const allByChannel = { ...engChannels, ...hinChannels };
   const hasEng = Object.keys(engChannels).length > 0;
   const hasHin = Object.keys(hinChannels).length > 0;
   if (!hasEng && !hasHin) { panel.innerHTML = emptyState('No channel data in this window', 'Try a wider filter.'); return; }
 
   const toggle = `<div class="ch-view-toggle">
     <button class="ch-view-btn ${channelView==='list'?'active':''}" onclick="setChannelView('list')">☰ List</button>
-    <button class="ch-view-btn ${channelView==='grid'?'active':''}" onclick="setChannelView('grid')">⊞ Grid</button>
+    <button class="ch-view-btn ${channelView==='grid'?'active':''}" onclick="setChannelView('grid')">⊞ Channels</button>
   </div>`;
 
   if (channelView === 'grid') {
-    const allVids = searchVideos(sortedVideos(
-      [...Object.values(engChannels).flat(), ...Object.values(hinChannels).flat()],
-      currentFilter, currentSort));
-    const cards = allVids.map((v, i) => cardHtml(v, i + 1, false, i >= 50, true)).join('');
-    const more  = allVids.length > 50 ? `<div class="show-more-wrap" id="smChG"><button class="show-more-btn" onclick="showMore('chGrid','smChG')">${allVids.length - 50} more</button></div>` : '';
-    panel.innerHTML = toggle + `<div class="video-grid" id="chGrid">${cards}</div>${more}`;
+    if (selectedChannel) {
+      const vids    = allByChannel[selectedChannel] || [];
+      const isHindi = !!hinChannels[selectedChannel];
+      const cards   = searchVideos(sortedVideos(vids, currentFilter, currentSort))
+                        .map((v, i) => cardHtml(v, i + 1, false, false, true)).join('');
+      panel.innerHTML = toggle +
+        `<div class="ch-detail-header">
+          <button class="ch-view-btn" onclick="setSelectedChannel(null)">← Back</button>
+          <span style="font-size:1rem;font-weight:700;color:#fff">${selectedChannel}</span>
+          <span class="channel-lang ${isHindi?'hin':'eng'}" style="margin-left:4px">${isHindi?'Hindi':'English'}</span>
+          <span class="channel-count" style="margin-left:auto">${vids.length} videos</span>
+        </div>
+        <div class="video-grid">${cards}</div>`;
+      return;
+    }
+    const stats = Object.entries(allByChannel)
+      .map(([name, vids]) => ({ name, totalViews: vids.reduce((s,v)=>s+v.view_count,0), count: vids.length, thumb: vids[0]?.thumbnail||'', isHindi: !!hinChannels[name] }))
+      .sort((a,b) => b.totalViews - a.totalViews);
+    const cards = stats.map(ch => {
+      const safe = ch.name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      return `<div class="channel-card" onclick="setSelectedChannel('${safe}')">
+        ${ch.thumb?`<img class="channel-card-thumb" src="${ch.thumb}" alt="">`:''}
+        <div class="channel-card-info">
+          <div class="channel-card-name">${ch.name}</div>
+          <div class="channel-card-views">👁 ${fmtViews(ch.totalViews)}</div>
+          <div class="channel-card-count">${ch.count} video${ch.count!==1?'s':''} · <span class="channel-lang ${ch.isHindi?'hin':'eng'}" style="font-size:0.6rem;padding:1px 4px">${ch.isHindi?'HI':'EN'}</span></div>
+        </div>
+      </div>`;
+    }).join('');
+    panel.innerHTML = toggle + `<div class="channel-card-grid">${cards}</div>`;
     return;
   }
 
