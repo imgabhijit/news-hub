@@ -271,12 +271,11 @@
       .district-tile-grid { grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: 8px; }
     }
 
-    /* PWA: safe area for notched phones */
-    /* Landscape on mobile — video takes left ~60%, right side free for talking head */
+    /* Mobile landscape */
     @media (orientation: landscape) and (max-height: 600px) {
       .modal-overlay { justify-content: flex-start; align-items: center; padding: 6px; }
-      .modal-box     { max-width: 60%; margin-left: 4px; }
-      .modal-wrapper { max-width: 60%; }
+      .modal-box     { max-width: 85vw; margin-left: 4px; }
+      .modal-wrapper { max-width: 85vw; }
     }
 
     @supports (padding: env(safe-area-inset-bottom)) {
@@ -284,10 +283,10 @@
       body { padding-bottom: env(safe-area-inset-bottom); }
     }
 
-    /* Desktop: modal positioned left so right side is free for talking head overlay */
+    /* Desktop: left-aligned, grows with screen up to 1200px */
     @media (min-width: 1100px) {
       .modal-overlay { justify-content: flex-start; padding-left: 40px; }
-      .modal-wrapper { max-width: 900px; }
+      .modal-wrapper { max-width: min(1200px, calc(100vw - 80px)); }
     }
   </style>
 </head>
