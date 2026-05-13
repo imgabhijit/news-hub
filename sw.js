@@ -1,4 +1,4 @@
-const CACHE_NAME = 'news-portal-v9';
+const CACHE_NAME = 'news-portal-v10';
 const STATIC_ASSETS = [
   '/news-hub/',
   '/news-hub/index.html',
