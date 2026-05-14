@@ -179,10 +179,11 @@
     .next-count span { color: #fff; font-weight: 700; font-size: 1.4rem; }
     .next-cancel  { background: #2a2d3a; border: 1px solid #3a3d4a; color: #ccc; padding: 8px 24px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; }
 
-    .subscribe-bar { padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; border-top: 1px solid #2a2d3a; background: #13151f; flex-wrap: wrap; }
+    .subscribe-bar { padding: 10px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; border-top: 1px solid #2a2d3a; background: #13151f; flex-wrap: wrap; }
     .subscribe-bar p { font-size: 0.85rem; color: #aaa; }
     .sub-btn { background: #3a86ff; border: none; color: #fff; padding: 8px 20px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 700; text-decoration: none; }
     .sub-btn:hover { background: #2563eb; }
+    .video-credit { font-size: 0.92rem; color: #ccc; font-weight: 600; letter-spacing: 0.02em; }
 
     /* ── By District / By Region ── */
     .view-toggle { display: flex; gap: 8px; margin-bottom: 24px; }
@@ -283,9 +284,8 @@
       body { padding-bottom: env(safe-area-inset-bottom); }
     }
 
-    /* Desktop: left-aligned, grows with screen up to 1200px */
     @media (min-width: 1100px) {
-      .modal-overlay { justify-content: flex-start; padding-left: 40px; }
+      .modal-overlay { justify-content: center; padding-left: 0; }
       .modal-wrapper { max-width: min(1200px, 79vw); }
     }
   </style>
@@ -393,6 +393,7 @@
         </div>
       </div>
       <div class="subscribe-bar">
+        <span class="video-credit" id="videoCredit"></span>
         <p>Enjoying the content? Support our channel!</p>
         <a class="sub-btn" href="#" target="_blank" id="modalSubBtn" style="display:none">▶ Subscribe on YouTube</a>
       </div>
@@ -649,8 +650,9 @@ function cardHtml(v, rank, isLive, hidden) {
     : rank ? `<span class="rank-badge">#${rank}</span>` : '';
   const dur = !isLive && v.duration ? `<span class="duration-badge">${fmtDuration(v.duration)}</span>` : '';
   const safe = v.title.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+  const safeCh = v.channel_name.replace(/'/g, "\\'");
   return `
-    <div class="video-card${hidden ? ' hidden' : ''}" onclick="openPlayer('${v.video_id}','${safe}')">
+    <div class="video-card${hidden ? ' hidden' : ''}" onclick="openPlayer('${v.video_id}','${safeCh}')">
       <div class="thumb-wrap">
         <img src="${v.thumbnail}" alt="" loading="lazy" onerror="this.src='https://i.ytimg.com/vi/${v.video_id}/mqdefault.jpg'">
         ${badge}${dur}
@@ -883,8 +885,10 @@ function onYouTubeIframeAPIReady() {
   });
 }
 
-function openPlayer(videoId) {
+function openPlayer(videoId, channelName) {
   currentVideoId = videoId;
+  const credit = document.getElementById('videoCredit');
+  if (credit) credit.textContent = channelName ? 'Source: ' + channelName : '';
   document.getElementById('playerModal').classList.add('open');
   document.body.style.overflow = 'hidden'; cancelCountdown();
   if (ytPlayerReady) ytPlayer.loadVideoById(videoId); else pendingVideoId = videoId;
