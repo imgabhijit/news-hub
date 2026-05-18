@@ -19,17 +19,26 @@ from dotenv import load_dotenv
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
-from channels import BENGALI_CHANNELS, BENGALI_OPINION_CHANNELS, NATIONAL_ENGLISH_CHANNELS, NATIONAL_HINDI_CHANNELS, WORLD_NEWS_CHANNELS
+from channels import BENGALI_CHANNELS, BENGALI_OPINION_CHANNELS, NATIONAL_ENGLISH_CHANNELS, NATIONAL_HINDI_CHANNELS, WORLD_NEWS_CHANNELS, HINDI_RIGHT_OPINION_CHANNELS, HINDI_LEFT_OPINION_CHANNELS
 
 load_dotenv(dotenv_path=Path(__file__).parent.parent / ".env")
 
-DATA_DIR        = Path(__file__).parent.parent / "data"
-META_FILE       = DATA_DIR / "channels_meta.json"
-VIDEOS_FILE     = DATA_DIR / "videos.json"
-CACHE_FILE      = DATA_DIR / "video_id_cache.json"
-FETCH_DAYS      = 1
-MIN_DURATION    = 60
-META_STALE_DAYS = 7
+DATA_DIR             = Path(__file__).parent.parent / "data"
+META_FILE            = DATA_DIR / "channels_meta.json"
+VIDEOS_FILE          = DATA_DIR / "videos.json"
+CACHE_FILE           = DATA_DIR / "video_id_cache.json"
+OPINION_STATE_FILE   = DATA_DIR / "opinion_state.json"
+FETCH_DAYS           = 1
+MIN_DURATION         = 60
+META_STALE_DAYS      = 7
+
+IST = datetime.timezone(datetime.timedelta(hours=5, minutes=30))
+
+OPINION_WINDOWS = {
+    "morning": (6,  10),
+    "evening": (16, 20),
+    "night":   (20, 24),
+}
 
 REGIONS = {
     "bengali":          BENGALI_CHANNELS,
@@ -38,6 +47,38 @@ REGIONS = {
     "national_hindi":   NATIONAL_HINDI_CHANNELS,
     "world_news":       WORLD_NEWS_CHANNELS,
 }
+
+
+def load_opinion_state():
+    if OPINION_STATE_FILE.exists():
+        try:
+            return json.loads(OPINION_STATE_FILE.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+    return {}
+
+
+def save_opinion_state(state):
+    DATA_DIR.mkdir(exist_ok=True)
+    OPINION_STATE_FILE.write_text(json.dumps(state, indent=2, ensure_ascii=False), encoding="utf-8")
+
+
+def current_opinion_window(hour):
+    for name, (start, end) in OPINION_WINDOWS.items():
+        if start <= hour < end:
+            return name
+    return None
+
+
+def should_fetch_opinion(now_ist):
+    window = current_opinion_window(now_ist.hour)
+    if not window:
+        return False, None
+    state = load_opinion_state()
+    today = now_ist.strftime("%Y-%m-%d")
+    if state.get("last_window") == window and state.get("last_date") == today:
+        return False, window
+    return True, window
 
 
 def get_youtube():
@@ -100,6 +141,8 @@ def refresh_meta(youtube, meta):
     for channels in REGIONS.values():
         for ch in channels:
             all_channels[ch["id"]] = ch["name"]
+    for ch in HINDI_RIGHT_OPINION_CHANNELS + HINDI_LEFT_OPINION_CHANNELS:
+        all_channels[ch["id"]] = ch["name"]
 
     ids = list(all_channels.keys())
     channel_data = {}
@@ -287,12 +330,22 @@ def main():
     video_cache = load_video_cache()
     video_cache = purge_video_cache(video_cache)
 
+    # Carry forward existing hindi opinion data (overwritten only when in fetch window)
+    existing = {}
+    if VIDEOS_FILE.exists():
+        try:
+            existing = json.loads(VIDEOS_FILE.read_text(encoding="utf-8"))
+        except Exception:
+            pass
+
     output = {
-        "last_updated":     datetime.datetime.now(datetime.timezone.utc).isoformat(),
-        "bengali":          [],
-        "opinion":          [],
-        "national_english": [],
-        "national_hindi":   [],
+        "last_updated":          datetime.datetime.now(datetime.timezone.utc).isoformat(),
+        "bengali":               [],
+        "opinion":               [],
+        "national_english":      [],
+        "national_hindi":        [],
+        "hindi_right_opinion":   existing.get("hindi_right_opinion", []),
+        "hindi_left_opinion":    existing.get("hindi_left_opinion", []),
     }
 
     cutoff_24h = int(datetime.datetime.now(datetime.timezone.utc).timestamp()) - 86400
@@ -304,6 +357,29 @@ def main():
         print(f"[fetch] {region}: {len(purged)} videos (last 24h)")
         output[region] = purged
 
+    # Hindi opinion — window-based fetch (morning 6-10, evening 4-8, night 8-12 IST)
+    now_ist = datetime.datetime.now(IST)
+    fetch_opinion, window = should_fetch_opinion(now_ist)
+
+    if fetch_opinion:
+        print(f"\n[opinion] === HINDI OPINION ({window} window) ===")
+        if HINDI_RIGHT_OPINION_CHANNELS:
+            print(f"[opinion] Fetching RIGHT ({len(HINDI_RIGHT_OPINION_CHANNELS)} channels)...")
+            right_videos = fetch_region(youtube, "hindi_right_opinion", HINDI_RIGHT_OPINION_CHANNELS, meta_channels, video_cache)
+            output["hindi_right_opinion"] = [v for v in right_videos if v["timestamp"] >= cutoff_24h]
+            print(f"[opinion] RIGHT: {len(output['hindi_right_opinion'])} videos")
+        if HINDI_LEFT_OPINION_CHANNELS:
+            print(f"[opinion] Fetching LEFT ({len(HINDI_LEFT_OPINION_CHANNELS)} channels)...")
+            left_videos = fetch_region(youtube, "hindi_left_opinion", HINDI_LEFT_OPINION_CHANNELS, meta_channels, video_cache)
+            output["hindi_left_opinion"] = [v for v in left_videos if v["timestamp"] >= cutoff_24h]
+            print(f"[opinion] LEFT: {len(output['hindi_left_opinion'])} videos")
+        save_opinion_state({"last_window": window, "last_date": now_ist.strftime("%Y-%m-%d")})
+        print(f"[opinion] State saved: window={window}, date={now_ist.strftime('%Y-%m-%d')}")
+    elif window:
+        print(f"\n[opinion] Already fetched '{window}' window today, carrying forward {len(output['hindi_right_opinion'])} right + {len(output['hindi_left_opinion'])} left videos")
+    else:
+        print(f"\n[opinion] Not in opinion window (IST hour={now_ist.hour}), carrying forward data")
+
     DATA_DIR.mkdir(exist_ok=True)
     VIDEOS_FILE.write_text(json.dumps(output, ensure_ascii=False), encoding="utf-8")
 
@@ -311,7 +387,8 @@ def main():
     save_video_cache(video_cache)
 
     total = sum(len(output[r]) for r in ["bengali", "opinion", "national_english", "national_hindi"])
-    print(f"\n[done] {total} videos saved to {VIDEOS_FILE}")
+    opinion_total = len(output["hindi_right_opinion"]) + len(output["hindi_left_opinion"])
+    print(f"\n[done] {total} news + {opinion_total} opinion videos saved to {VIDEOS_FILE}")
 
 
 if __name__ == "__main__":
