@@ -108,13 +108,13 @@ def refresh_meta(youtube, meta):
         chunk = ids[i:i + 50]
         try:
             res = youtube.channels().list(
-                part="contentDetails,statistics",
+                part="contentDetails,statistics,snippet",
                 id=",".join(chunk)
             ).execute()
             for item in res.get("items", []):
                 cid = item["id"]
                 channel_data[cid] = {
-                    "name":        all_channels[cid],
+                    "name":        item["snippet"]["title"],
                     "playlist_id": item["contentDetails"]["relatedPlaylists"]["uploads"],
                     "subscribers": int(item["statistics"].get("subscriberCount", 0)),
                 }
