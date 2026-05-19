@@ -645,7 +645,7 @@ function cardHtml(v, rank, isLive, hidden) {
       <div class="thumb-wrap">
         <img src="${v.thumbnail}" alt="" loading="lazy" onerror="this.src='https://i.ytimg.com/vi/${v.video_id}/mqdefault.jpg'">
         ${badge}${dur}
-        <button class="newtab-btn" onclick="openInNewTab(event,'${v.video_id}','${safe}')">↗</button>
+        <button class="newtab-btn" onclick="openInNewTab(event,'${v.video_id}','${safe}','${safeCh}')">↗</button>
       </div>
       <div class="card-body">
         <div class="card-channel">${v.channel_name}</div>
@@ -861,7 +861,7 @@ function closePlayer() {
   document.body.style.overflow = ''; cancelCountdown();
   if (ytPlayerReady) ytPlayer.stopVideo();
 }
-function openInNewTab(e, vid, t) { e.stopPropagation(); window.open('player.html?v=' + encodeURIComponent(vid) + '&t=' + encodeURIComponent(t), '_blank'); }
+function openInNewTab(e, vid, t, ch) { e.stopPropagation(); window.open('player.html?v=' + encodeURIComponent(vid) + '&t=' + encodeURIComponent(t) + '&c=' + encodeURIComponent(ch||''), '_blank'); }
 
 function onModalClick(e) { if (e.target === document.getElementById('playerModal')) closePlayer(); }
 
@@ -1108,7 +1108,7 @@ function cardHtmlWithFlag(v, rank, isLive, hidden, flag) {
       <div class="thumb-wrap">
         <img src="${v.thumbnail}" alt="" loading="lazy" onerror="this.src='https://i.ytimg.com/vi/${v.video_id}/mqdefault.jpg'">
         ${badge}${dur}${flagBadge}
-        <button class="newtab-btn" onclick="openInNewTab(event,'${v.video_id}','${safe}')">↗</button>
+        <button class="newtab-btn" onclick="openInNewTab(event,'${v.video_id}','${safe}','${safeCh}')">↗</button>
       </div>
       <div class="card-body">
         <div class="card-channel">${v.channel_name}</div>
