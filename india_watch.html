@@ -84,7 +84,13 @@
     .live-badge { position: absolute; top: 7px; left: 7px; background: #e63946; color: #fff; font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 4px; display: flex; align-items: center; gap: 4px; }
     .live-dot { width: 6px; height: 6px; background: #fff; border-radius: 50%; animation: pulse 1.2s infinite; }
     @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
-    .duration-badge { position: absolute; bottom: 6px; right: 6px; background: rgba(0,0,0,0.82); color: #fff; font-size: 0.7rem; font-weight: 600; padding: 1px 5px; border-radius: 3px; letter-spacing: 0.02em; }
+    .duration-badge  { position: absolute; bottom: 6px; right: 6px; background: rgba(0,0,0,0.82); color: #fff; font-size: 0.7rem; font-weight: 600; padding: 1px 5px; border-radius: 3px; letter-spacing: 0.02em; }
+    .country-badge   { position: absolute; bottom: 6px; left: 6px; font-size: 0.8rem; background: rgba(0,0,0,0.75); padding: 1px 5px; border-radius: 3px; line-height: 1.4; }
+    .country-section { margin-bottom: 40px; }
+    .country-header  { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid #2a2d3a; }
+    .country-flag    { font-size: 1.8rem; line-height: 1; }
+    .country-name    { font-size: 1rem; font-weight: 700; color: #fff; }
+    .country-count   { font-size: 0.72rem; color: #e67e22; background: #2a1a0a; padding: 3px 10px; border-radius: 10px; margin-left: auto; }
     .newtab-btn { position: absolute; top: 7px; right: 7px; z-index: 2; background: rgba(0,0,0,0.8); border: 1px solid rgba(255,255,255,0.45); color: #fff; width: 26px; height: 26px; border-radius: 4px; cursor: pointer; font-size: 0.82rem; line-height: 1; display: flex; align-items: center; justify-content: center; opacity: 1; transition: background 0.15s, border-color 0.15s; padding: 0; }
     .video-card:hover .newtab-btn { background: rgba(46,204,113,0.85); border-color: #2ecc71; }
 
@@ -202,10 +208,11 @@
 </nav>
 
 <div class="tabbar">
-  <button class="tab-btn" id="btn-all"      onclick="switchTab('all')">🇮🇳 All India</button>
-  <button class="tab-btn" id="btn-wb"       onclick="switchTab('wb')">🏙 West Bengal</button>
-  <button class="tab-btn" id="btn-live"     onclick="switchTab('live')">🔴 Live</button>
-  <button class="tab-btn" id="btn-channels" onclick="switchTab('channels')">📺 By Channel</button>
+  <button class="tab-btn" id="btn-all"        onclick="switchTab('all')">🇮🇳 All India</button>
+  <button class="tab-btn" id="btn-wb"         onclick="switchTab('wb')">🏙 West Bengal</button>
+  <button class="tab-btn" id="btn-bycountry"  onclick="switchTab('bycountry')">🌍 By Country</button>
+  <button class="tab-btn" id="btn-live"       onclick="switchTab('live')">🔴 Live</button>
+  <button class="tab-btn" id="btn-channels"   onclick="switchTab('channels')">📺 By Channel</button>
 </div>
 
 <div class="toolbar-wrap" id="toolbarWrap">
@@ -266,6 +273,7 @@
 
 <div class="tab-panel" id="panel-all"></div>
 <div class="tab-panel" id="panel-wb"></div>
+<div class="tab-panel" id="panel-bycountry"></div>
 <div class="tab-panel" id="panel-live"></div>
 <div class="tab-panel" id="panel-channels"></div>
 
@@ -456,9 +464,18 @@ function isWBRelated(v) {
 }
 
 // ── Config & state ────────────────────────────────────────────────────────────
-const TAB_DEFAULTS      = { all: 'today', wb: 'today', live: '1h', channels: '24h' };
-const SORT_DEFAULTS     = { all: 'velocity', wb: 'velocity', live: 'views', channels: 'views' };
-const DURATION_DEFAULTS = { all: 'upto30', wb: 'upto30', live: 'all', channels: 'all' };
+const TAB_DEFAULTS      = { all: 'today', wb: 'today', bycountry: '24h', live: '1h', channels: '24h' };
+const SORT_DEFAULTS     = { all: 'velocity', wb: 'velocity', bycountry: 'velocity', live: 'views', channels: 'views' };
+const DURATION_DEFAULTS = { all: 'upto30', wb: 'upto30', bycountry: 'all', live: 'all', channels: 'all' };
+
+const COUNTRY_META = {
+  'bangladesh': { flag: '🇧🇩', name: 'Bangladesh' },
+  'world_news': { flag: '🌍', name: 'World Media' },
+  'pakistan':   { flag: '🇵🇰', name: 'Pakistan' },
+  'nepal':      { flag: '🇳🇵', name: 'Nepal' },
+  'srilanka':   { flag: '🇱🇰', name: 'Sri Lanka' },
+  'myanmar':    { flag: '🇲🇲', name: 'Myanmar' },
+};
 const THRESHOLDS        = { lastnight:40000, today:25000, tonight:8000, '1h':3000, '3h':5000, '5h':10000, '24h':50000 };
 
 const params        = new URLSearchParams(location.search);
@@ -548,15 +565,17 @@ function filterLabel() { return{lastnight:'Last Night',today:'Today',tonight:'To
 
 // ── Card builder ──────────────────────────────────────────────────────────────
 function cardHtml(v, rank, isLive, hidden) {
-  const badge = isLive ? `<span class="live-badge"><span class="live-dot"></span> LIVE</span>` : rank ? `<span class="rank-badge">#${rank}</span>` : '';
-  const dur = !isLive && v.duration ? `<span class="duration-badge">${fmtDuration(v.duration)}</span>` : '';
-  const safe   = v.title.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-  const safeCh = v.channel_name.replace(/'/g,"\\'");
+  const badge   = isLive ? `<span class="live-badge"><span class="live-dot"></span> LIVE</span>` : rank ? `<span class="rank-badge">#${rank}</span>` : '';
+  const dur     = !isLive && v.duration ? `<span class="duration-badge">${fmtDuration(v.duration)}</span>` : '';
+  const cm      = COUNTRY_META[v.channel_type];
+  const cflag   = cm ? `<span class="country-badge">${cm.flag}</span>` : '';
+  const safe    = v.title.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+  const safeCh  = v.channel_name.replace(/'/g,"\\'");
   return `
     <div class="video-card${hidden?' hidden':''}" onclick="openPlayer('${v.video_id}','${safeCh}')">
       <div class="thumb-wrap">
         <img src="${v.thumbnail}" alt="" loading="lazy" onerror="this.src='https://i.ytimg.com/vi/${v.video_id}/mqdefault.jpg'">
-        ${badge}${dur}
+        ${badge}${dur}${cflag}
         <button class="newtab-btn" onclick="openInNewTab(event,'${v.video_id}','${safe}','${safeCh}')">↗</button>
       </div>
       <div class="card-body">
@@ -573,7 +592,32 @@ function emptyState(t, s) { return `<div class="empty-state"><h3>${t}</h3><p>${s
 const SOURCE_NOTE = `<div class="source-note"><strong>India Watch</strong> — India &amp; West Bengal news coverage from Bangladesh media.</div>`;
 
 // ── Render ────────────────────────────────────────────────────────────────────
-function renderAll() { if (!allData) return; renderIndiaAll(); renderWB(); renderLive(); renderChannels(); }
+function renderAll() { if (!allData) return; renderIndiaAll(); renderWB(); renderByCountry(); renderLive(); renderChannels(); }
+
+function renderByCountry() {
+  const panel = document.getElementById('panel-bycountry');
+  const pool = filterByRange(indiaPool, currentFilter)
+    .filter(v => v.live_broadcast !== 'live')
+    .filter(v => matchesDuration(v))
+    .filter(v => v.view_count >= getMinViewsNum(currentFilter));
+  const byType = {};
+  pool.forEach(v => { const ct = v.channel_type || 'unknown'; (byType[ct] = byType[ct] || []).push(v); });
+  const order = ['bangladesh','world_news','pakistan','nepal','srilanka','myanmar'];
+  const sections = order.filter(ct => byType[ct]?.length).map(ct => {
+    const meta  = COUNTRY_META[ct] || { flag: '🌐', name: ct };
+    const vids  = searchVideos(sortedVideos(byType[ct], currentFilter, currentSort)).slice(0, 20);
+    const cards = vids.map((v, i) => cardHtml(v, i+1, false, false)).join('');
+    return `<div class="country-section">
+      <div class="country-header">
+        <span class="country-flag">${meta.flag}</span>
+        <span class="country-name">${meta.name}</span>
+        <span class="country-count">${vids.length} stories</span>
+      </div>
+      <div class="video-row">${cards}</div>
+    </div>`;
+  }).join('');
+  panel.innerHTML = sections || emptyState('No stories by country', 'Try a wider time filter.');
+}
 
 function renderIndiaAll() {
   const panel = document.getElementById('panel-all');
@@ -729,7 +773,7 @@ function openPlayer(videoId, channelName) {
   if (ytPlayerReady) ytPlayer.loadVideoById(videoId); else pendingVideoId=videoId;
 }
 function closePlayer() { document.getElementById('playerModal').classList.remove('open'); document.body.style.overflow=''; cancelCountdown(); if(ytPlayerReady) ytPlayer.stopVideo(); }
-function openInNewTab(e, vid, t) { e.stopPropagation(); window.open('player.html?v='+encodeURIComponent(vid)+'&t='+encodeURIComponent(t),'_blank'); }
+function openInNewTab(e, vid, t, ch) { e.stopPropagation(); window.open('player.html?v='+encodeURIComponent(vid)+'&t='+encodeURIComponent(t)+'&c='+encodeURIComponent(ch||''),'_blank'); }
 function onModalClick(e) { if(e.target===document.getElementById('playerModal')) closePlayer(); }
 function startCountdown() { cancelCountdown(); }
 function cancelCountdown() { clearInterval(countdownTimer); countdownTimer=null; document.getElementById('nextOverlay').classList.remove('show'); }
@@ -745,9 +789,13 @@ window.addEventListener('DOMContentLoaded', async () => {
     allData = { last_updated: null, bangladesh: [] };
     showToast('Could not load data.');
   }
-  const src = allData.bangladesh || [];
-  indiaPool = src.filter(isIndiaRelated);
-  wbPool    = src.filter(isWBRelated);
+  const bdSrc  = allData.bangladesh || [];
+  const wnSrc  = (allData.world_news || []).filter(isIndiaRelated);
+  const pkSrc  = (allData.pakistan   || []).filter(isIndiaRelated);
+  const npSrc  = (allData.nepal      || []).filter(isIndiaRelated);
+  const allSrc = [...bdSrc.filter(isIndiaRelated), ...wnSrc, ...pkSrc, ...npSrc];
+  indiaPool = allSrc;
+  wbPool    = allSrc.filter(isWBRelated);
   renderAll();
 });
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
