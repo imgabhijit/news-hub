@@ -596,6 +596,10 @@ function renderAll() { if (!allData) return; renderIndiaAll(); renderWB(); rende
 
 let countryView = 'list';
 function setCountryView(v) { countryView = v; renderByCountry(); }
+function showMoreCountry(gridId, btnId) {
+  document.querySelectorAll('#' + gridId + ' .video-card.hidden').forEach(c => c.classList.remove('hidden'));
+  document.getElementById(btnId).style.display = 'none';
+}
 
 function renderByCountry() {
   const panel = document.getElementById('panel-bycountry');
@@ -616,41 +620,42 @@ function renderByCountry() {
 
   if (!activeSections.length) { panel.innerHTML = toggle + emptyState('No stories by country', 'Try a wider time filter.'); return; }
 
-  const sections = activeSections.map(ct => {
+  const sections = activeSections.map((ct, ci) => {
     const meta   = COUNTRY_META[ct] || { flag: '🌐', name: ct };
     const videos = byType[ct];
+    const header = `<div class="country-header">
+      <span class="country-flag">${meta.flag}</span>
+      <span class="country-name">${meta.name}</span>
+      <span class="country-count">${videos.length} stories</span>
+    </div>`;
 
     if (countryView === 'grid') {
-      const vids  = searchVideos(sortedVideos(videos, currentFilter, currentSort)).slice(0, 20);
-      const cards = vids.map((v, i) => cardHtml(v, i+1, false, i>=12)).join('');
-      const more  = vids.length > 12 ? `<div class="show-more-wrap"><button class="show-more-btn" onclick="this.closest('.video-grid').querySelectorAll('.video-card.hidden').forEach(c=>c.classList.remove('hidden'));this.parentElement.style.display='none'">${vids.length-12} more</button></div>` : '';
-      return `<div class="country-section">
-        <div class="country-header"><span class="country-flag">${meta.flag}</span><span class="country-name">${meta.name}</span><span class="country-count">${vids.length} stories</span></div>
-        <div class="video-grid">${cards}</div>${more}
-      </div>`;
+      const gridId = 'ctGrid' + ci;
+      const moreId = 'ctMore' + ci;
+      const vids   = searchVideos(sortedVideos(videos, currentFilter, currentSort)).slice(0, 20);
+      const cards  = vids.map((v, i) => cardHtml(v, i+1, false, i >= 12)).join('');
+      const more   = vids.length > 12
+        ? `<div class="show-more-wrap" id="${moreId}"><button class="show-more-btn" onclick="showMoreCountry('${gridId}','${moreId}')">${vids.length - 12} more stories</button></div>`
+        : '';
+      return `<div class="country-section">${header}<div class="video-grid" id="${gridId}">${cards}</div>${more}</div>`;
     }
 
-    // List mode: group by channel with horizontal scroll rows
+    // List mode — channel-grouped horizontal scroll rows
     const byChannel = {};
     videos.forEach(v => { (byChannel[v.channel_name] = byChannel[v.channel_name] || []).push(v); });
-    const chEntries = Object.entries(byChannel)
-      .map(([name, vids]) => ({ name, vids: sortedVideos(vids, currentFilter, currentSort).slice(0, 10), total: vids.reduce((s,v)=>s+v.view_count,0) }))
-      .sort((a, b) => b.total - a.total);
-    const rows = chEntries.map(({ name, vids }) => {
-      const filtered = searchVideos(vids); if (!filtered.length) return '';
-      const cards = filtered.map((v, i) => cardHtml(v, i+1, false, false)).join('');
-      return `<div class="channel-row">
-        <div class="channel-header">
-          <span class="channel-name">${name}</span>
-          <span class="channel-count">${filtered.length} India stories</span>
-        </div>
-        <div class="video-row">${cards}</div>
-      </div>`;
-    }).join('');
-    return `<div class="country-section">
-      <div class="country-header"><span class="country-flag">${meta.flag}</span><span class="country-name">${meta.name}</span><span class="country-count">${videos.length} stories · ${chEntries.length} channels</span></div>
-      ${rows}
-    </div>`;
+    const rows = Object.entries(byChannel)
+      .map(([name, vids]) => ({ name, vids: sortedVideos(vids, currentFilter, currentSort).slice(0, 10), total: vids.reduce((s,v) => s + v.view_count, 0) }))
+      .sort((a, b) => b.total - a.total)
+      .map(({ name, vids }) => {
+        const filtered = searchVideos(vids);
+        if (!filtered.length) return '';
+        const cards = filtered.map((v, i) => cardHtml(v, i+1, false, false)).join('');
+        return `<div class="channel-row">
+          <div class="channel-header"><span class="channel-name">${name}</span><span class="channel-count">${filtered.length} India stories</span></div>
+          <div class="video-row">${cards}</div>
+        </div>`;
+      }).join('');
+    return `<div class="country-section">${header}${rows}</div>`;
   }).join('');
 
   panel.innerHTML = toggle + sections;
