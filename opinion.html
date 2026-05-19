@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Hindi Opinion Portal</title>
+  <title>Opinion Portal</title>
   <link rel="manifest" href="manifest.json">
   <meta name="theme-color" content="#9b59b6">
   <style>
@@ -188,11 +188,12 @@
 <nav>
   <a class="nav-brand" href="index.html">💬 News Portal</a>
   <span class="nav-sep">/</span>
-  <span class="nav-region">Hindi Opinion</span>
+  <span class="nav-region">Opinion</span>
   <a class="nav-subscribe" href="https://www.youtube.com/@YOUR_CHANNEL" target="_blank" id="navSubBtn" style="display:none">▶ Subscribe</a>
 </nav>
 
 <div class="tabbar">
+  <button class="tab-btn" id="btn-all"      onclick="switchTab('all')">💬 All Opinion</button>
   <button class="tab-btn" id="btn-right"    onclick="switchTab('right')">🔶 Right</button>
   <button class="tab-btn" id="btn-left"     onclick="switchTab('left')">🔷 Left</button>
   <button class="tab-btn" id="btn-live"     onclick="switchTab('live')">🔴 Live</button>
@@ -251,6 +252,7 @@
   <span id="metaInfo" style="display:none"></span>
 </div>
 
+<div class="tab-panel" id="panel-all"></div>
 <div class="tab-panel" id="panel-right"></div>
 <div class="tab-panel" id="panel-left"></div>
 <div class="tab-panel" id="panel-live"></div>
@@ -285,13 +287,13 @@ const MY_CHANNEL_URL    = '';
 const MY_CHANNEL_NAME   = '';
 const MY_CHANNEL_VIDEOS = [];
 
-const TAB_DEFAULTS      = { right: 'today', left: 'today', live: '1h', channels: '24h' };
-const SORT_DEFAULTS     = { right: 'views', left: 'views', live: 'views', channels: 'views' };
-const DURATION_DEFAULTS = { right: 'all', left: 'all', live: 'all', channels: 'all' };
+const TAB_DEFAULTS      = { all: 'today', right: 'today', left: 'today', live: '1h', channels: '24h' };
+const SORT_DEFAULTS     = { all: 'views', right: 'views', left: 'views', live: 'views', channels: 'views' };
+const DURATION_DEFAULTS = { all: 'all', right: 'all', left: 'all', live: 'all', channels: 'all' };
 const THRESHOLDS = { lastnight:40000, today:25000, tonight:8000, '1h':3000, '3h':5000, '5h':10000, '24h':50000 };
 
 const params        = new URLSearchParams(location.search);
-let currentTab      = params.get('tab')    || 'right';
+let currentTab      = params.get('tab')    || 'all';
 let currentFilter   = params.get('filter') || TAB_DEFAULTS[currentTab];
 let currentSort     = params.get('sort')   || SORT_DEFAULTS[currentTab];
 let currentMinViews = '0';
@@ -342,7 +344,13 @@ function cardHtml(v,rank,isLive,hidden){
 function emptyState(t,s){return`<div class="empty-state"><h3>${t}</h3><p>${s}</p></div>`;}
 const PERIODIC_NOTE = `<div class="periodic-note">⏱ Opinion data refreshes 3× daily — morning, evening &amp; night.</div>`;
 
-function renderAll(){if(!allData)return;renderRight();renderLeft();renderLive();renderChannels();}
+function renderAll(){if(!allData)return;renderAllOpinion();renderRight();renderLeft();renderLive();renderChannels();}
+
+function renderAllOpinion(){
+  const combined=(allData.hindi_right_opinion||[]).concat(allData.hindi_left_opinion||[]);
+  const v=getVideos(combined,currentFilter,currentSort);
+  renderPanel('panel-all','aGrid','smA',v,`Top ${v.length} Opinion`);
+}
 
 function renderPanel(panelId,gridId,smId,videos,label){
   const panel=document.getElementById(panelId);
