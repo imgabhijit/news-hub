@@ -300,6 +300,8 @@
 </div>
 
 <div id="toast"></div>
+<script src="data/geo-utils.js"></script>
+<script src="data/geo-countries.js"></script>
 <script src="https://www.youtube.com/iframe_api"></script>
 <script>
 // ── India Watch keywords ──────────────────────────────────────────────────────
@@ -461,6 +463,16 @@ function isWBRelated(v) {
   const t = v.title.toLowerCase();
   return WB_KW_EN.some(kw => t.includes(kw)) ||
          WB_KW_BN.some(kw => v.title.includes(kw));
+}
+
+// For world_news: use precise geo-countries.js India keywords (same logic as world.html)
+function isIndiaRelatedWorld(v) {
+  const indiaEntry = (typeof COUNTRIES_RAW !== 'undefined')
+    ? COUNTRIES_RAW.find(c => c.name === 'India')
+    : null;
+  if (!indiaEntry) return isIndiaRelated(v); // fallback
+  const t = normStr(v.title);
+  return indiaEntry.kw.some(kw => t.includes(kw));
 }
 
 // ── Config & state ────────────────────────────────────────────────────────────
@@ -813,9 +825,9 @@ window.addEventListener('DOMContentLoaded', async () => {
     showToast('Could not load data.');
   }
   const bdSrc  = allData.bangladesh || [];
-  const wnSrc  = (allData.world_news || []).filter(isIndiaRelated);
-  const pkSrc  = (allData.pakistan   || []).filter(isIndiaRelated);
-  const npSrc  = (allData.nepal      || []).filter(isIndiaRelated);
+  const wnSrc  = (allData.world_news || []).filter(isIndiaRelatedWorld);
+  const pkSrc  = (allData.pakistan   || []).filter(isIndiaRelatedWorld);
+  const npSrc  = (allData.nepal      || []).filter(isIndiaRelatedWorld);
   const allSrc = [...bdSrc.filter(isIndiaRelated), ...wnSrc, ...pkSrc, ...npSrc];
   indiaPool = allSrc;
   wbPool    = allSrc.filter(isWBRelated);
