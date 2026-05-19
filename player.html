@@ -13,7 +13,7 @@
     .back-btn { align-self: flex-start; background: none; border: none; color: #888; cursor: pointer; font-size: 0.9rem; padding: 4px 0 16px 0; }
     .back-btn:hover { color: #fff; }
 
-    .player-container { width: 100%; max-width: 900px; }
+    .player-container { width: 100%; max-width: clamp(900px, 72vw, 1400px); }
 
     .thumb-container { position: relative; width: 100%; padding-top: 56.25%; background: #000; border-radius: 10px; overflow: hidden; cursor: pointer; }
     .thumb-container img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: opacity 0.2s; }
@@ -26,7 +26,8 @@
     .iframe-wrap { position: relative; width: 100%; padding-top: 56.25%; border-radius: 10px; overflow: hidden; display: none; }
     .iframe-wrap iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: none; }
 
-    .video-title { margin-top: 14px; font-size: 1rem; line-height: 1.55; color: #e0e0e0; font-weight: 500; }
+    .video-title  { margin-top: 14px; font-size: 1rem; line-height: 1.55; color: #e0e0e0; font-weight: 500; }
+    .video-credit { margin-top: 6px; font-size: 0.88rem; color: #f5c518; font-weight: 700; letter-spacing: 0.02em; }
   </style>
 </head>
 <body>
@@ -40,14 +41,17 @@
       <iframe id="videoFrame" src="" allowfullscreen allow="autoplay; encrypted-media; picture-in-picture"></iframe>
     </div>
     <p class="video-title" id="videoTitle"></p>
+    <p class="video-credit" id="videoCredit"></p>
   </div>
   <script>
     const p = new URLSearchParams(location.search);
-    const vid = p.get('v') || '';
+    const vid   = p.get('v') || '';
     const title = p.get('t') || '';
+    const ch    = p.get('c') || '';
 
     document.getElementById('videoTitle').textContent = title;
     document.title = title || 'Video Player';
+    if (ch) document.getElementById('videoCredit').textContent = 'Source: ' + ch;
 
     if (vid) {
       const img = document.getElementById('thumbImg');
