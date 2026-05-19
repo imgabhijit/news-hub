@@ -236,11 +236,12 @@
     }
     @media (orientation: landscape) and (max-height: 600px) {
       .modal-overlay { justify-content: flex-start; align-items: center; padding: 6px; }
-      .modal-wrapper { max-width: 60%; }
+      .modal-box     { max-width: 67vw; margin-left: 4px; }
+      .modal-wrapper { max-width: 67vw; }
     }
     @media (min-width: 1100px) {
-      .modal-overlay { justify-content: flex-start; padding-left: 40px; }
-      .modal-wrapper { max-width: 900px; }
+      .modal-overlay { justify-content: center; padding-left: 0; }
+      .modal-wrapper { max-width: min(1200px, 79vw); }
     }
     @supports (padding: env(safe-area-inset-bottom)) {
       nav  { padding-left: max(12px, env(safe-area-inset-left)); padding-right: max(12px, env(safe-area-inset-right)); }
@@ -471,6 +472,14 @@ function fmtViews(n) {
   if (n >= 1e3) return `${(n/1e3).toFixed(1)}K`;
   return String(n);
 }
+
+function medianViews(vids) {
+  if (!vids || !vids.length) return 0;
+  const sorted = [...vids].map(v => v.view_count).sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+}
+
 function formatAgo(ts) {
   const d = Math.floor(Date.now()/1000 - ts);
   if (d < 60)    return `${d}s ago`;
@@ -571,15 +580,15 @@ function renderChannels() {
       return;
     }
     const stats = Object.entries(allByChannel)
-      .map(([name, vids]) => ({ name, totalViews: vids.reduce((s,v)=>s+v.view_count,0), count: vids.length, thumb: vids[0]?.thumbnail||'' }))
-      .sort((a,b) => b.totalViews - a.totalViews);
+      .map(([name, vids]) => { const all=allByChannel[name]||vids; return { name, medViews: medianViews(all), count: all.length, thumb: all[0]?.thumbnail||'' }; })
+      .sort((a,b) => b.medViews - a.medViews);
     const cards = stats.map(ch => {
       const safe = ch.name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
       return `<div class="channel-card" onclick="setSelectedChannel('${safe}')">
         ${ch.thumb?`<img class="channel-card-thumb" src="${ch.thumb}" alt="">`:''}
         <div class="channel-card-info">
           <div class="channel-card-name">${ch.name}</div>
-          <div class="channel-card-views">👁 ${fmtViews(ch.totalViews)}</div>
+          <div class="channel-card-views">📊 ${fmtViews(ch.medViews)} median</div>
           <div class="channel-card-count">${ch.count} video${ch.count!==1?'s':''}</div>
         </div>
       </div>`;
@@ -588,7 +597,8 @@ function renderChannels() {
     return;
   }
 
-  const rows = Object.entries(byChannel).map(([name, vids]) => {
+  const allByChannelFull2 = getVideosPerChannel(allData.bangladesh||[], currentFilter, currentSort, Infinity);
+  const rows = Object.entries(byChannel).map(([name,vids])=>[name,vids,medianViews(allByChannelFull2[name]||vids)]).sort((a,b)=>b[2]-a[2]).map(([name,vids]) => {
     const filtered = searchVideos(vids);
     if (!filtered.length) return '';
     const cards = filtered.map((v,i) => cardHtml(v, i+1, false, false)).join('');

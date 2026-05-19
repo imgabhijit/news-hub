@@ -588,6 +588,13 @@ function fmtViews(n) {
   return String(n);
 }
 
+function medianViews(vids) {
+  if (!vids || !vids.length) return 0;
+  const sorted = [...vids].map(v => v.view_count).sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  return sorted.length % 2 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+}
+
 function fmtDuration(s) {
   if (!s) return '';
   const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
@@ -712,15 +719,15 @@ function renderChannels() {
       return;
     }
     const stats = Object.entries(allByChannel)
-      .map(([name, vids]) => ({ name, totalViews: vids.reduce((s,v)=>s+v.view_count,0), count: vids.length, thumb: vids[0]?.thumbnail||'' }))
-      .sort((a,b) => b.totalViews - a.totalViews);
+      .map(([name, vids]) => { const all=allByChannel[name]||vids; return { name, medViews: medianViews(all), count: all.length, thumb: all[0]?.thumbnail||'' }; })
+      .sort((a,b) => b.medViews - a.medViews);
     const cards = stats.map(ch => {
       const safe = ch.name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
       return `<div class="channel-card" onclick="setSelectedChannel('${safe}')">
         ${ch.thumb?`<img class="channel-card-thumb" src="${ch.thumb}" alt="">`:''}
         <div class="channel-card-info">
           <div class="channel-card-name">${ch.name}</div>
-          <div class="channel-card-views">👁 ${fmtViews(ch.totalViews)}</div>
+          <div class="channel-card-views">📊 ${fmtViews(ch.medViews)} median</div>
           <div class="channel-card-count">${ch.count} video${ch.count!==1?'s':''}</div>
         </div>
       </div>`;
@@ -729,7 +736,8 @@ function renderChannels() {
     return;
   }
 
-  const rows = Object.entries(byChannel).map(([name, vids]) => {
+  const allByChannelFull2 = getVideosPerChannel(allData.world_news||[], currentFilter, currentSort, Infinity);
+  const rows = Object.entries(byChannel).map(([name,vids])=>[name,vids,medianViews(allByChannelFull2[name]||vids)]).sort((a,b)=>b[2]-a[2]).map(([name,vids]) => {
     const filtered = searchVideos(vids);
     if (!filtered.length) return '';
     const cards = filtered.map((v, i) => cardHtml(v, i + 1, false, false)).join('');
@@ -944,7 +952,7 @@ function renderCountries() {
   const map = buildCountryMap(videos);
   const sorted = Object.values(map)
     .filter(e => e.certain.length > 0)
-    .sort((a, b) => b.totalViews - a.totalViews);
+    .sort((a, b) => medianViews(b.certain) - medianViews(a.certain));
 
   if (!sorted.length) { panel.innerHTML = emptyState('No country data', 'Check back soon.'); return; }
 
@@ -959,26 +967,26 @@ function renderCountries() {
   </div>`;
 
   if (currentViewMode === 'list') {
-    const rows = sorted.map(({ country, certain, totalViews }) => {
+    const rows = sorted.map(({ country, certain }) => {
       const cards = certain.slice(0, 10).map((v, i) => cardHtml(v, i + 1, false, false)).join('');
       return `<div class="country-section">
         <div class="country-list-header">
           <span class="country-flag-lg">${country.flag}</span>
           <span class="country-name-lg">${country.name}</span>
-          <span class="country-views-lg">${fmtViews(totalViews)} views</span>
+          <span class="country-views-lg">${fmtViews(medianViews(certain))} median</span>
         </div>
         <div class="video-row">${cards}</div>
       </div>`;
     }).join('');
     panel.innerHTML = `<p class="section-label">By Country · Last 24h</p>${toggle}${rows}`;
   } else {
-    const tiles = sorted.map(({ country, certain, uncertain, totalViews }) => {
+    const tiles = sorted.map(({ country, certain, uncertain }) => {
       const sn = country.name.replace(/'/g, "\\'");
       const ub = uncertain.length ? `<span class="uncertain-count"> +${uncertain.length}⚠️</span>` : '';
       return `<div class="country-tile" onclick="openCountryDetail('${sn}')">
         <div class="country-tile-flag">${country.flag}</div>
         <div class="country-tile-name">${country.name}</div>
-        <div class="country-tile-stats">${fmtViews(totalViews)} · ${certain.length} video${certain.length!==1?'s':''}${ub}</div>
+        <div class="country-tile-stats">${fmtViews(medianViews(certain))} median · ${certain.length} video${certain.length!==1?'s':''}${ub}</div>
       </div>`;
     }).join('');
     panel.innerHTML = `<p class="section-label">By Country · Last 24h</p>${toggle}<div class="country-tile-grid">${tiles}</div>`;
@@ -1022,18 +1030,17 @@ function renderRegions() {
   const cmap    = buildCountryMap(videos);
 
   const regionData = REGIONS_DEF.map(r => {
-    const rVideos = []; let totalViews = 0; const topFlags = [];
+    const rVideos = []; const topFlags = [];
     for (const cn of r.countries) {
       if (cmap[cn] && cmap[cn].certain.length) {
         const e = cmap[cn];
         cmap[cn].certain.forEach(v => rVideos.push({ ...v, _flag: e.country.flag }));
-        totalViews += e.totalViews;
         topFlags.push(e.country.flag);
       }
     }
     rVideos.sort((a, b) => b.view_count - a.view_count);
-    return { ...r, videos: rVideos, totalViews, topFlags: topFlags.slice(0, 6) };
-  }).filter(r => r.videos.length > 0).sort((a, b) => b.totalViews - a.totalViews);
+    return { ...r, videos: rVideos, topFlags: topFlags.slice(0, 6) };
+  }).filter(r => r.videos.length > 0).sort((a, b) => medianViews(b.videos) - medianViews(a.videos));
 
   if (!regionData.length) { panel.innerHTML = emptyState('No region data', 'Check back soon.'); return; }
 
@@ -1048,27 +1055,26 @@ function renderRegions() {
       <div class="region-tile-icon">${r.icon}</div>
       <div class="region-tile-name">${r.name}</div>
       <div class="region-tile-flags">${r.topFlags.join(' ')}</div>
-      <div class="region-tile-stats">${fmtViews(r.totalViews)} views · ${r.videos.length} videos</div>
+      <div class="region-tile-stats">${fmtViews(medianViews(r.videos))} median · ${r.videos.length} videos</div>
     </div>`;
   }).join('');
 
-  panel.innerHTML = `<p class="section-label">By Region · Last 24h · sorted by total views</p><div class="region-tile-grid-world">${tiles}</div>`;
+  panel.innerHTML = `<p class="section-label">By Region · Last 24h · sorted by median views</p><div class="region-tile-grid-world">${tiles}</div>`;
 }
 
 function renderRegionDetail(panel, region, cmap) {
-  // Build per-country sections sorted by total views
   const countryEntries = region.countries
     .map(cn => cmap[cn])
     .filter(e => e && e.certain.length > 0)
-    .sort((a, b) => b.totalViews - a.totalViews);
+    .sort((a, b) => medianViews(b.certain) - medianViews(a.certain));
 
-  const rows = countryEntries.map(({ country, certain, totalViews }) => {
+  const rows = countryEntries.map(({ country, certain }) => {
     const cards = certain.map((v, i) => cardHtml(v, i + 1, false, false)).join('');
     return `<div class="country-section">
       <div class="country-list-header">
         <span class="country-flag-lg">${country.flag}</span>
         <span class="country-name-lg">${country.name}</span>
-        <span class="country-views-lg">${fmtViews(totalViews)} views</span>
+        <span class="country-views-lg">${fmtViews(medianViews(certain))} median</span>
       </div>
       <div class="video-row">${cards}</div>
     </div>`;
@@ -1079,7 +1085,7 @@ function renderRegionDetail(panel, region, cmap) {
       <button class="back-btn" onclick="closeRegionDetail()">← Back</button>
       <span style="font-size:1.6rem;line-height:1">${region.icon}</span>
       <span class="country-detail-name">${region.name}</span>
-      <span class="country-views-lg">${fmtViews(region.totalViews)} views</span>
+      <span class="country-views-lg">${fmtViews(medianViews(region.videos))} median</span>
     </div>
     ${rows}`;
 }
