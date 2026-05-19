@@ -594,8 +594,6 @@ const SOURCE_NOTE = `<div class="source-note"><strong>India Watch</strong> — I
 // ── Render ────────────────────────────────────────────────────────────────────
 function renderAll() { if (!allData) return; renderIndiaAll(); renderWB(); renderByCountry(); renderLive(); renderChannels(); }
 
-let countryView = 'list';
-function setCountryView(v) { countryView = v; renderByCountry(); }
 function showMoreCountry(gridId, btnId) {
   document.querySelectorAll('#' + gridId + ' .video-card.hidden').forEach(c => c.classList.remove('hidden'));
   document.getElementById(btnId).style.display = 'none';
@@ -610,55 +608,33 @@ function renderByCountry() {
   const byType = {};
   pool.forEach(v => { const ct = v.channel_type || 'unknown'; (byType[ct] = byType[ct] || []).push(v); });
 
-  const toggle = `<div class="ch-view-toggle">
-    <button class="ch-view-btn ${countryView==='list'?'active':''}" onclick="setCountryView('list')">☰ By Channel</button>
-    <button class="ch-view-btn ${countryView==='grid'?'active':''}" onclick="setCountryView('grid')">⊞ Grid</button>
-  </div>`;
-
   const order = ['bangladesh','world_news','pakistan','nepal','srilanka','myanmar'];
   const activeSections = order.filter(ct => byType[ct]?.length);
 
-  if (!activeSections.length) { panel.innerHTML = toggle + emptyState('No stories by country', 'Try a wider time filter.'); return; }
+  if (!activeSections.length) { panel.innerHTML = emptyState('No stories by country', 'Try a wider time filter.'); return; }
 
   const sections = activeSections.map((ct, ci) => {
     const meta   = COUNTRY_META[ct] || { flag: '🌐', name: ct };
     const videos = byType[ct];
-    const header = `<div class="country-header">
-      <span class="country-flag">${meta.flag}</span>
-      <span class="country-name">${meta.name}</span>
-      <span class="country-count">${videos.length} stories</span>
+    const gridId = 'ctGrid' + ci;
+    const moreId = 'ctMore' + ci;
+    const vids   = searchVideos(sortedVideos(videos, currentFilter, currentSort));
+    const INIT   = 12; // ~2 rows on desktop
+    const cards  = vids.map((v, i) => cardHtml(v, i+1, false, i >= INIT)).join('');
+    const more   = vids.length > INIT
+      ? `<div class="show-more-wrap" id="${moreId}"><button class="show-more-btn" onclick="showMoreCountry('${gridId}','${moreId}')">${vids.length - INIT} more stories</button></div>`
+      : '';
+    return `<div class="country-section">
+      <div class="country-header">
+        <span class="country-flag">${meta.flag}</span>
+        <span class="country-name">${meta.name}</span>
+        <span class="country-count">${vids.length} stories</span>
+      </div>
+      <div class="video-grid" id="${gridId}">${cards}</div>${more}
     </div>`;
-
-    if (countryView === 'grid') {
-      const gridId = 'ctGrid' + ci;
-      const moreId = 'ctMore' + ci;
-      const vids   = searchVideos(sortedVideos(videos, currentFilter, currentSort)).slice(0, 20);
-      const cards  = vids.map((v, i) => cardHtml(v, i+1, false, i >= 12)).join('');
-      const more   = vids.length > 12
-        ? `<div class="show-more-wrap" id="${moreId}"><button class="show-more-btn" onclick="showMoreCountry('${gridId}','${moreId}')">${vids.length - 12} more stories</button></div>`
-        : '';
-      return `<div class="country-section">${header}<div class="video-grid" id="${gridId}">${cards}</div>${more}</div>`;
-    }
-
-    // List mode — channel-grouped horizontal scroll rows
-    const byChannel = {};
-    videos.forEach(v => { (byChannel[v.channel_name] = byChannel[v.channel_name] || []).push(v); });
-    const rows = Object.entries(byChannel)
-      .map(([name, vids]) => ({ name, vids: sortedVideos(vids, currentFilter, currentSort).slice(0, 10), total: vids.reduce((s,v) => s + v.view_count, 0) }))
-      .sort((a, b) => b.total - a.total)
-      .map(({ name, vids }) => {
-        const filtered = searchVideos(vids);
-        if (!filtered.length) return '';
-        const cards = filtered.map((v, i) => cardHtml(v, i+1, false, false)).join('');
-        return `<div class="channel-row">
-          <div class="channel-header"><span class="channel-name">${name}</span><span class="channel-count">${filtered.length} India stories</span></div>
-          <div class="video-row">${cards}</div>
-        </div>`;
-      }).join('');
-    return `<div class="country-section">${header}${rows}</div>`;
   }).join('');
 
-  panel.innerHTML = toggle + sections;
+  panel.innerHTML = sections;
 }
 
 function renderIndiaAll() {
