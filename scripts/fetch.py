@@ -27,7 +27,7 @@ DATA_DIR             = Path(__file__).parent.parent / "data"
 META_FILE            = DATA_DIR / "channels_meta.json"
 VIDEOS_FILE          = DATA_DIR / "videos.json"
 CACHE_FILE           = DATA_DIR / "video_id_cache.json"
-OPINION_STATE_FILE   = DATA_DIR / "opinion_state.json"
+PERIODIC_STATE_FILE  = DATA_DIR / "periodic_state.json"
 FETCH_DAYS           = 1
 MIN_DURATION         = 60
 META_STALE_DAYS      = 7
@@ -49,18 +49,18 @@ REGIONS = {
 }
 
 
-def load_opinion_state():
-    if OPINION_STATE_FILE.exists():
+def load_periodic_state():
+    if PERIODIC_STATE_FILE.exists():
         try:
-            return json.loads(OPINION_STATE_FILE.read_text(encoding="utf-8"))
+            return json.loads(PERIODIC_STATE_FILE.read_text(encoding="utf-8"))
         except Exception:
             pass
     return {}
 
 
-def save_opinion_state(state):
+def save_periodic_state(state):
     DATA_DIR.mkdir(exist_ok=True)
-    OPINION_STATE_FILE.write_text(json.dumps(state, indent=2, ensure_ascii=False), encoding="utf-8")
+    PERIODIC_STATE_FILE.write_text(json.dumps(state, indent=2, ensure_ascii=False), encoding="utf-8")
 
 
 def current_opinion_window(hour):
@@ -70,11 +70,11 @@ def current_opinion_window(hour):
     return None
 
 
-def should_fetch_opinion(now_ist):
+def should_fetch_periodic(now_ist):
     window = current_opinion_window(now_ist.hour)
     if not window:
         return False, None
-    state = load_opinion_state()
+    state = load_periodic_state()
     today = now_ist.strftime("%Y-%m-%d")
     if state.get("last_window") == window and state.get("last_date") == today:
         return False, window
@@ -361,7 +361,7 @@ def main():
 
     # Hindi opinion — window-based fetch (morning 6-10, evening 4-8, night 8-12 IST)
     now_ist = datetime.datetime.now(IST)
-    fetch_opinion, window = should_fetch_opinion(now_ist)
+    fetch_opinion, window = should_fetch_periodic(now_ist)
 
     if fetch_opinion:
         print(f"\n[opinion] === HINDI OPINION ({window} window) ===")
@@ -381,7 +381,7 @@ def main():
         output["bangladesh"] = [v for v in bd_videos if v["timestamp"] >= cutoff_24h]
         print(f"[neighbour] bangladesh: {len(output['bangladesh'])} videos")
 
-        save_opinion_state({"last_window": window, "last_date": now_ist.strftime("%Y-%m-%d")})
+        save_periodic_state({"last_window": window, "last_date": now_ist.strftime("%Y-%m-%d")})
         print(f"[opinion] State saved: window={window}, date={now_ist.strftime('%Y-%m-%d')}")
     elif window:
         print(f"\n[opinion] Already fetched '{window}' window today, carrying forward {len(output['hindi_right_opinion'])} right + {len(output['hindi_left_opinion'])} left videos")

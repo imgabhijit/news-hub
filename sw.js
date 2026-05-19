@@ -1,10 +1,11 @@
-const CACHE_NAME = 'news-portal-v12';
+const CACHE_NAME = 'news-portal-v13';
 const STATIC_ASSETS = [
   '/news-hub/',
   '/news-hub/index.html',
   '/news-hub/bengali.html',
   '/news-hub/national.html',
   '/news-hub/world.html',
+  '/news-hub/opinion.html',
   '/news-hub/neighbour.html',
   '/news-hub/manifest.json',
   '/news-hub/icons/icon-192.png',
