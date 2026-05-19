@@ -209,6 +209,7 @@
 
     .subscribe-bar { padding: 12px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; border-top: 1px solid #2a2d3a; background: #13151f; flex-wrap: wrap; }
     .subscribe-bar p { font-size: 0.85rem; color: #aaa; }
+    .video-credit { font-size: 0.92rem; color: #f5c518; font-weight: 700; letter-spacing: 0.02em; }
     .sub-btn { background: #16a085; border: none; color: #fff; padding: 8px 20px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; font-weight: 700; text-decoration: none; }
     .sub-btn:hover { background: #1abc9c; }
 
@@ -349,6 +350,7 @@
         </div>
       </div>
       <div class="subscribe-bar">
+        <span class="video-credit" id="videoCredit"></span>
         <p>Enjoying the content? Support our channel!</p>
         <a class="sub-btn" href="#" target="_blank" id="modalSubBtn" style="display:none">▶ Subscribe on YouTube</a>
       </div>
@@ -605,13 +607,17 @@ function renderChannels() {
   const rows = Object.entries(byChannel).map(([name,vids])=>[name,vids,medianViews(allByChannelFull2[name]||vids)]).sort((a,b)=>b[2]-a[2]).map(([name,vids]) => {
     const filtered = searchVideos(vids);
     if (!filtered.length) return '';
-    const cards = filtered.map((v,i) => cardHtml(v, i+1, false, false)).join('');
+    const gid = 'chg_' + name.replace(/[^a-z0-9]/gi,'_');
+    const mid = 'chm_' + name.replace(/[^a-z0-9]/gi,'_');
+    const INIT = 12;
+    const cards = filtered.map((v,i) => cardHtml(v, i+1, false, i >= INIT)).join('');
+    const more = filtered.length > INIT ? `<div class="show-more-wrap" id="${mid}"><button class="show-more-btn" onclick="showMore('${gid}','${mid}')">${filtered.length - INIT} more</button></div>` : '';
     return `<div class="channel-row">
       <div class="channel-header">
         <span class="channel-name">${name}</span>
         <span class="channel-count">${filtered.length} videos</span>
       </div>
-      <div class="video-row">${cards}</div>
+      <div class="video-grid" id="${gid}">${cards}</div>${more}
     </div>`;
   }).join('');
   panel.innerHTML = toggle + (rows || emptyState('No results', 'Try a different search.'));
@@ -679,7 +685,9 @@ function onYouTubeIframeAPIReady() {
     }
   });
 }
-function openPlayer(videoId) {
+function openPlayer(videoId, channelName) {
+  const credit = document.getElementById('videoCredit');
+  if (credit) credit.textContent = channelName ? 'Source: ' + channelName : '';
   document.getElementById('playerModal').classList.add('open');
   document.body.style.overflow='hidden'; cancelCountdown();
   if(ytPlayerReady) ytPlayer.loadVideoById(videoId); else pendingVideoId=videoId;
