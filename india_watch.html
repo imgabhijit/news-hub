@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>India Watch</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#e67e22">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #0f1117; color: #e0e0e0; min-height: 100vh; }
+
+    nav {
+      background: #1a1d27; border-bottom: 2px solid #e67e22;
+      padding: 0 24px; display: flex; align-items: center;
+      height: 56px; position: sticky; top: 0; z-index: 200; gap: 16px;
+    }
+    .nav-brand  { font-size: 1.1rem; font-weight: 700; color: #e67e22; text-decoration: none; }
+    .nav-sep    { color: #444; }
+    .nav-region { font-size: 0.95rem; color: #aaa; }
+
+    .tabbar {
+      background: #1a1d27; border-bottom: 1px solid #2a2d3a;
+      padding: 0 24px; display: flex; align-items: center; gap: 4px;
+      position: sticky; top: 56px; z-index: 100;
+    }
+    .tab-btn {
+      background: none; border: none; border-bottom: 3px solid transparent;
+      color: #888; padding: 14px 18px; font-size: 0.9rem; cursor: pointer;
+      transition: color 0.2s, border-color 0.2s; white-space: nowrap;
+    }
+    .tab-btn:hover  { color: #ccc; }
+    .tab-btn.active { color: #fff; font-weight: 600; border-bottom-color: #e67e22; }
+
+    .toolbar-wrap {
+      background: #13151f; border-bottom: 1px solid #1e2130;
+      padding: 10px 24px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap;
+    }
+    .toolbar-label { font-size: 0.72rem; color: #555; text-transform: uppercase; letter-spacing: 0.05em; white-space: nowrap; }
+    .toolbar-group { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+    .toolbar-select {
+      background: #2a2d3a; border: 1px solid #3a3d4a; color: #e0e0e0;
+      padding: 6px 32px 6px 12px; border-radius: 8px; cursor: pointer;
+      font-size: 0.85rem; outline: none; appearance: none;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23888' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right 10px center; transition: border-color 0.2s;
+    }
+    .toolbar-select:hover  { border-color: #e67e22; }
+    .toolbar-select:focus  { border-color: #e67e22; }
+    .toolbar-input {
+      background: #2a2d3a; border: 1px solid #3a3d4a; color: #e0e0e0;
+      padding: 6px 12px; border-radius: 8px; font-size: 0.85rem; outline: none;
+      width: 96px; -moz-appearance: textfield;
+    }
+    .toolbar-input::-webkit-outer-spin-button,
+    .toolbar-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+    .toolbar-input:focus { border-color: #e67e22; }
+    .toolbar-input::placeholder { color: #555; }
+    .toolbar-search {
+      background: #2a2d3a; border: 1px solid #3a3d4a; color: #e0e0e0;
+      padding: 6px 12px 6px 34px; border-radius: 8px; font-size: 0.85rem; outline: none;
+      width: 200px; transition: border-color 0.2s, width 0.2s;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: 10px center;
+    }
+    .toolbar-search:focus { border-color: #e67e22; width: 260px; }
+    .toolbar-search::placeholder { color: #555; }
+
+    .tab-panel { display: none; padding: 24px; }
+    .tab-panel.active { display: block; }
+    .section-label { font-size: 0.78rem; font-weight: 600; color: #666; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 16px; }
+
+    .source-note { background: #1a1d27; border: 1px solid #2a2d3a; border-left: 3px solid #e67e22; border-radius: 6px; padding: 10px 14px; margin-bottom: 18px; font-size: 0.8rem; color: #888; }
+    .source-note strong { color: #e67e22; }
+
+    .video-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 18px; }
+    .video-card { background: #1a1d27; border: 1px solid #2a2d3a; border-radius: 10px; overflow: hidden; cursor: pointer; transition: transform 0.2s, border-color 0.2s; }
+    .video-card:hover { transform: translateY(-3px); border-color: #e67e22; }
+    .video-card.hidden { display: none; }
+
+    .thumb-wrap { position: relative; width: 100%; padding-top: 56.25%; background: #111; }
+    .thumb-wrap img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+    .rank-badge { position: absolute; top: 7px; left: 7px; background: #e67e22; color: #fff; font-size: 0.7rem; font-weight: 700; padding: 2px 7px; border-radius: 4px; }
+    .live-badge { position: absolute; top: 7px; left: 7px; background: #e63946; color: #fff; font-size: 0.7rem; font-weight: 700; padding: 2px 8px; border-radius: 4px; display: flex; align-items: center; gap: 4px; }
+    .live-dot { width: 6px; height: 6px; background: #fff; border-radius: 50%; animation: pulse 1.2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    .duration-badge { position: absolute; bottom: 6px; right: 6px; background: rgba(0,0,0,0.82); color: #fff; font-size: 0.7rem; font-weight: 600; padding: 1px 5px; border-radius: 3px; letter-spacing: 0.02em; }
+    .newtab-btn { position: absolute; top: 7px; right: 7px; z-index: 2; background: rgba(0,0,0,0.65); border: 1px solid rgba(255,255,255,0.25); color: #fff; width: 26px; height: 26px; border-radius: 4px; cursor: pointer; font-size: 0.82rem; line-height: 1; display: flex; align-items: center; justify-content: center; opacity: 0.6; transition: opacity 0.15s; padding: 0; }
+    .video-card:hover .newtab-btn { opacity: 1; }
+    @media (max-width: 768px) { .newtab-btn { opacity: 0.85; } }
+
+    .card-body    { padding: 11px; }
+    .card-channel { font-size: 0.72rem; color: #e67e22; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 4px; }
+    .card-title   { font-size: 0.88rem; color: #e0e0e0; line-height: 1.4; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; margin-bottom: 8px; }
+    .card-meta    { display: flex; justify-content: space-between; font-size: 0.74rem; color: #777; }
+    .card-views   { color: #aaa; font-weight: 600; }
+
+    .show-more-wrap { text-align: center; margin-top: 28px; }
+    .show-more-btn  { background: #2a2d3a; border: 1px solid #3a3d4a; color: #ccc; padding: 10px 32px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; transition: all 0.2s; }
+    .show-more-btn:hover { background: #3a3d4a; color: #fff; }
+
+    .channel-row   { margin-bottom: 36px; }
+    .channel-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #2a2d3a; }
+    .channel-name  { font-size: 0.95rem; font-weight: 700; color: #fff; }
+    .channel-count { font-size: 0.75rem; color: #555; background: #2a2d3a; padding: 2px 8px; border-radius: 10px; }
+    .video-row { display: flex; gap: 12px; overflow-x: auto; padding-bottom: 6px; scrollbar-width: thin; scrollbar-color: #3a3d4a transparent; }
+    .video-row::-webkit-scrollbar { height: 3px; }
+    .video-row::-webkit-scrollbar-thumb { background: #3a3d4a; border-radius: 2px; }
+    .video-row .video-card { flex: 0 0 210px; }
+    .video-row .card-channel { display: none; }
+
+    .live-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 18px; }
+
+    .empty-state { text-align: center; padding: 80px 20px; color: #444; }
+    .empty-state h3 { font-size: 1.1rem; margin-bottom: 8px; color: #555; }
+    .empty-state p  { font-size: 0.88rem; }
+
+    #toast { position: fixed; bottom: 24px; right: 24px; background: #1a1d27; border: 1px solid #3a3d4a; color: #e0e0e0; padding: 12px 20px; border-radius: 8px; font-size: 0.88rem; opacity: 0; transition: opacity 0.3s; z-index: 2000; pointer-events: none; }
+    #toast.show { opacity: 1; }
+
+    .ch-view-toggle { display: flex; gap: 8px; margin-bottom: 16px; }
+    .ch-view-btn { background: #2a2d3a; border: 1px solid #3a3d4a; color: #888; padding: 6px 16px; border-radius: 6px; cursor: pointer; font-size: 0.82rem; transition: all 0.2s; }
+    .ch-view-btn.active { background: #2a1500; border-color: #e67e22; color: #e67e22; }
+    .ch-view-btn:hover:not(.active) { color: #ccc; }
+    .channel-card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 14px; }
+    .channel-card { background: #1a1d27; border: 1px solid #2a2d3a; border-radius: 10px; overflow: hidden; cursor: pointer; transition: transform 0.2s, border-color 0.2s; }
+    .channel-card:hover { transform: translateY(-3px); border-color: #e67e22; }
+    .channel-card-thumb { width: 100%; aspect-ratio: 16/9; object-fit: cover; display: block; }
+    .channel-card-info { padding: 10px 12px; }
+    .channel-card-name { font-size: 0.85rem; font-weight: 700; color: #fff; margin-bottom: 5px; }
+    .channel-card-views { font-size: 0.78rem; color: #e67e22; font-weight: 600; }
+    .channel-card-count { font-size: 0.68rem; color: #666; margin-top: 3px; }
+    .ch-detail-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid #2a2d3a; }
+
+    .modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.92); z-index: 1000; align-items: center; justify-content: center; padding: 16px; }
+    .modal-overlay.open { display: flex; }
+    .modal-wrapper { position: relative; width: 100%; max-width: 900px; }
+    .modal-box { position: relative; width: 100%; background: #1a1d27; border-radius: 12px; overflow: hidden; box-shadow: 0 24px 80px rgba(0,0,0,0.6); }
+    .modal-close { position: absolute; top: 8px; left: 8px; right: auto; z-index: 20; background: rgba(0,0,0,0.75); border: 1px solid #555; color: #fff; width: 34px; height: 34px; border-radius: 50%; cursor: pointer; font-size: 1rem; }
+    .modal-close:hover { background: #e67e22; border-color: #e67e22; }
+    .player-wrap { position: relative; width: 100%; padding-top: 56.25%; background: #000; }
+    #ytPlayerDiv { position: absolute; inset: 0; width: 100%; height: 100%; }
+    .next-overlay { display: none; position: absolute; inset: 0; background: rgba(15,17,23,0.93); flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center; padding: 24px; z-index: 10; }
+    .next-overlay.show { display: flex; }
+    .next-label   { font-size: 0.75rem; color: #888; text-transform: uppercase; letter-spacing: 0.08em; }
+    .next-thumb   { width: 180px; border-radius: 8px; }
+    .next-ch-name { font-size: 0.8rem; color: #e67e22; font-weight: 700; text-transform: uppercase; }
+    .next-count   { font-size: 1.1rem; color: #aaa; }
+    .next-count span { color: #fff; font-weight: 700; font-size: 1.4rem; }
+    .next-cancel  { background: #2a2d3a; border: 1px solid #3a3d4a; color: #ccc; padding: 8px 24px; border-radius: 6px; cursor: pointer; font-size: 0.85rem; }
+    .subscribe-bar { padding: 10px 20px; display: flex; align-items: center; justify-content: space-between; gap: 16px; border-top: 1px solid #2a2d3a; background: #13151f; flex-wrap: wrap; }
+    .subscribe-bar p { font-size: 0.85rem; color: #aaa; }
+    .video-credit { font-size: 0.92rem; color: #e67e22; font-weight: 700; letter-spacing: 0.02em; }
+
+    html { -webkit-text-size-adjust: 100%; }
+    .tabbar { overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; }
+    .tabbar::-webkit-scrollbar { display: none; }
+    @media (max-width: 768px) {
+      nav { padding: 0 12px; gap: 10px; }
+      .tab-btn { padding: 12px 12px; font-size: 0.82rem; }
+      .toolbar-wrap { padding: 8px 12px; gap: 10px; }
+      .toolbar-label { font-size: 0.63rem; }
+      .toolbar-select { font-size: 0.8rem; padding: 5px 26px 5px 9px; }
+      .toolbar-input { width: 80px; }
+      .tab-panel { padding: 16px 12px; }
+      .modal-wrapper { max-width: 100%; }
+      .modal-overlay { align-items: flex-start; padding: 56px 12px 12px; }
+    }
+    @media (max-width: 600px) {
+      .video-grid { grid-template-columns: 1fr; gap: 12px; }
+      .live-grid  { grid-template-columns: 1fr; gap: 12px; }
+      .card-channel { font-size: 0.78rem; }
+      .card-title   { font-size: 0.92rem; }
+      .toolbar-search { flex: 0 0 100%; width: 100%; max-width: none; }
+    }
+    @media (orientation: landscape) and (max-height: 600px) {
+      .modal-overlay { justify-content: flex-start; align-items: center; padding: 6px; }
+      .modal-box     { max-width: 67vw; margin-left: 4px; }
+      .modal-wrapper { max-width: 67vw; }
+    }
+    @media (min-width: 1100px) {
+      .modal-overlay { justify-content: center; padding-left: 0; }
+      .modal-wrapper { max-width: min(1200px, 79vw); }
+    }
+    @supports (padding: env(safe-area-inset-bottom)) {
+      nav  { padding-left: max(12px, env(safe-area-inset-left)); padding-right: max(12px, env(safe-area-inset-right)); }
+      body { padding-bottom: env(safe-area-inset-bottom); }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-brand" href="index.html">🔭 News Portal</a>
+  <span class="nav-sep">/</span>
+  <span class="nav-region">India Watch</span>
+</nav>
+
+<div class="tabbar">
+  <button class="tab-btn" id="btn-all"      onclick="switchTab('all')">🇮🇳 All India</button>
+  <button class="tab-btn" id="btn-wb"       onclick="switchTab('wb')">🏙 West Bengal</button>
+  <button class="tab-btn" id="btn-live"     onclick="switchTab('live')">🔴 Live</button>
+  <button class="tab-btn" id="btn-channels" onclick="switchTab('channels')">📺 By Channel</button>
+</div>
+
+<div class="toolbar-wrap" id="toolbarWrap">
+  <div class="toolbar-group">
+    <span class="toolbar-label">Time</span>
+    <select class="toolbar-select" id="filterSelect" onchange="setFilter(this.value)">
+      <option value="today">Today</option>
+      <option value="tonight">Tonight</option>
+      <option value="lastnight">Last Night</option>
+      <option value="24h">24 hours</option>
+      <option value="5h">5 hours</option>
+      <option value="3h">3 hours</option>
+      <option value="1h">1 hour</option>
+    </select>
+  </div>
+  <div class="toolbar-group">
+    <span class="toolbar-label">Sort</span>
+    <select class="toolbar-select" id="sortSelect" onchange="setSort(this.value)">
+      <option value="views">👁 Views</option>
+      <option value="velocity">⚡ Velocity</option>
+      <option value="normalized">📊 Trending</option>
+      <option value="newest">🕐 Newest</option>
+      <option value="oldest">🕰 Oldest</option>
+    </select>
+  </div>
+  <div class="toolbar-group">
+    <span class="toolbar-label">Min Views</span>
+    <select class="toolbar-select" id="viewsSelect" onchange="setMinViews(this.value)">
+      <option value="0">Any</option>
+      <option value="auto">Auto</option>
+      <option value="1000">1K+</option>
+      <option value="5000">5K+</option>
+      <option value="10000">10K+</option>
+      <option value="25000">25K+</option>
+      <option value="50000">50K+</option>
+      <option value="100000">100K+</option>
+      <option value="custom">Custom…</option>
+    </select>
+    <input type="number" id="customViewsInput" class="toolbar-input"
+           placeholder="e.g. 75000" min="0" step="1000"
+           oninput="applyCustomViews(this.value)" style="display:none">
+  </div>
+  <div class="toolbar-group">
+    <span class="toolbar-label">Duration</span>
+    <select class="toolbar-select" id="durationSelect" onchange="setDuration(this.value)">
+      <option value="all">All</option>
+      <option value="upto30">Up to 30 min</option>
+      <option value="short">Under 1 min</option>
+      <option value="1to3">1–3 min</option>
+      <option value="3to15">3–15 min</option>
+      <option value="15to30">15–30 min</option>
+      <option value="long">30+ min</option>
+    </select>
+  </div>
+  <input type="search" id="searchInput" class="toolbar-search" placeholder="Search title or channel…"
+         oninput="setSearch(this.value)">
+</div>
+
+<div class="tab-panel" id="panel-all"></div>
+<div class="tab-panel" id="panel-wb"></div>
+<div class="tab-panel" id="panel-live"></div>
+<div class="tab-panel" id="panel-channels"></div>
+
+<div class="modal-overlay" id="playerModal" onclick="onModalClick(event)">
+  <div class="modal-wrapper">
+    <button class="modal-close" onclick="closePlayer()">✕</button>
+    <div class="modal-box">
+      <div class="player-wrap">
+        <div id="ytPlayerDiv"></div>
+        <div class="next-overlay" id="nextOverlay">
+          <div class="next-label">Up Next</div>
+          <div class="next-ch-name" id="nextChName"></div>
+          <img class="next-thumb" id="nextThumb" src="" alt="">
+          <div class="next-count">Playing in <span id="countNum">5</span>s</div>
+          <button class="next-cancel" onclick="cancelCountdown()">Cancel</button>
+        </div>
+      </div>
+      <div class="subscribe-bar">
+        <span class="video-credit" id="videoCredit"></span>
+        <p>Enjoying the content? Support our channel!</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+<script src="https://www.youtube.com/iframe_api"></script>
+<script>
+// ── India Watch keywords ──────────────────────────────────────────────────────
+const INDIA_KW_EN = [
+  // Country identity
+  'india','indian','bharat','bharatiya','hindustan','hindustani',
+  // Prime Minister & Cabinet
+  'narendra modi','modi','amit shah','rajnath singh','nirmala sitharaman',
+  'jaishankar','s jaishankar','smriti irani','jp nadda','nitin gadkari',
+  'dharmendra pradhan','kiren rijiju',
+  // State Chief Ministers (prominent)
+  'yogi adityanath','devendra fadnavis','nitish kumar','hemant soren',
+  'pinarayi vijayan','mk stalin','m k stalin','arvind kejriwal',
+  'chandrashekhar rao','bhupesh baghel','shivraj singh',
+  // Opposition
+  'rahul gandhi','priyanka gandhi','sonia gandhi','mallikarjun kharge',
+  // West Bengal — politicians
+  'mamata banerjee','mamata','suvendu adhikari','abhishek banerjee',
+  'firhad hakim','dilip ghosh','babul supriyo','partha chatterjee',
+  'anubrata mondal','madan mitra','sudip bandyopadhyay','derek o\'brien',
+  // Parties
+  'bjp','rss','rashtriya swayamsevak','trinamool','tmc',
+  'aam aadmi party','congress',
+  // West Bengal — districts & cities
+  'west bengal','kolkata','howrah','siliguri','darjeeling','asansol','durgapur',
+  'jalpaiguri','cooch behar','malda','murshidabad','nadia','bardhaman',
+  'bankura','purulia','midnapore','medinipur','hooghly','birbhum',
+  'krishnanagar','berhampore','nabadwip','shantipur','bolpur','suri',
+  'rampurhat','raiganj','islampur','balurghat','alipurduar',
+  'habra','barasat','basirhat','kalyani','ranaghat','chakdaha',
+  'kharagpur','tamluk','haldia','contai','jhargram','bishnupur',
+  'katwa','kalna','arambagh','uluberia','bally','serampore','rishra',
+  'barrackpore','naihati','bangaon','kamarhati','panihati',
+  'salt lake','new town','rajarhat','dum dum','behala','jadavpur',
+  'north 24 parganas','south 24 parganas',
+  // Major Indian cities
+  'delhi','new delhi','mumbai','bombay','chennai','madras',
+  'bangalore','bengaluru','hyderabad','ahmedabad','pune','jaipur',
+  'lucknow','agra','varanasi','banaras','kashi','amritsar',
+  'chandigarh','bhopal','indore','nagpur','surat','vadodara','rajkot',
+  'patna','ranchi','bhubaneswar','cuttack','guwahati','imphal','shillong',
+  'kohima','agartala','gangtok','dehradun','shimla','jammu','srinagar','leh',
+  'kochi','cochin','thiruvananthapuram','trivandrum','coimbatore','madurai',
+  'udaipur','jodhpur','haridwar','rishikesh','prayagraj','allahabad',
+  'gorakhpur','mathura','vrindavan','ayodhya','meerut','noida','ghaziabad',
+  'faridabad','gurugram','gurgaon','panaji','raipur','aurangabad',
+  // Indian states & union territories
+  'assam','manipur','meghalaya','arunachal','nagaland','mizoram',
+  'sikkim','tripura','odisha','orissa','chhattisgarh','jharkhand',
+  'uttarakhand','himachal','rajasthan','gujarat','maharashtra',
+  'karnataka','kerala','tamil nadu','andhra pradesh','telangana',
+  'punjab','haryana','uttar pradesh','uttarpradesh','bihar',
+  'madhya pradesh','kashmir','ladakh','jammu and kashmir',
+  'northeast india','north east india',
+  // Religious & controversial places
+  'babri masjid','ram mandir','ram temple','golden temple','tirupati',
+  'kashi vishwanath','gyanvapi','somnath','mathura temple','vrindavan',
+  // Political issues & institutions
+  'hindutva','article 370','surgical strike','pulwama','balakot',
+  'demonetisation','demonetization','supreme court of india',
+  'parliament of india','lok sabha','rajya sabha',
+  'election commission of india','indian army','indian navy',
+  'indian air force','isro','reserve bank of india',
+  'enforcement directorate','cbi india','nia india',
+  // Media outlets (India-specific)
+  'ndtv','aaj tak','india today','zee news','republic tv','news18',
+  'times of india','hindustan times','indian express',
+];
+
+const INDIA_KW_BN = [
+  // Country identity
+  'ভারত','ভারতীয়','ভারতবর্ষ','ভারতের','হিন্দুস্তান',
+  // PM & leaders
+  'নরেন্দ্র মোদি','মোদি','অমিত শাহ','রাজনাথ সিং','নির্মলা সীতারামন',
+  'জয়শংকর','যোগী আদিত্যনাথ','নীতিশ কুমার','হেমন্ত সরেন',
+  // Opposition
+  'রাহুল গান্ধী','প্রিয়াঙ্কা গান্ধী','সোনিয়া গান্ধী',
+  'অরবিন্দ কেজরিওয়াল','খাড়গে',
+  // Parties
+  'বিজেপি','আরএসএস','কংগ্রেস','তৃণমূল','টিএমসি','আম আদমি পার্টি',
+  // WB politicians
+  'মমতা বন্দ্যোপাধ্যায়','শুভেন্দু অধিকারী','অভিষেক বন্দ্যোপাধ্যায়',
+  'ফিরহাদ হাকিম','দিলীপ ঘোষ','অনুব্রত মণ্ডল','পার্থ চট্টোপাধ্যায়',
+  // WB places
+  'পশ্চিমবঙ্গ','কলকাতা','হাওড়া','শিলিগুড়ি','দার্জিলিং',
+  'আসানসোল','দুর্গাপুর','জলপাইগুড়ি','কোচবিহার','মালদা',
+  'মুর্শিদাবাদ','নদিয়া','বর্ধমান','বাঁকুড়া','পুরুলিয়া',
+  'মেদিনীপুর','হুগলি','বীরভূম','কৃষ্ণনগর','বহরমপুর',
+  'নবদ্বীপ','বোলপুর','সুরি','রামপুরহাট','রায়গঞ্জ',
+  'বালুরঘাট','ইসলামপুর','আলিপুরদুয়ার','বারাসাত','হাবড়া',
+  'বসিরহাট','কল্যাণী','রানাঘাট','খড়গপুর','তমলুক','হলদিয়া',
+  'কাঁথি','ঝাড়গ্রাম','কাটোয়া','উলুবেড়িয়া','শ্রীরামপুর',
+  'ব্যারাকপুর','নৈহাটি','বনগাঁ','সল্টলেক','নিউটাউন',
+  // Other Indian cities in Bengali
+  'দিল্লি','নয়া দিল্লি','মুম্বাই','চেন্নাই','বেঙ্গালুরু',
+  'হায়দরাবাদ','আহমেদাবাদ','পুণে','জয়পুর','লখনউ',
+  'আগ্রা','বারাণসী','বানারস','অমৃতসর','চণ্ডীগড়',
+  'ভোপাল','ইন্দোর','নাগপুর','সুরাট','পাটনা','রাঁচি',
+  'ভুবনেশ্বর','গুয়াহাটি','দেহরাদুন','শিমলা',
+  'জম্মু','শ্রীনগর','লেহ','কোচি','কোচিন',
+  'কোয়েম্বাটোর','মাদুরাই','উদয়পুর','জোধপুর',
+  'হরিদ্বার','ঋষিকেশ','প্রয়াগরাজ','এলাহাবাদ',
+  'গোরখপুর','মথুরা','অযোধ্যা','বৃন্দাবন','মিরাট',
+  'নয়ডা','গুরগাঁও','ইম্ফাল','শিলং',
+  // Indian states in Bengali
+  'আসাম','মণিপুর','মেঘালয়','নাগাল্যান্ড','মিজোরাম',
+  'সিকিম','ত্রিপুরা','ওড়িশা','ছত্তিশগড়','ঝাড়খণ্ড',
+  'উত্তরাখণ্ড','হিমাচল প্রদেশ','রাজস্থান','গুজরাট',
+  'মহারাষ্ট্র','কর্ণাটক','কেরালা','তামিলনাড়ু',
+  'অন্ধ্র প্রদেশ','তেলাঙ্গানা','গোয়া','হরিয়ানা',
+  'উত্তর প্রদেশ','বিহার','মধ্যপ্রদেশ','কাশ্মীর','লাদাখ',
+  // Religious places
+  'বাবরি মসজিদ','রাম মন্দির','স্বর্ণমন্দির','তিরুপতি',
+  'কাশী বিশ্বনাথ','জ্ঞানবাপী','সোমনাথ',
+  // Political issues & institutions (qualified where needed)
+  'হিন্দুত্ব','সিএএ','এনআরসি','৩৭০ ধারা','পুলওয়ামা','বালাকোট',
+  'নোটবন্দি','ইসরো',
+  'ভারতের সুপ্রিম কোর্ট','ভারতের সংসদ','ভারতের লোকসভা',
+  'ভারতের রাজ্যসভা','ভারতীয় সেনাবাহিনী','ভারতীয় নৌবাহিনী',
+  'ভারতীয় বায়ুসেনা','ভারতীয় বায়ু সেনা',
+  'ভারতের নির্বাচন কমিশন','ভারতের রিজার্ভ ব্যাংক',
+];
+
+// West Bengal-specific keywords (subset)
+const WB_KW_EN = [
+  'west bengal','mamata','trinamool','tmc','suvendu adhikari',
+  'abhishek banerjee','firhad hakim','dilip ghosh','babul supriyo',
+  'partha chatterjee','anubrata mondal','madan mitra','derek o\'brien',
+  'kolkata','howrah','siliguri','darjeeling','asansol','durgapur',
+  'jalpaiguri','cooch behar','malda','murshidabad','nadia','bardhaman',
+  'bankura','purulia','midnapore','medinipur','hooghly','birbhum',
+  'krishnanagar','berhampore','nabadwip','bolpur','rampurhat','raiganj',
+  'islampur','balurghat','alipurduar','habra','barasat','basirhat',
+  'kalyani','ranaghat','kharagpur','tamluk','haldia','contai','jhargram',
+  'bishnupur','katwa','arambagh','uluberia','serampore','barrackpore',
+  'naihati','bangaon','salt lake','new town','rajarhat','behala',
+  'north 24 parganas','south 24 parganas',
+];
+const WB_KW_BN = [
+  'পশ্চিমবঙ্গ','মমতা','তৃণমূল','টিএমসি','শুভেন্দু অধিকারী',
+  'অভিষেক বন্দ্যোপাধ্যায়','ফিরহাদ হাকিম','দিলীপ ঘোষ',
+  'অনুব্রত মণ্ডল','পার্থ চট্টোপাধ্যায়',
+  'কলকাতা','হাওড়া','শিলিগুড়ি','দার্জিলিং','আসানসোল','দুর্গাপুর',
+  'জলপাইগুড়ি','কোচবিহার','মালদা','মুর্শিদাবাদ','নদিয়া','বর্ধমান',
+  'বাঁকুড়া','পুরুলিয়া','মেদিনীপুর','হুগলি','বীরভূম',
+  'কৃষ্ণনগর','বহরমপুর','নবদ্বীপ','বোলপুর','রামপুরহাট','রায়গঞ্জ',
+  'বালুরঘাট','ইসলামপুর','আলিপুরদুয়ার','বারাসাত','হাবড়া','বসিরহাট',
+  'কল্যাণী','রানাঘাট','খড়গপুর','তমলুক','হলদিয়া','কাঁথি','ঝাড়গ্রাম',
+  'কাটোয়া','উলুবেড়িয়া','শ্রীরামপুর','ব্যারাকপুর','নৈহাটি','বনগাঁ',
+  'সল্টলেক','নিউটাউন',
+];
+
+function isIndiaRelated(v) {
+  const t = v.title.toLowerCase();
+  return INDIA_KW_EN.some(kw => t.includes(kw)) ||
+         INDIA_KW_BN.some(kw => v.title.includes(kw));
+}
+function isWBRelated(v) {
+  const t = v.title.toLowerCase();
+  return WB_KW_EN.some(kw => t.includes(kw)) ||
+         WB_KW_BN.some(kw => v.title.includes(kw));
+}
+
+// ── Config & state ────────────────────────────────────────────────────────────
+const TAB_DEFAULTS      = { all: 'today', wb: 'today', live: '1h', channels: '24h' };
+const SORT_DEFAULTS     = { all: 'velocity', wb: 'velocity', live: 'views', channels: 'views' };
+const DURATION_DEFAULTS = { all: 'upto30', wb: 'upto30', live: 'all', channels: 'all' };
+const THRESHOLDS        = { lastnight:40000, today:25000, tonight:8000, '1h':3000, '3h':5000, '5h':10000, '24h':50000 };
+
+const params        = new URLSearchParams(location.search);
+let currentTab      = params.get('tab')    || 'all';
+let currentFilter   = params.get('filter') || TAB_DEFAULTS[currentTab];
+let currentSort     = params.get('sort')   || SORT_DEFAULTS[currentTab];
+let currentMinViews = '0';
+let customMinViews  = 0;
+let currentDuration = DURATION_DEFAULTS[currentTab] || 'upto30';
+let currentSearch   = '';
+let channelView     = 'grid';
+let selectedChannel = null;
+let allData         = null;
+let indiaPool       = [];
+let wbPool          = [];
+let ytPlayer = null, ytPlayerReady = false, pendingVideoId = null, countdownTimer = null;
+
+// ── Time ranges ───────────────────────────────────────────────────────────────
+function getTimeRange(filter) {
+  const now = Date.now() / 1000, d = new Date();
+  switch (filter) {
+    case 'lastnight': { const t=new Date(d); t.setHours(6,0,0,0); const y=new Date(t); y.setDate(y.getDate()-1); y.setHours(20,0,0,0); return [y.getTime()/1000, t.getTime()/1000]; }
+    case 'today':   { const t=new Date(d); t.setHours(6,0,0,0); return [t.getTime()/1000, now]; }
+    case 'tonight': { const t=new Date(d); t.setHours(18,0,0,0); return [t.getTime()/1000, now]; }
+    case '1h':  return [now-3600, now];
+    case '3h':  return [now-10800, now];
+    case '5h':  return [now-18000, now];
+    case '24h': return [now-86400, now];
+    default:    return [now-18000, now];
+  }
+}
+function filterByRange(videos, filter) { const [s,e]=getTimeRange(filter); return videos.filter(v=>v.timestamp>=s&&v.timestamp<=e); }
+
+// ── Sort / filter helpers ─────────────────────────────────────────────────────
+function sortedVideos(videos, filter, sort) {
+  const now = Date.now() / 1000;
+  switch (sort) {
+    case 'views':    return [...videos].sort((a,b)=>b.view_count-a.view_count);
+    case 'velocity': return [...videos].map(v=>({...v,_v:v.view_count/Math.max(0.25,(now-v.timestamp)/3600)})).sort((a,b)=>b._v-a._v);
+    case 'normalized': { const d=['1h','3h','5h','tonight'].includes(filter); return [...videos].map(v=>({...v,_v:v.subscribers?v.view_count/v.subscribers*(d?1/Math.sqrt(Math.max(0.25,(now-v.timestamp)/3600)):1):0})).filter(v=>v._v>0).sort((a,b)=>b._v-a._v); }
+    case 'newest':   return [...videos].sort((a,b)=>b.timestamp-a.timestamp);
+    case 'oldest':   return [...videos].sort((a,b)=>a.timestamp-b.timestamp);
+    default:         return videos;
+  }
+}
+function getMinViewsNum(filter) {
+  if (currentMinViews==='auto')   return THRESHOLDS[filter]||5000;
+  if (currentMinViews==='custom') return customMinViews||0;
+  return parseInt(currentMinViews)||0;
+}
+function matchesDuration(v) {
+  const d=v.duration||0;
+  switch (currentDuration) {
+    case 'upto30': return d<1800;
+    case 'short':  return d<60;
+    case '1to3':   return d>=60&&d<180;
+    case '3to15':  return d>=180&&d<900;
+    case '15to30': return d>=900&&d<1800;
+    case 'long':   return d>=1800;
+    default:       return true;
+  }
+}
+function searchVideos(videos) {
+  if (!currentSearch) return videos;
+  const q=currentSearch.toLowerCase();
+  return videos.filter(v=>v.title.toLowerCase().includes(q)||v.channel_name.toLowerCase().includes(q));
+}
+function getVideos(pool, filter, sort, n=100) {
+  let p=filterByRange(pool,filter).filter(v=>v.live_broadcast!=='live').filter(v=>v.view_count>=getMinViewsNum(filter)).filter(v=>matchesDuration(v));
+  return searchVideos(sortedVideos(p,filter,sort)).slice(0,n);
+}
+function getVideosPerChannel(pool, filter, sort, n=10) {
+  const p=filterByRange(pool,filter).filter(v=>v.live_broadcast!=='live').filter(v=>matchesDuration(v));
+  const b={};
+  p.forEach(v=>{(b[v.channel_name]=b[v.channel_name]||[]).push(v);});
+  const r={};
+  Object.entries(b).forEach(([name,vids])=>{r[name]=sortedVideos(vids,filter,sort).slice(0,n);});
+  return r;
+}
+
+// ── Formatters ────────────────────────────────────────────────────────────────
+function fmtViews(n) { if(n>=1e6)return`${(n/1e6).toFixed(1)}M`;if(n>=1e3)return`${(n/1e3).toFixed(1)}K`;return String(n); }
+function medianViews(vids) { if(!vids||!vids.length)return 0; const s=[...vids].map(v=>v.view_count).sort((a,b)=>a-b); const m=Math.floor(s.length/2); return s.length%2?s[m]:(s[m-1]+s[m])/2; }
+function formatAgo(ts) { const d=Math.floor(Date.now()/1000-ts); if(d<60)return`${d}s ago`;if(d<3600)return`${Math.floor(d/60)}m ago`;if(d<86400)return`${Math.floor(d/3600)}h ago`;return`${Math.floor(d/86400)}d ago`; }
+function fmtDuration(sec) { const m=Math.floor(sec/60),s=sec%60; return m>=60?`${Math.floor(m/60)}:${String(m%60).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; }
+function filterLabel() { return{lastnight:'Last Night',today:'Today',tonight:'Tonight','1h':'1h','3h':'3h','5h':'5h','24h':'24h'}[currentFilter]||currentFilter; }
+
+// ── Card builder ──────────────────────────────────────────────────────────────
+function cardHtml(v, rank, isLive, hidden) {
+  const badge = isLive ? `<span class="live-badge"><span class="live-dot"></span> LIVE</span>` : rank ? `<span class="rank-badge">#${rank}</span>` : '';
+  const dur = !isLive && v.duration ? `<span class="duration-badge">${fmtDuration(v.duration)}</span>` : '';
+  const safe   = v.title.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+  const safeCh = v.channel_name.replace(/'/g,"\\'");
+  return `
+    <div class="video-card${hidden?' hidden':''}" onclick="openPlayer('${v.video_id}','${safeCh}')">
+      <div class="thumb-wrap">
+        <img src="${v.thumbnail}" alt="" loading="lazy" onerror="this.src='https://i.ytimg.com/vi/${v.video_id}/mqdefault.jpg'">
+        ${badge}${dur}
+        <button class="newtab-btn" onclick="openInNewTab(event,'${v.video_id}','${safe}')">↗</button>
+      </div>
+      <div class="card-body">
+        <div class="card-channel">${v.channel_name}</div>
+        <div class="card-title">${v.title}</div>
+        <div class="card-meta">
+          <span class="card-views">👁 ${fmtViews(v.view_count)}</span>
+          <span>${formatAgo(v.timestamp)}</span>
+        </div>
+      </div>
+    </div>`;
+}
+function emptyState(t, s) { return `<div class="empty-state"><h3>${t}</h3><p>${s}</p></div>`; }
+const SOURCE_NOTE = `<div class="source-note"><strong>India Watch</strong> — India &amp; West Bengal news coverage from Bangladesh media.</div>`;
+
+// ── Render ────────────────────────────────────────────────────────────────────
+function renderAll() { if (!allData) return; renderIndiaAll(); renderWB(); renderLive(); renderChannels(); }
+
+function renderIndiaAll() {
+  const panel = document.getElementById('panel-all');
+  const videos = getVideos(indiaPool, currentFilter, currentSort);
+  if (!videos.length) { panel.innerHTML = SOURCE_NOTE + emptyState('No India stories in this window', 'Try a wider time filter.'); return; }
+  const cards = videos.map((v,i) => cardHtml(v, i+1, false, i>=30)).join('');
+  const more  = videos.length > 30 ? `<div class="show-more-wrap" id="smAll"><button class="show-more-btn" onclick="showMore('allGrid','smAll')">${videos.length-30} more stories</button></div>` : '';
+  panel.innerHTML = SOURCE_NOTE + `<p class="section-label">Top ${videos.length} India stories · ${filterLabel()}</p><div class="video-grid" id="allGrid">${cards}</div>${more}`;
+}
+
+function renderWB() {
+  const panel = document.getElementById('panel-wb');
+  const videos = getVideos(wbPool, currentFilter, currentSort);
+  if (!videos.length) { panel.innerHTML = SOURCE_NOTE + emptyState('No West Bengal stories in this window', 'Try a wider time filter.'); return; }
+  const cards = videos.map((v,i) => cardHtml(v, i+1, false, i>=30)).join('');
+  const more  = videos.length > 30 ? `<div class="show-more-wrap" id="smWB"><button class="show-more-btn" onclick="showMore('wbGrid','smWB')">${videos.length-30} more stories</button></div>` : '';
+  panel.innerHTML = SOURCE_NOTE + `<p class="section-label">Top ${videos.length} West Bengal stories · ${filterLabel()}</p><div class="video-grid" id="wbGrid">${cards}</div>${more}`;
+}
+
+function renderLive() {
+  const panel = document.getElementById('panel-live');
+  let live = indiaPool.filter(v => v.live_broadcast === 'live');
+  live = live.filter(v => v.view_count >= getMinViewsNum(currentFilter)).filter(v => matchesDuration(v));
+  live = searchVideos(sortedVideos(live, currentFilter, currentSort));
+  if (!live.length) { panel.innerHTML = emptyState('No India-related live streams right now', 'Check back soon.'); return; }
+  const cards = live.map((v,i) => cardHtml(v, i+1, true, false)).join('');
+  panel.innerHTML = `<p class="section-label">${live.length} live stream(s)</p><div class="live-grid">${cards}</div>`;
+}
+
+function setChannelView(v) { if (v==='list') selectedChannel=null; channelView=v; renderChannels(); }
+function setSelectedChannel(name) { selectedChannel=name; renderChannels(); }
+
+function renderChannels() {
+  const panel = document.getElementById('panel-channels');
+  const byChannel = getVideosPerChannel(indiaPool, currentFilter, currentSort);
+  if (!Object.keys(byChannel).length) { panel.innerHTML = emptyState('No channel data in this window', 'Try a wider filter.'); return; }
+
+  const toggle = `<div class="ch-view-toggle">
+    <button class="ch-view-btn ${channelView==='list'?'active':''}" onclick="setChannelView('list')">☰ List</button>
+    <button class="ch-view-btn ${channelView==='grid'?'active':''}" onclick="setChannelView('grid')">⊞ Channels</button>
+  </div>`;
+
+  if (channelView === 'grid') {
+    const allByChannel = getVideosPerChannel(indiaPool, currentFilter, currentSort, Infinity);
+    if (selectedChannel) {
+      const vids   = allByChannel[selectedChannel] || [];
+      const sorted = searchVideos(sortedVideos(vids, currentFilter, currentSort));
+      const cards  = sorted.map((v,i) => cardHtml(v, i+1, false, i>=30)).join('');
+      const more   = sorted.length > 30 ? `<div class="show-more-wrap" id="smChD"><button class="show-more-btn" onclick="showMore('chDetGrid','smChD')">${sorted.length-30} more</button></div>` : '';
+      panel.innerHTML = toggle +
+        `<div class="ch-detail-header">
+          <button class="ch-view-btn" onclick="setSelectedChannel(null)">← Back</button>
+          <span style="font-size:1rem;font-weight:700;color:#fff">${selectedChannel}</span>
+          <span class="channel-count" style="margin-left:auto">${sorted.length} India-related videos</span>
+        </div>
+        <div class="video-grid" id="chDetGrid">${cards}</div>${more}`;
+      return;
+    }
+    const stats = Object.entries(allByChannel)
+      .map(([name, vids]) => ({ name, medViews: medianViews(vids), count: vids.length, thumb: vids[0]?.thumbnail || '' }))
+      .sort((a,b) => b.medViews - a.medViews);
+    const cards = stats.map(ch => {
+      const safe = ch.name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+      return `<div class="channel-card" onclick="setSelectedChannel('${safe}')">
+        ${ch.thumb ? `<img class="channel-card-thumb" src="${ch.thumb}" alt="">` : ''}
+        <div class="channel-card-info">
+          <div class="channel-card-name">${ch.name}</div>
+          <div class="channel-card-views">📊 ${fmtViews(ch.medViews)} median</div>
+          <div class="channel-card-count">${ch.count} India video${ch.count!==1?'s':''}</div>
+        </div>
+      </div>`;
+    }).join('');
+    panel.innerHTML = toggle + `<div class="channel-card-grid">${cards}</div>`;
+    return;
+  }
+
+  const allByChannelFull = getVideosPerChannel(indiaPool, currentFilter, currentSort, Infinity);
+  const rows = Object.entries(byChannel)
+    .map(([name,vids]) => [name, vids, medianViews(allByChannelFull[name]||vids)])
+    .sort((a,b) => b[2]-a[2])
+    .map(([name, vids]) => {
+      const filtered = searchVideos(vids); if (!filtered.length) return '';
+      return `<div class="channel-row">
+        <div class="channel-header">
+          <span class="channel-name">${name}</span>
+          <span class="channel-count">${filtered.length} India videos</span>
+        </div>
+        <div class="video-row">${filtered.map((v,i) => cardHtml(v, i+1, false, false)).join('')}</div>
+      </div>`;
+    }).join('');
+  panel.innerHTML = toggle + (rows || emptyState('No results', 'Try a different search.'));
+}
+
+// ── Controls ──────────────────────────────────────────────────────────────────
+function switchTab(name, push = true) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  const panel = document.getElementById(`panel-${name}`);
+  const btn   = document.getElementById(`btn-${name}`);
+  if (panel) panel.classList.add('active');
+  if (btn)   btn.classList.add('active');
+  currentTab = name;
+  if (push) {
+    currentFilter   = TAB_DEFAULTS[name]   || 'today';
+    currentSort     = SORT_DEFAULTS[name]  || 'velocity';
+    currentDuration = DURATION_DEFAULTS[name] || 'all';
+    renderAll(); updateUrl();
+  }
+  renderToolbar();
+}
+function setFilter(f)  { currentFilter=f; renderToolbar(); renderAll(); updateUrl(); }
+function setSort(s)    { currentSort=s; renderToolbar(); renderAll(); updateUrl(); }
+function setMinViews(val) {
+  currentMinViews=val;
+  const inp=document.getElementById('customViewsInput');
+  inp.style.display=val==='custom'?'inline-block':'none';
+  if (val!=='custom') { renderAll(); updateUrl(); }
+}
+function applyCustomViews(val) { customMinViews=parseInt(val)||0; renderAll(); }
+function setDuration(val) { currentDuration=val; renderAll(); updateUrl(); }
+function setSearch(val) { currentSearch=val.trim(); renderAll(); }
+function renderToolbar() {
+  document.getElementById('filterSelect').value   = currentFilter;
+  document.getElementById('sortSelect').value     = currentSort;
+  document.getElementById('viewsSelect').value    = currentMinViews;
+  document.getElementById('durationSelect').value = currentDuration;
+  document.getElementById('customViewsInput').style.display = currentMinViews==='custom'?'inline-block':'none';
+}
+function updateUrl() { history.replaceState(null,'',`?tab=${currentTab}&filter=${currentFilter}&sort=${currentSort}`); }
+function showMore(gridId, wrapperId) {
+  document.querySelectorAll(`#${gridId} .video-card.hidden`).forEach(c=>c.classList.remove('hidden'));
+  document.getElementById(wrapperId).style.display='none';
+}
+function showToast(msg, ms=3500) { const t=document.getElementById('toast'); t.textContent=msg; t.classList.add('show'); setTimeout(()=>t.classList.remove('show'),ms); }
+
+// ── YouTube player ────────────────────────────────────────────────────────────
+function onYouTubeIframeAPIReady() {
+  ytPlayer = new YT.Player('ytPlayerDiv', {
+    height:'100%', width:'100%',
+    playerVars: { rel:0, modestbranding:1, playsinline:1 },
+    events: {
+      onReady()        { ytPlayerReady=true; if(pendingVideoId){ytPlayer.loadVideoById(pendingVideoId);pendingVideoId=null;} },
+      onStateChange(e) { if(e.data===YT.PlayerState.ENDED) startCountdown(); },
+      onError()        { showToast('Video cannot be embedded.'); }
+    }
+  });
+}
+function openPlayer(videoId, channelName) {
+  const credit = document.getElementById('videoCredit');
+  if (credit) credit.textContent = channelName ? 'Source: ' + channelName : '';
+  document.getElementById('playerModal').classList.add('open');
+  document.body.style.overflow='hidden'; cancelCountdown();
+  if (ytPlayerReady) ytPlayer.loadVideoById(videoId); else pendingVideoId=videoId;
+}
+function closePlayer() { document.getElementById('playerModal').classList.remove('open'); document.body.style.overflow=''; cancelCountdown(); if(ytPlayerReady) ytPlayer.stopVideo(); }
+function openInNewTab(e, vid, t) { e.stopPropagation(); window.open('player.html?v='+encodeURIComponent(vid)+'&t='+encodeURIComponent(t),'_blank'); }
+function onModalClick(e) { if(e.target===document.getElementById('playerModal')) closePlayer(); }
+function startCountdown() { cancelCountdown(); }
+function cancelCountdown() { clearInterval(countdownTimer); countdownTimer=null; document.getElementById('nextOverlay').classList.remove('show'); }
+
+// ── Boot ──────────────────────────────────────────────────────────────────────
+window.addEventListener('DOMContentLoaded', async () => {
+  switchTab(currentTab, false);
+  renderToolbar();
+  try {
+    const r = await fetch('data/videos.json');
+    allData  = await r.json();
+  } catch {
+    allData = { last_updated: null, bangladesh: [] };
+    showToast('Could not load data.');
+  }
+  const src = allData.bangladesh || [];
+  indiaPool = src.filter(isIndiaRelated);
+  wbPool    = src.filter(isWBRelated);
+  renderAll();
+});
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
+</script>
+</body>
+</html>

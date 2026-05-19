@@ -1,4 +1,4 @@
-const CACHE_NAME = 'news-portal-v13';
+const CACHE_NAME = 'news-portal-v14';
 const STATIC_ASSETS = [
   '/news-hub/',
   '/news-hub/index.html',
@@ -7,6 +7,8 @@ const STATIC_ASSETS = [
   '/news-hub/world.html',
   '/news-hub/opinion.html',
   '/news-hub/neighbour.html',
+  '/news-hub/player.html',
+  '/news-hub/india_watch.html',
   '/news-hub/manifest.json',
   '/news-hub/icons/icon-192.png',
   '/news-hub/icons/icon-512.png',
@@ -20,6 +22,7 @@ const STATIC_ASSETS = [
 const HTML_PAGES = [
   '/news-hub/', '/news-hub/index.html',
   '/news-hub/bengali.html', '/news-hub/national.html', '/news-hub/world.html',
+  '/news-hub/opinion.html', '/news-hub/neighbour.html', '/news-hub/player.html', '/news-hub/india_watch.html',
 ];
 
 self.addEventListener('install', e => {

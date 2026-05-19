@@ -131,6 +131,9 @@
       background: rgba(0,0,0,0.82); color: #fff; font-size: 0.7rem; font-weight: 600;
       padding: 1px 5px; border-radius: 3px; letter-spacing: 0.02em;
     }
+    .newtab-btn { position: absolute; top: 7px; right: 7px; z-index: 2; background: rgba(0,0,0,0.65); border: 1px solid rgba(255,255,255,0.25); color: #fff; width: 26px; height: 26px; border-radius: 4px; cursor: pointer; font-size: 0.82rem; line-height: 1; display: flex; align-items: center; justify-content: center; opacity: 0.6; transition: opacity 0.15s; padding: 0; }
+    .video-card:hover .newtab-btn { opacity: 1; }
+    @media (max-width: 768px) { .newtab-btn { opacity: 0.85; } }
 
     .card-body    { padding: 11px; }
     .card-channel { font-size: 0.72rem; color: #16a085; font-weight: 600; text-transform: uppercase; letter-spacing: 0.03em; margin-bottom: 4px; }
@@ -498,12 +501,14 @@ function cardHtml(v, rank, isLive, hidden) {
     : rank ? `<span class="rank-badge">#${rank}</span>` : '';
   const dur = v.duration ? (() => { const m=Math.floor(v.duration/60),s=v.duration%60; return m>=60?`${Math.floor(m/60)}:${String(m%60).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; })() : '';
   const safe = v.title.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+  const safeCh = v.channel_name.replace(/'/g,"\\'");
   return `
-    <div class="video-card${hidden?' hidden':''}" onclick="openPlayer('${v.video_id}','${safe}')">
+    <div class="video-card${hidden?' hidden':''}" onclick="openPlayer('${v.video_id}','${safeCh}')">
       <div class="thumb-wrap">
         <img src="${v.thumbnail}" alt="" onerror="this.src='https://i.ytimg.com/vi/${v.video_id}/mqdefault.jpg'">
         ${badge}
         ${dur?`<span class="duration-badge">${dur}</span>`:''}
+        <button class="newtab-btn" onclick="openInNewTab(event,'${v.video_id}','${safe}')">↗</button>
       </div>
       <div class="card-body">
         <div class="card-channel">${v.channel_name}</div>
@@ -685,6 +690,7 @@ function closePlayer() {
   document.body.style.overflow=''; cancelCountdown();
   if(ytPlayerReady) ytPlayer.stopVideo();
 }
+function openInNewTab(e, vid, t) { e.stopPropagation(); window.open('player.html?v=' + encodeURIComponent(vid) + '&t=' + encodeURIComponent(t), '_blank'); }
 function onModalClick(e) { if(e.target===document.getElementById('playerModal')) closePlayer(); }
 function startCountdown() {
   if(!MY_CHANNEL_VIDEOS.length) return;
