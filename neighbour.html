@@ -263,7 +263,7 @@
 
 <div class="tabbar">
   <button class="tab-btn" id="btn-bangladesh" onclick="switchTab('bangladesh')">🇧🇩 Bangladesh</button>
-  <button class="tab-btn disabled" title="Coming Soon">🇵🇰 Pakistan</button>
+  <button class="tab-btn" id="btn-pakistan"   onclick="switchTab('pakistan')">🇵🇰 Pakistan</button>
   <button class="tab-btn disabled" title="Coming Soon">🇱🇰 Sri Lanka</button>
   <button class="tab-btn disabled" title="Coming Soon">🇳🇵 Nepal</button>
   <button class="tab-btn" id="btn-live"     onclick="switchTab('live')">🔴 Live</button>
@@ -332,6 +332,7 @@
 </div>
 
 <div class="tab-panel" id="panel-bangladesh"></div>
+<div class="tab-panel" id="panel-pakistan"></div>
 <div class="tab-panel" id="panel-live"></div>
 <div class="tab-panel" id="panel-channels"></div>
 
@@ -368,7 +369,7 @@ const MY_CHANNEL_NAME   = '';
 const MY_CHANNEL_VIDEOS = [];
 
 // ── Defaults ──────────────────────────────────────────────────────────────────
-const TAB_DEFAULTS      = { bangladesh: 'today', live: '1h', channels: '24h' };
+const TAB_DEFAULTS      = { bangladesh: 'today', pakistan: 'today', live: '1h', channels: '24h' };
 const SORT_DEFAULTS     = { bangladesh: 'velocity', live: 'views', channels: 'views' };
 const DURATION_DEFAULTS = { bangladesh: 'upto30', live: 'all', channels: 'all' };
 
@@ -532,8 +533,18 @@ function comingSoon(flag, country) {
 function renderAll() {
   if (!allData) return;
   renderBangladesh();
+  renderPakistan();
   renderLive();
   renderChannels();
+}
+
+function renderPakistan() {
+  const panel  = document.getElementById('panel-pakistan');
+  const videos = getVideos(allData.pakistan || [], currentFilter, currentSort);
+  if (!videos.length) { panel.innerHTML = emptyState('No Pakistan stories in this window', 'Data refreshes 3× daily (morning, evening, night). Try a wider time filter.'); return; }
+  const cards = videos.map((v,i) => cardHtml(v, i+1, false, i>=30)).join('');
+  const more  = videos.length > 30 ? `<div class="show-more-wrap" id="smPK"><button class="show-more-btn" onclick="showMore('pkGrid','smPK')">${videos.length-30} more stories</button></div>` : '';
+  panel.innerHTML = `<p class="section-label">Top ${videos.length} Pakistan stories · ${filterLabel()}</p><div class="video-grid" id="pkGrid">${cards}</div>${more}`;
 }
 
 function renderBangladesh() {
@@ -547,7 +558,7 @@ function renderBangladesh() {
 
 function renderLive() {
   const panel = document.getElementById('panel-live');
-  let live = (allData.bangladesh || []).filter(v => v.live_broadcast === 'live');
+  let live = [...(allData.bangladesh || []), ...(allData.pakistan || [])].filter(v => v.live_broadcast === 'live');
   live = live.filter(v => v.view_count >= getMinViewsNum(currentFilter));
   live = live.filter(v => matchesDuration(v));
   live = searchVideos(sortedVideos(live, currentFilter, currentSort));
@@ -561,7 +572,8 @@ function setSelectedChannel(name) { selectedChannel=name; renderChannels(); }
 
 function renderChannels() {
   const panel     = document.getElementById('panel-channels');
-  const byChannel = getVideosPerChannel(allData.bangladesh || [], currentFilter, currentSort);
+  const allNeighbour = [...(allData.bangladesh||[]),...(allData.pakistan||[])];
+  const byChannel = getVideosPerChannel(allNeighbour, currentFilter, currentSort);
   if (!Object.keys(byChannel).length) { panel.innerHTML = emptyState('No channel data in this window', 'Try a wider filter.'); return; }
 
   const toggle = `<div class="ch-view-toggle">
@@ -603,7 +615,7 @@ function renderChannels() {
     return;
   }
 
-  const allByChannelFull2 = getVideosPerChannel(allData.bangladesh||[], currentFilter, currentSort, Infinity);
+  const allByChannelFull2 = getVideosPerChannel([...(allData.bangladesh||[]),...(allData.pakistan||[])], currentFilter, currentSort, Infinity);
   const rows = Object.entries(byChannel).map(([name,vids])=>[name,vids,medianViews(allByChannelFull2[name]||vids)]).sort((a,b)=>b[2]-a[2]).map(([name,vids]) => {
     const filtered = searchVideos(vids);
     if (!filtered.length) return '';
@@ -729,13 +741,14 @@ window.addEventListener('DOMContentLoaded', async () => {
     const r = await fetch('data/videos.json');
     allData  = await r.json();
   } catch {
-    allData = { last_updated: null, bangladesh: [] };
+    allData = { last_updated: null, bangladesh: [], pakistan: [] };
     showToast('Could not load data.');
   }
   const ts = allData.last_updated;
   const bd = (allData.bangladesh || []).length;
+  const pk = (allData.pakistan   || []).length;
   document.getElementById('metaInfo').textContent =
-    `Refreshed: ${ts ? formatAgo(new Date(ts).getTime()/1000) : 'never'} | ${bd} Bangladesh videos`;
+    `Refreshed: ${ts ? formatAgo(new Date(ts).getTime()/1000) : 'never'} | ${bd} Bangladesh · ${pk} Pakistan`;
   renderAll();
 });
 if ('serviceWorker' in navigator) navigator.serviceWorker.register('sw.js');
