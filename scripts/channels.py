@@ -281,6 +281,37 @@ HINDI_RIGHT_OPINION_CHANNELS = [
 
 HINDI_LEFT_OPINION_CHANNELS = []  # to be added
 
+PAKISTAN_NEWS_CHANNELS = [
+    {"id": "UC_vt34wimdCzdkrzVejwX9g", "name": "Geo News"},
+    {"id": "UCMmpLL2ucRHAXbNHiCPyIyg", "name": "ARY News"},
+    {"id": "UCJekW1Vj5fCVEGdye_mBN6Q", "name": "SAMAA TV"},
+    {"id": "UCnMBV5Iw4WqKILKue1nP6Hg", "name": "Dunya News"},
+    {"id": "UCz2yxQJZgiB_5elTzqV7FiQ", "name": "BOL News"},
+    {"id": "UCsgC5cbz3DE2Shh34gNKiog", "name": "92 News HD"},
+    {"id": "UCTur7oM6mLL0rM2k0znuZpQ", "name": "Express News"},
+    {"id": "UC35KuZBNIj4S5Ls0yjY-UHQ", "name": "GNN"},
+    {"id": "UCElJZvY_RVra6qjD8WSQYog", "name": "Public News"},
+    {"id": "UC-an6pHQfTVZXgrLP0p1EGA", "name": "Capital TV"},
+    {"id": "UC0CbUVRC1d1RvunYbp3w2qQ", "name": "Lahore News HD"},
+    {"id": "UCaxR-D8FjZ-2otbU0_Y2grg", "name": "Dawn News"},
+    {"id": "UCAsvFcpUQegneSh0QAUd64A", "name": "Neo News"},
+    {"id": "UCgBAPAcLsh_MAPvJprIz89w", "name": "Aaj TV"},
+    {"id": "UCCEMt2W7Y8qXkLSTkr082mw", "name": "Khyber News"},
+    {"id": "UC7EDIC3ONWZpN3DLkRzmhww", "name": "AAP News"},
+    {"id": "UC5mwDEzm4FzXKoHPBDnuUQQ", "name": "Abb Tak"},
+    {"id": "UCjHWKUbljF4hp3s5PbgK9uA", "name": "News One"},
+    {"id": "UC5RvV_LtR1dxPCVFGw6dxXA", "name": "PTV News"},
+    {"id": "UC6XLG5YjZfK1p5oY5MJ3NMw", "name": "GTV News HD"},
+    {"id": "UCAT-k0v_xVXOmLgNwa_dzdw", "name": "7 News Pakistan"},
+    {"id": "UCzVdIJeAwQfBZbG_8AOXgBw", "name": "Naya Daur"},
+    {"id": "UCICSlkaHBZwU_86JrIbeoCQ", "name": "Duniya TV"},
+    {"id": "UCAvhohWtYwPdpKVGiMkkKOQ", "name": "Independent Urdu"},
+    {"id": "UCQDZ97IhAmyQWu3SlPspc4g", "name": "Daily Ausaf"},
+    {"id": "UCvm8V4Dwtz0fbPGbpk7RYAg", "name": "BBC News Urdu"},
+    {"id": "UCV1K26GOlQOB_3sRS8vDzhw", "name": "DW Urdu"},
+    {"id": "UCx8MbRAMH-KNJuFLKdsmZ_w", "name": "VOA Urdu"},
+]
+
 BENGALI_OPINION_CHANNELS = [
     {"id": "UCWWq6nFnUjje9RvGwYlIGTg", "name": "Arambagh TV"},
     {"id": "UCrp7axFgr0WTbFWybKFKZlQ", "name": "Campaigncalling Media"},

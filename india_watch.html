@@ -465,14 +465,48 @@ function isWBRelated(v) {
          WB_KW_BN.some(kw => v.title.includes(kw));
 }
 
-// For world_news: use precise geo-countries.js India keywords (same logic as world.html)
+// Urdu keywords for India — used for Pakistan channel filtering
+const INDIA_KW_UR = [
+  // Country identity
+  'بھارت','بھارتی','ہندوستان','ہندوستانی',
+  // Leaders
+  'مودی','نریندر مودی','امیت شاہ','راہل گاندھی',
+  'یوگی آدتیہ ناتھ','سونیا گاندھی','پرینکا گاندھی',
+  // Cities
+  'دہلی','نئی دہلی','ممبئی','کلکتہ','چنئی',
+  'بنگلور','حیدرآباد بھارت','احمدآباد','پونہ',
+  'لکھنؤ','آگرہ','وارانسی','امرتسر','چندی گڑھ',
+  'جے پور','بھوپال','ناگپور','سورت','پٹنہ',
+  'گواہاٹی','بھونیشور','دہرادون','شملہ','سرینگر',
+  // States
+  'مغربی بنگال','تمل ناڈو','کیرالہ','گجرات',
+  'مہاراشٹر','کرناٹک','راجستھان','اتر پردیش',
+  'بہار','مدھیہ پردیش','آسام','اوڈیشہ',
+  'جھارکھنڈ','ہماچل پردیش','اتراکھنڈ',
+  // Parties & institutions
+  'بی جے پی','آر ایس ایس','کانگریس بھارت',
+  'ترنمول','لوک سبھا','راجیہ سبھا',
+  'بھارتی فوج','بھارتی بحریہ','بھارتی فضائیہ',
+  'اسرو','سپریم کورٹ بھارت',
+  // Bilateral / conflict
+  'را','خفیہ ایجنسی بھارت',
+  'مقبوضہ کشمیر','لائن آف کنٹرول','ایل او سی',
+  'سرجیکل اسٹرائیک','پلوامہ','بالاکوٹ',
+  'بھارت پاکستان','پاک بھارت',
+  // Religion & culture
+  'ہندوتوا','ایودھیا','رام مندر','بابری مسجد',
+  'ہندو مسلم بھارت',
+];
+
+// For world_news & pakistan: use geo-countries.js India keywords + Urdu keywords
 function isIndiaRelatedWorld(v) {
   const indiaEntry = (typeof COUNTRIES_RAW !== 'undefined')
     ? COUNTRIES_RAW.find(c => c.name === 'India')
     : null;
   if (!indiaEntry) return isIndiaRelated(v); // fallback
   const t = normStr(v.title);
-  return indiaEntry.kw.some(kw => t.includes(kw));
+  return indiaEntry.kw.some(kw => t.includes(kw)) ||
+         INDIA_KW_UR.some(kw => v.title.includes(kw));
 }
 
 // ── Config & state ────────────────────────────────────────────────────────────
