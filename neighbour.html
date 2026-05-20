@@ -264,7 +264,8 @@
 <div class="tabbar">
   <button class="tab-btn" id="btn-bangladesh" onclick="switchTab('bangladesh')">🇧🇩 Bangladesh</button>
   <button class="tab-btn" id="btn-pakistan"   onclick="switchTab('pakistan')">🇵🇰 Pakistan</button>
-  <button class="tab-btn" id="btn-nepal"    onclick="switchTab('nepal')">🇳🇵 Nepal</button>
+  <button class="tab-btn" id="btn-nepal"     onclick="switchTab('nepal')">🇳🇵 Nepal</button>
+  <button class="tab-btn" id="btn-srilanka" onclick="switchTab('srilanka')">🇱🇰 Sri Lanka</button>
   <button class="tab-btn" id="btn-myanmar"  onclick="switchTab('myanmar')">🇲🇲 Myanmar</button>
   <button class="tab-btn" id="btn-live"     onclick="switchTab('live')">🔴 Live</button>
   <button class="tab-btn" id="btn-channels" onclick="switchTab('channels')">📺 By Channel</button>
@@ -334,6 +335,7 @@
 <div class="tab-panel" id="panel-bangladesh"></div>
 <div class="tab-panel" id="panel-pakistan"></div>
 <div class="tab-panel" id="panel-nepal"></div>
+<div class="tab-panel" id="panel-srilanka"></div>
 <div class="tab-panel" id="panel-myanmar"></div>
 <div class="tab-panel" id="panel-live"></div>
 <div class="tab-panel" id="panel-channels"></div>
@@ -371,7 +373,10 @@ const MY_CHANNEL_NAME   = '';
 const MY_CHANNEL_VIDEOS = [];
 
 // ── Defaults ──────────────────────────────────────────────────────────────────
-const TAB_DEFAULTS      = { bangladesh: 'today', pakistan: 'today', nepal: 'today', myanmar: 'today', live: '1h', channels: '24h' };
+const TAB_DEFAULTS      = { bangladesh: 'today', pakistan: 'today', nepal: 'today', srilanka: 'today', myanmar: 'today', live: '1h', channels: '24h' };
+
+// Sri Lanka channels already in world_news — filter by channel_id
+const SRILANKA_CHANNEL_IDS = new Set(['UCuOtdpOPjHeoEAT4i44mVOg']); // Ada Derana English
 const SORT_DEFAULTS     = { bangladesh: 'velocity', live: 'views', channels: 'views' };
 const DURATION_DEFAULTS = { bangladesh: 'upto30', live: 'all', channels: 'all' };
 
@@ -537,9 +542,19 @@ function renderAll() {
   renderBangladesh();
   renderPakistan();
   renderNepal();
+  renderSriLanka();
   renderMyanmar();
   renderLive();
   renderChannels();
+}
+
+function renderSriLanka() {
+  const panel  = document.getElementById('panel-srilanka');
+  const videos = getVideos((allData.world_news || []).filter(v => SRILANKA_CHANNEL_IDS.has(v.channel_id)), currentFilter, currentSort);
+  if (!videos.length) { panel.innerHTML = emptyState('No Sri Lanka stories in this window', 'Try a wider time filter.'); return; }
+  const cards = videos.map((v,i) => cardHtml(v, i+1, false, i>=30)).join('');
+  const more  = videos.length > 30 ? `<div class="show-more-wrap" id="smLK"><button class="show-more-btn" onclick="showMore('lkGrid','smLK')">${videos.length-30} more stories</button></div>` : '';
+  panel.innerHTML = `<p class="section-label">Top ${videos.length} Sri Lanka stories · ${filterLabel()}</p><div class="video-grid" id="lkGrid">${cards}</div>${more}`;
 }
 
 function renderMyanmar() {
