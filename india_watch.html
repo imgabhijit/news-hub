@@ -199,10 +199,11 @@
   <a class="nav-brand" href="index.html">🔭 News Portal</a>
   <span class="nav-sep">/</span>
   <select class="nav-cat-select" onchange="if(this.value)window.location=this.value" style="background:#2a2d3a;border:1px solid #3a3d4a;color:#e0e0e0;padding:4px 10px;border-radius:6px;font-size:0.85rem;cursor:pointer;outline:none;">
-    <option value="">Choose Category</option>
+    <option value="">🇮🇳 India Watch</option>
+    <option value="bengali.html">🗣️ Bengali News</option>
     <option value="national.html">📰 National News</option>
+    <option value="world.html">🌍 World News</option>
     <option value="opinion.html">🎙️ Opinion</option>
-    <option value="india_watch.html" selected>🇮🇳 India Watch</option>
     <option value="neighbour.html">🌏 Neighbour News</option>
   </select>
 </nav>
@@ -259,12 +260,13 @@
     <span class="toolbar-label">Duration</span>
     <select class="toolbar-select" id="durationSelect" onchange="setDuration(this.value)">
       <option value="all">All</option>
+      <option value="upto60">Up to 1 hr</option>
       <option value="upto30">Up to 30 min</option>
       <option value="short">Under 1 min</option>
       <option value="1to3">1–3 min</option>
       <option value="3to15">3–15 min</option>
       <option value="15to30">15–30 min</option>
-      <option value="long">30+ min</option>
+      <option value="long">1 hr+</option>
     </select>
   </div>
   <input type="search" id="searchInput" class="toolbar-search" placeholder="Search title or channel…"
@@ -510,9 +512,9 @@ function isIndiaRelatedWorld(v) {
 }
 
 // ── Config & state ────────────────────────────────────────────────────────────
-const TAB_DEFAULTS      = { all: 'today', wb: 'today', bycountry: '24h', live: '1h', channels: '24h' };
-const SORT_DEFAULTS     = { all: 'velocity', wb: 'velocity', bycountry: 'velocity', live: 'views', channels: 'views' };
-const DURATION_DEFAULTS = { all: 'upto30', wb: 'upto30', bycountry: 'all', live: 'all', channels: 'all' };
+const TAB_DEFAULTS      = { all: '24h', wb: '24h', bycountry: '24h', live: '1h', channels: '24h' };
+const SORT_DEFAULTS     = { all: 'views', wb: 'views', bycountry: 'views', live: 'views', channels: 'views' };
+const DURATION_DEFAULTS = { all: 'upto60', wb: 'upto60', bycountry: 'all', live: 'all', channels: 'all' };
 
 const COUNTRY_META = {
   'bangladesh': { flag: '🇧🇩', name: 'Bangladesh' },
@@ -575,12 +577,13 @@ function getMinViewsNum(filter) {
 function matchesDuration(v) {
   const d=v.duration||0;
   switch (currentDuration) {
+    case 'upto60': return d<3600;
     case 'upto30': return d<1800;
     case 'short':  return d<60;
     case '1to3':   return d>=60&&d<180;
     case '3to15':  return d>=180&&d<900;
     case '15to30': return d>=900&&d<1800;
-    case 'long':   return d>=1800;
+    case 'long':   return d>=3600;
     default:       return true;
   }
 }

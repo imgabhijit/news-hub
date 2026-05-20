@@ -303,7 +303,14 @@
 <nav>
   <a class="nav-brand" href="index.html">🟠 News Portal</a>
   <span class="nav-sep">/</span>
-  <span class="nav-region">National News</span>
+  <select class="nav-cat-select" onchange="if(this.value)window.location=this.value" style="background:#2a2d3a;border:1px solid #3a3d4a;color:#e0e0e0;padding:4px 10px;border-radius:6px;font-size:0.85rem;cursor:pointer;outline:none;">
+    <option value="">📰 National News</option>
+    <option value="bengali.html">🗣️ Bengali News</option>
+    <option value="world.html">🌍 World News</option>
+    <option value="opinion.html">🎙️ Opinion</option>
+    <option value="neighbour.html">🌏 Neighbour News</option>
+    <option value="india_watch.html">🇮🇳 India Watch</option>
+  </select>
   <a class="nav-subscribe" href="https://www.youtube.com/@YOUR_CHANNEL" target="_blank" id="navSubBtn" style="display:none">▶ Subscribe</a>
 </nav>
 
@@ -368,11 +375,12 @@
     <span class="toolbar-label">Duration</span>
     <select class="toolbar-select" id="durationSelect" onchange="setDuration(this.value)">
       <option value="all">All</option>
+      <option value="upto60">Up to 1 hr</option>
       <option value="upto30">Up to 30 min</option>
       <option value="1to3">Under 3 min</option>
       <option value="3to15">3–15 min</option>
       <option value="15to30">15–30 min</option>
-      <option value="long">30+ min</option>
+      <option value="long">1 hr+</option>
     </select>
   </div>
 
@@ -567,11 +575,12 @@ function getMinViewsNum(filter) {
 function matchesDuration(v) {
   const d = v.duration || 0;
   switch (currentDuration) {
+    case 'upto60': return d < 3600;
     case 'upto30': return d < 1800;
     case '1to3':  return d < 180;
     case '3to15':  return d >= 180  && d < 900;
     case '15to30': return d >= 900  && d < 1800;
-    case 'long':   return d >= 1800;
+    case 'long':   return d >= 3600;
     default:       return true;
   }
 }

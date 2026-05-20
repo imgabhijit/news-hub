@@ -195,9 +195,10 @@
   <a class="nav-brand" href="index.html">💬 News Portal</a>
   <span class="nav-sep">/</span>
   <select class="nav-cat-select" onchange="if(this.value)window.location=this.value" style="background:#2a2d3a;border:1px solid #3a3d4a;color:#e0e0e0;padding:4px 10px;border-radius:6px;font-size:0.85rem;cursor:pointer;outline:none;">
-    <option value="">Choose Category</option>
+    <option value="">🎙️ Opinion</option>
+    <option value="bengali.html">🗣️ Bengali News</option>
     <option value="national.html">📰 National News</option>
-    <option value="opinion.html" selected>🎙️ Opinion</option>
+    <option value="world.html">🌍 World News</option>
     <option value="india_watch.html">🇮🇳 India Watch</option>
     <option value="neighbour.html">🌏 Neighbour News</option>
   </select>
@@ -252,12 +253,13 @@
     <span class="toolbar-label">Duration</span>
     <select class="toolbar-select" id="durationSelect" onchange="setDuration(this.value)">
       <option value="all">All</option>
+      <option value="upto60">Up to 1 hr</option>
       <option value="upto30">Up to 30 min</option>
       <option value="short">Under 1 min</option>
       <option value="1to3">1–3 min</option>
       <option value="3to15">3–15 min</option>
       <option value="15to30">15–30 min</option>
-      <option value="long">30+ min</option>
+      <option value="long">1 hr+</option>
     </select>
   </div>
   <input type="search" id="searchInput" class="toolbar-search" placeholder="Search title or channel…" oninput="setSearch(this.value)">
@@ -300,9 +302,9 @@ const MY_CHANNEL_URL    = '';
 const MY_CHANNEL_NAME   = '';
 const MY_CHANNEL_VIDEOS = [];
 
-const TAB_DEFAULTS      = { all: 'today', right: 'today', left: 'today', live: '1h', channels: '24h' };
+const TAB_DEFAULTS      = { all: '24h', right: '24h', left: '24h', live: '1h', channels: '24h' };
 const SORT_DEFAULTS     = { all: 'views', right: 'views', left: 'views', live: 'views', channels: 'views' };
-const DURATION_DEFAULTS = { all: 'all', right: 'all', left: 'all', live: 'all', channels: 'all' };
+const DURATION_DEFAULTS = { all: 'upto60', right: 'upto60', left: 'upto60', live: 'all', channels: 'all' };
 const THRESHOLDS = { lastnight:40000, today:25000, tonight:8000, '1h':3000, '3h':5000, '5h':10000, '24h':50000 };
 
 const params        = new URLSearchParams(location.search);
@@ -340,7 +342,7 @@ function sortedVideos(videos,filter,sort){
   }
 }
 function getMinViewsNum(f){if(currentMinViews==='auto')return THRESHOLDS[f]||5000;if(currentMinViews==='custom')return customMinViews||0;return parseInt(currentMinViews)||0;}
-function matchesDuration(v){const d=v.duration||0;switch(currentDuration){case 'upto30':return d<1800;case 'short':return d<60;case '1to3':return d>=60&&d<180;case '3to15':return d>=180&&d<900;case '15to30':return d>=900&&d<1800;case 'long':return d>=1800;default:return true;}}
+function matchesDuration(v){const d=v.duration||0;switch(currentDuration){case 'upto60':return d<3600;case 'upto30':return d<1800;case 'short':return d<60;case '1to3':return d>=60&&d<180;case '3to15':return d>=180&&d<900;case '15to30':return d>=900&&d<1800;case 'long':return d>=3600;default:return true;}}
 function searchVideos(v){if(!currentSearch)return v;const q=currentSearch.toLowerCase();return v.filter(x=>x.title.toLowerCase().includes(q)||x.channel_name.toLowerCase().includes(q));}
 function getVideos(videos,filter,sort,n=100){let p=filterByRange(videos,filter).filter(v=>v.live_broadcast!=='live').filter(v=>v.view_count>=getMinViewsNum(filter)).filter(v=>matchesDuration(v));return searchVideos(sortedVideos(p,filter,sort)).slice(0,n);}
 function getVideosPerChannel(videos,filter,sort,n=10){const p=filterByRange(videos,filter).filter(v=>v.live_broadcast!=='live').filter(v=>matchesDuration(v));const b={};p.forEach(v=>{(b[v.channel_name]=b[v.channel_name]||[]).push(v);});const r={};Object.entries(b).forEach(([k,vs])=>{r[k]=sortedVideos(vs,filter,sort).slice(0,n);});return r;}

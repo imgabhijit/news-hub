@@ -257,7 +257,14 @@
 <nav>
   <a class="nav-brand" href="index.html">🤝 News Portal</a>
   <span class="nav-sep">/</span>
-  <span class="nav-region">Neighbour News</span>
+  <select class="nav-cat-select" onchange="if(this.value)window.location=this.value" style="background:#2a2d3a;border:1px solid #3a3d4a;color:#e0e0e0;padding:4px 10px;border-radius:6px;font-size:0.85rem;cursor:pointer;outline:none;">
+    <option value="">🌏 Neighbour News</option>
+    <option value="bengali.html">🗣️ Bengali News</option>
+    <option value="national.html">📰 National News</option>
+    <option value="world.html">🌍 World News</option>
+    <option value="opinion.html">🎙️ Opinion</option>
+    <option value="india_watch.html">🇮🇳 India Watch</option>
+  </select>
   <a class="nav-subscribe" href="https://www.youtube.com/@YOUR_CHANNEL" target="_blank" id="navSubBtn" style="display:none">▶ Subscribe</a>
 </nav>
 
@@ -318,12 +325,13 @@
     <span class="toolbar-label">Duration</span>
     <select class="toolbar-select" id="durationSelect" onchange="setDuration(this.value)">
       <option value="all">All</option>
+      <option value="upto60">Up to 1 hr</option>
       <option value="upto30">Up to 30 min</option>
       <option value="short">Under 1 min</option>
       <option value="1to3">1–3 min</option>
       <option value="3to15">3–15 min</option>
       <option value="15to30">15–30 min</option>
-      <option value="long">30+ min</option>
+      <option value="long">1 hr+</option>
     </select>
   </div>
 
@@ -373,12 +381,12 @@ const MY_CHANNEL_NAME   = '';
 const MY_CHANNEL_VIDEOS = [];
 
 // ── Defaults ──────────────────────────────────────────────────────────────────
-const TAB_DEFAULTS      = { bangladesh: 'today', pakistan: 'today', nepal: 'today', srilanka: 'today', myanmar: 'today', live: '1h', channels: '24h' };
+const TAB_DEFAULTS      = { bangladesh: '24h', pakistan: '24h', nepal: '24h', srilanka: '24h', myanmar: '24h', live: '1h', channels: '24h' };
 
 // Sri Lanka channels already in world_news — filter by channel_id
 const SRILANKA_CHANNEL_IDS = new Set(['UCuOtdpOPjHeoEAT4i44mVOg']); // Ada Derana English
-const SORT_DEFAULTS     = { bangladesh: 'velocity', live: 'views', channels: 'views' };
-const DURATION_DEFAULTS = { bangladesh: 'upto30', live: 'all', channels: 'all' };
+const SORT_DEFAULTS     = { bangladesh: 'views', pakistan: 'views', nepal: 'views', srilanka: 'views', myanmar: 'views', live: 'views', channels: 'views' };
+const DURATION_DEFAULTS = { bangladesh: 'upto60', pakistan: 'upto60', nepal: 'upto60', srilanka: 'upto60', myanmar: 'upto60', live: 'all', channels: 'all' };
 
 const THRESHOLDS = {
   lastnight: 40000, today: 25000, tonight: 8000,
@@ -449,12 +457,13 @@ function getMinViewsNum(filter) {
 function matchesDuration(v) {
   const d = v.duration || 0;
   switch (currentDuration) {
+    case 'upto60': return d < 3600;
     case 'upto30': return d < 1800;
     case 'short':  return d < 60;
     case '1to3':   return d >= 60   && d < 180;
     case '3to15':  return d >= 180  && d < 900;
     case '15to30': return d >= 900  && d < 1800;
-    case 'long':   return d >= 1800;
+    case 'long':   return d >= 3600;
     default:       return true;
   }
 }
