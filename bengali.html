@@ -427,7 +427,7 @@ const MY_CHANNEL_VIDEOS = [];
 // Today = 6am today → now  (feels like "today", not since midnight)
 // Last Night = yesterday 8pm → today 6am (covers the gap)
 const TAB_DEFAULTS      = { top: 'today', opinion: 'today', live: '1h', channels: '24h', districts: '24h', regions: '24h' };
-const DURATION_DEFAULTS = { top: 'upto30', opinion: 'all', live: 'all', channels: 'all', districts: 'all', regions: 'all' };
+const DURATION_DEFAULTS = { top: 'upto60', opinion: 'upto60', live: 'all', channels: 'all', districts: 'all', regions: 'all' };
 const SORT_DEFAULTS     = { top: 'velocity', opinion: 'views', live: 'views', channels: 'views', districts: 'views', regions: 'views' };
 
 // View thresholds — applied to all sorts including Newest/Oldest
@@ -448,7 +448,7 @@ let currentFilter   = params.get('filter') || TAB_DEFAULTS[currentTab];
 let currentSort     = params.get('sort')   || SORT_DEFAULTS[currentTab];
 let currentMinViews = '0';
 let customMinViews  = 0;
-let currentDuration = DURATION_DEFAULTS[currentTab] || 'upto30';
+let currentDuration = DURATION_DEFAULTS[currentTab] || 'upto60';
 let channelView     = 'grid';
 let selectedChannel = null;
 let currentSearch   = '';
@@ -821,7 +821,7 @@ function switchTab(name, push = true) {
     if (name !== 'districts' && name !== 'regions') {
       currentFilter   = TAB_DEFAULTS[name];
       currentSort     = SORT_DEFAULTS[name];
-      currentDuration = DURATION_DEFAULTS[name] || 'all';
+      currentDuration = DURATION_DEFAULTS[name] || 'upto60';
     }
     renderAll();
     updateUrl();

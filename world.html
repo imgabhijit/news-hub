@@ -417,7 +417,7 @@ const MY_CHANNEL_VIDEOS = [];
 
 // ── Filter & sort setup ───────────────────────────────────────────────────────
 const TAB_DEFAULTS      = { top: 'today', live: '1h', channels: '24h', countries: '24h', regions: '24h' };
-const DURATION_DEFAULTS = { top: 'upto30', live: 'all', channels: 'all', countries: 'all', regions: 'all' };
+const DURATION_DEFAULTS = { top: 'upto60', live: 'all', channels: 'all', countries: 'all', regions: 'all' };
 const SORT_DEFAULTS     = { top: 'velocity', live: 'views', channels: 'views', countries: 'views', regions: 'views' };
 
 const THRESHOLDS = {
@@ -437,7 +437,7 @@ let currentFilter   = params.get('filter') || TAB_DEFAULTS[currentTab];
 let currentSort     = params.get('sort')   || SORT_DEFAULTS[currentTab];
 let currentMinViews = '0';
 let customMinViews  = 0;
-let currentDuration = DURATION_DEFAULTS[currentTab] || 'upto30';
+let currentDuration = DURATION_DEFAULTS[currentTab] || 'upto60';
 let channelView     = 'grid';
 let selectedChannel = null;
 let currentSearch   = '';
@@ -783,7 +783,7 @@ function switchTab(name, push = true) {
     if (name !== 'countries' && name !== 'regions') {
       currentFilter   = TAB_DEFAULTS[name];
       currentSort     = SORT_DEFAULTS[name];
-      currentDuration = DURATION_DEFAULTS[name] || 'all';
+      currentDuration = DURATION_DEFAULTS[name] || 'upto60';
     }
     renderAll();
     updateUrl();
