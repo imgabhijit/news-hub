@@ -281,6 +281,29 @@ HINDI_RIGHT_OPINION_CHANNELS = [
 
 HINDI_LEFT_OPINION_CHANNELS = []  # to be added
 
+NEPAL_NEWS_CHANNELS = [
+    {"id": "UCMDzPE_7fcZSRJgpwIVor_A", "name": "Avenues TV"},
+    {"id": "UC4h-FP0sqCPzFikmZqF0ZIA", "name": "ABC News Nepal"},
+    {"id": "UCVsE1h7d6-NnaSg2JQ5vRQw", "name": "TV Annapurna"},
+    {"id": "UCNSPYrl_sdPfOIS4e1HjhMg", "name": "TV Today HD"},
+    {"id": "UC7JGxk_AFlBz5pyXPuQMELg", "name": "OTV Nepal"},
+    {"id": "UCR0sb6TDx2vY0DGsLlDr5BA", "name": "Sagarmatha TV"},
+    {"id": "UCXHgSsTbbojsyot6Kg_q2mg", "name": "Nepal Live"},
+    {"id": "UCY0zpSUoxHZNHGq9-926G4w", "name": "Global TV HD"},
+    {"id": "UCZlRPQfqzssWXtTin21lwlg", "name": "Danfe TV"},
+    {"id": "UCtjmWttibtOsdow5lYBD-7A", "name": "Mountain TV"},
+    {"id": "UCa1-bet7aevH-YmtPhqdwtQ", "name": "Fewa TV"},
+    {"id": "UCKCKxATff7qnaEu7Wd7lZbQ", "name": "Everest Nepal TV"},
+    {"id": "UCDFqB5h4nbpZTaU7QQ3u3cw", "name": "BG TV Nepal"},
+    {"id": "UCxG_3NG1uWy4_x1nMj-Wdwg", "name": "Good TV"},
+    {"id": "UCZb6R17u4dLtR_v6yoIM2Ig", "name": "Horizon TV Nepal"},
+    {"id": "UCa9wigEw31xDMh_nrscmL6g", "name": "BBC Nepali"},
+    {"id": "UCPjHEeafcMdr-balIMiEwrg", "name": "Setopati"},
+    {"id": "UCQZ18Tr_bEqo6-0S9z1psPw", "name": "Nepal Times"},
+    {"id": "UCguFuMcHqNX4qF-JaJg9KKw", "name": "Lokantar TV"},
+    {"id": "UCHfEz1mbYhQR-GxVi1RrNXw", "name": "Reporters Nepal"},
+]
+
 PAKISTAN_NEWS_CHANNELS = [
     {"id": "UC_vt34wimdCzdkrzVejwX9g", "name": "Geo News"},
     {"id": "UCMmpLL2ucRHAXbNHiCPyIyg", "name": "ARY News"},

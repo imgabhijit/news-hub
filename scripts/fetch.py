@@ -19,7 +19,7 @@ from dotenv import load_dotenv
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
-from channels import BENGALI_CHANNELS, BENGALI_OPINION_CHANNELS, NATIONAL_ENGLISH_CHANNELS, NATIONAL_HINDI_CHANNELS, WORLD_NEWS_CHANNELS, HINDI_RIGHT_OPINION_CHANNELS, HINDI_LEFT_OPINION_CHANNELS, BANGLADESH_NEWS_CHANNELS, PAKISTAN_NEWS_CHANNELS
+from channels import BENGALI_CHANNELS, BENGALI_OPINION_CHANNELS, NATIONAL_ENGLISH_CHANNELS, NATIONAL_HINDI_CHANNELS, WORLD_NEWS_CHANNELS, HINDI_RIGHT_OPINION_CHANNELS, HINDI_LEFT_OPINION_CHANNELS, BANGLADESH_NEWS_CHANNELS, PAKISTAN_NEWS_CHANNELS, NEPAL_NEWS_CHANNELS
 
 load_dotenv(dotenv_path=Path(__file__).parent.parent / ".env")
 
@@ -141,7 +141,7 @@ def refresh_meta(youtube, meta):
     for channels in REGIONS.values():
         for ch in channels:
             all_channels[ch["id"]] = ch["name"]
-    for ch in HINDI_RIGHT_OPINION_CHANNELS + HINDI_LEFT_OPINION_CHANNELS + BANGLADESH_NEWS_CHANNELS + PAKISTAN_NEWS_CHANNELS:
+    for ch in HINDI_RIGHT_OPINION_CHANNELS + HINDI_LEFT_OPINION_CHANNELS + BANGLADESH_NEWS_CHANNELS + PAKISTAN_NEWS_CHANNELS + NEPAL_NEWS_CHANNELS:
         all_channels[ch["id"]] = ch["name"]
 
     ids = list(all_channels.keys())
@@ -349,6 +349,7 @@ def main():
         "hindi_left_opinion":    existing.get("hindi_left_opinion", []),
         "bangladesh":            existing.get("bangladesh", []),
         "pakistan":              existing.get("pakistan", []),
+        "nepal":                 existing.get("nepal", []),
     }
 
     cutoff_24h = int(datetime.datetime.now(datetime.timezone.utc).timestamp()) - 86400
@@ -387,6 +388,11 @@ def main():
         output["pakistan"] = [v for v in pk_videos if v["timestamp"] >= cutoff_24h]
         print(f"[neighbour] pakistan: {len(output['pakistan'])} videos")
 
+        print(f"\n[neighbour] === NEPAL ({len(NEPAL_NEWS_CHANNELS)} channels) ===")
+        np_videos = fetch_region(youtube, "nepal", NEPAL_NEWS_CHANNELS, meta_channels, video_cache)
+        output["nepal"] = [v for v in np_videos if v["timestamp"] >= cutoff_24h]
+        print(f"[neighbour] nepal: {len(output['nepal'])} videos")
+
         save_periodic_state({"last_window": window, "last_date": now_ist.strftime("%Y-%m-%d")})
         print(f"[opinion] State saved: window={window}, date={now_ist.strftime('%Y-%m-%d')}")
     elif window:
@@ -401,7 +407,7 @@ def main():
     save_video_cache(video_cache)
 
     total = sum(len(output[r]) for r in ["bengali", "opinion", "national_english", "national_hindi", "world_news"])
-    neighbour_total = len(output["bangladesh"]) + len(output["pakistan"])
+    neighbour_total = len(output["bangladesh"]) + len(output["pakistan"]) + len(output["nepal"])
     opinion_total = len(output["hindi_right_opinion"]) + len(output["hindi_left_opinion"])
     print(f"\n[done] {total} news + {opinion_total} opinion + {neighbour_total} neighbour videos saved to {VIDEOS_FILE}")
 
