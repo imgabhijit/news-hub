@@ -281,6 +281,34 @@ HINDI_RIGHT_OPINION_CHANNELS = [
 
 HINDI_LEFT_OPINION_CHANNELS = []  # to be added
 
+SRILANKA_NEWS_CHANNELS = [
+    {"id": "UCckltLEhFLv8Xz_lQhYfwmg", "name": "Hiru News"},
+    {"id": "UCgnFSj7jQffD5V5m05j4dPw", "name": "Newsfirst Sri Lanka"},
+]
+
+AFGHANISTAN_NEWS_CHANNELS = [
+    {"id": "UCknKEREcKsqhB9DFvT61LZQ", "name": "TOLOnews"},
+    {"id": "UC1yDKupSUpifv3CtgLqRMAg", "name": "Ariana News"},
+    {"id": "UCNYssWlc1i2oC54Tive3c2g", "name": "1TV Afghanistan"},
+    {"id": "UCI66K57kW6e9erEkY_n_JRA",  "name": "Afghanistan International"},
+    {"id": "UCdQaMnY_gERhv-aaipvVS7w",  "name": "Shamshad TV"},
+]
+
+MYANMAR_NEWS_CHANNELS = [
+    {"id": "UCuaRmKJLYaVMDHrnjhWUcHw", "name": "DVB TV News"},
+    {"id": "UCd9maKo3B6jX8pCPzLa2hvA", "name": "BBC News Myanmar"},
+    {"id": "UCk9f0cLiMmtchQySOogzoig", "name": "Mizzima News"},
+    {"id": "UCE75dgnEYPacknHHg3a3sJg",  "name": "RFA Burmese"},
+    {"id": "UCgEI7TvwuNGVGpd1M0icWJQ",  "name": "The Irrawaddy"},
+    {"id": "UCKud809KUMIyNhqwuy5JeFw",  "name": "Myanmar Now"},
+    {"id": "UCdI0UA27karDChnhnboHmqQ",  "name": "DVB English"},
+]
+
+MALDIVES_NEWS_CHANNELS = [
+    {"id": "UCVzO6pRmTELeCTDyOB0FOcw", "name": "Raajje TV"},
+    {"id": "UCPbslqG3viZRaA8ARsk6yBg",  "name": "PSM News"},
+]
+
 NEPAL_NEWS_CHANNELS = [
     {"id": "UCMDzPE_7fcZSRJgpwIVor_A", "name": "Avenues TV"},
     {"id": "UC4h-FP0sqCPzFikmZqF0ZIA", "name": "ABC News Nepal"},
