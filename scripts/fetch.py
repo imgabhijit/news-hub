@@ -13,8 +13,6 @@ import re
 import sys
 import json
 import datetime
-import urllib.request
-import urllib.parse
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -26,8 +24,7 @@ from channels import (
     NATIONAL_ENGLISH_CHANNELS, NATIONAL_HINDI_CHANNELS, WORLD_NEWS_CHANNELS,
     HINDI_RIGHT_OPINION_CHANNELS, HINDI_LEFT_OPINION_CHANNELS,
     BANGLADESH_NEWS_CHANNELS, PAKISTAN_NEWS_CHANNELS, NEPAL_NEWS_CHANNELS,
-    SRILANKA_NEWS_CHANNELS, AFGHANISTAN_NEWS_CHANNELS,
-    MYANMAR_NEWS_CHANNELS, MALDIVES_NEWS_CHANNELS,
+    MYANMAR_NEWS_CHANNELS,
 )
 
 load_dotenv(dotenv_path=Path(__file__).parent.parent / ".env")
@@ -37,10 +34,6 @@ META_FILE            = DATA_DIR / "channels_meta.json"
 VIDEOS_FILE          = DATA_DIR / "videos.json"
 CACHE_FILE           = DATA_DIR / "video_id_cache.json"
 PERIODIC_STATE_FILE  = DATA_DIR / "periodic_state.json"
-TRANS_CACHE_FILE     = DATA_DIR / "title_translations.json"
-
-# Channel types whose non-English titles need translation
-TRANSLATE_CHANNEL_TYPES = {"myanmar", "srilanka", "afghanistan", "maldives"}
 FETCH_DAYS           = 1
 MIN_DURATION         = 60
 META_STALE_DAYS      = 7
@@ -74,77 +67,6 @@ def load_periodic_state():
 def save_periodic_state(state):
     DATA_DIR.mkdir(exist_ok=True)
     PERIODIC_STATE_FILE.write_text(json.dumps(state, indent=2, ensure_ascii=False), encoding="utf-8")
-
-
-def load_trans_cache():
-    if TRANS_CACHE_FILE.exists():
-        try:
-            return json.loads(TRANS_CACHE_FILE.read_text(encoding="utf-8"))
-        except Exception:
-            pass
-    return {}
-
-
-def save_trans_cache(cache):
-    DATA_DIR.mkdir(exist_ok=True)
-    TRANS_CACHE_FILE.write_text(json.dumps(cache, ensure_ascii=False), encoding="utf-8")
-    print(f"[translate] Cache saved — {len(cache)} translations stored")
-
-
-def needs_translation(title):
-    """True if title contains non-ASCII characters (non-English script)."""
-    return any(ord(c) > 127 for c in title)
-
-
-def batch_translate(texts, api_key, target="en"):
-    """Translate a list of texts using Google Translate REST API (stdlib only)."""
-    if not texts or not api_key:
-        return [""] * len(texts)
-    results = []
-    for i in range(0, len(texts), 100):
-        batch = texts[i:i + 100]
-        try:
-            data = json.dumps({
-                "q": batch,
-                "target": target,
-                "format": "text",
-            }).encode("utf-8")
-            url = f"https://translation.googleapis.com/language/translate/v2?key={urllib.parse.quote(api_key, safe='')}"
-            req = urllib.request.Request(
-                url, data=data,
-                headers={"Content-Type": "application/json"},
-                method="POST",
-            )
-            with urllib.request.urlopen(req, timeout=30) as resp:
-                result = json.loads(resp.read().decode("utf-8"))
-                translations = result.get("data", {}).get("translations", [])
-                results.extend(t.get("translatedText", "") for t in translations)
-        except Exception as e:
-            print(f"[translate] Error in batch {i//100 + 1}: {e}")
-            results.extend([""] * len(batch))
-    return results
-
-
-def translate_videos(videos, channel_type, cache, api_key):
-    """Translate non-English titles for videos of translatable channel types."""
-    if channel_type not in TRANSLATE_CHANNEL_TYPES or not api_key:
-        return videos
-    to_translate = [
-        (v["video_id"], v["title"]) for v in videos
-        if v["video_id"] not in cache and needs_translation(v["title"])
-    ]
-    if to_translate:
-        print(f"[translate] Translating {len(to_translate)} new {channel_type} titles…")
-        texts = [t for _, t in to_translate]
-        translated = batch_translate(texts, api_key)
-        for (vid, _), trans in zip(to_translate, translated):
-            if trans:
-                cache[vid] = trans
-    for v in videos:
-        en = cache.get(v["video_id"], "")
-        if en:
-            v["title_en"] = en
-    return videos
 
 
 def current_opinion_window(hour):
@@ -226,9 +148,8 @@ def refresh_meta(youtube, meta):
         for ch in channels:
             all_channels[ch["id"]] = ch["name"]
     for ch in (HINDI_RIGHT_OPINION_CHANNELS + HINDI_LEFT_OPINION_CHANNELS +
-               BANGLADESH_NEWS_CHANNELS + PAKISTAN_NEWS_CHANNELS + NEPAL_NEWS_CHANNELS +
-               SRILANKA_NEWS_CHANNELS + AFGHANISTAN_NEWS_CHANNELS +
-               MYANMAR_NEWS_CHANNELS + MALDIVES_NEWS_CHANNELS):
+               BANGLADESH_NEWS_CHANNELS + PAKISTAN_NEWS_CHANNELS +
+               NEPAL_NEWS_CHANNELS + MYANMAR_NEWS_CHANNELS):
         all_channels[ch["id"]] = ch["name"]
 
     ids = list(all_channels.keys())
@@ -404,10 +325,8 @@ def fetch_region(youtube, region, channels, meta_channels, video_cache):
 
 
 def main():
-    youtube      = get_youtube()
-    translate_key = os.environ.get("GOOGLE_TRANSLATE_API_KEY", "").strip()
-    trans_cache  = load_trans_cache()
-    meta         = load_meta()
+    youtube = get_youtube()
+    meta    = load_meta()
 
     if is_stale(meta):
         meta = refresh_meta(youtube, meta)
@@ -439,10 +358,7 @@ def main():
         "bangladesh":            existing.get("bangladesh", []),
         "pakistan":              existing.get("pakistan", []),
         "nepal":                 existing.get("nepal", []),
-        "srilanka":              existing.get("srilanka", []),
-        "afghanistan":           existing.get("afghanistan", []),
         "myanmar":               existing.get("myanmar", []),
-        "maldives":              existing.get("maldives", []),
     }
 
     cutoff_24h = int(datetime.datetime.now(datetime.timezone.utc).timestamp()) - 86400
@@ -486,19 +402,10 @@ def main():
         output["nepal"] = [v for v in np_videos if v["timestamp"] >= cutoff_24h]
         print(f"[neighbour] nepal: {len(output['nepal'])} videos")
 
-        # Translatable neighbours
-        for region_key, channels in [
-            ("srilanka",    SRILANKA_NEWS_CHANNELS),
-            ("afghanistan", AFGHANISTAN_NEWS_CHANNELS),
-            ("myanmar",     MYANMAR_NEWS_CHANNELS),
-            ("maldives",    MALDIVES_NEWS_CHANNELS),
-        ]:
-            print(f"\n[neighbour] === {region_key.upper()} ({len(channels)} channels) ===")
-            vids = fetch_region(youtube, region_key, channels, meta_channels, video_cache)
-            purged = [v for v in vids if v["timestamp"] >= cutoff_24h]
-            purged = translate_videos(purged, region_key, trans_cache, translate_key)
-            output[region_key] = purged
-            print(f"[neighbour] {region_key}: {len(purged)} videos")
+        print(f"\n[neighbour] === MYANMAR ({len(MYANMAR_NEWS_CHANNELS)} channels) ===")
+        mm_videos = fetch_region(youtube, "myanmar", MYANMAR_NEWS_CHANNELS, meta_channels, video_cache)
+        output["myanmar"] = [v for v in mm_videos if v["timestamp"] >= cutoff_24h]
+        print(f"[neighbour] myanmar: {len(output['myanmar'])} videos")
 
         save_periodic_state({"last_window": window, "last_date": now_ist.strftime("%Y-%m-%d")})
         print(f"[opinion] State saved: window={window}, date={now_ist.strftime('%Y-%m-%d')}")
@@ -510,13 +417,11 @@ def main():
     DATA_DIR.mkdir(exist_ok=True)
     VIDEOS_FILE.write_text(json.dumps(output, ensure_ascii=False), encoding="utf-8")
 
-    # Persist updated video ID cache and translation cache
     save_video_cache(video_cache)
-    save_trans_cache(trans_cache)
 
     total = sum(len(output[r]) for r in ["bengali", "opinion", "national_english", "national_hindi", "world_news"])
     neighbour_total = sum(len(output.get(r, [])) for r in
-                          ["bangladesh","pakistan","nepal","srilanka","afghanistan","myanmar","maldives"])
+                          ["bangladesh","pakistan","nepal","myanmar"])
     opinion_total = len(output["hindi_right_opinion"]) + len(output["hindi_left_opinion"])
     print(f"\n[done] {total} news + {opinion_total} opinion + {neighbour_total} neighbour videos saved to {VIDEOS_FILE}")
 

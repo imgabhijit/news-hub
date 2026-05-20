@@ -264,11 +264,8 @@
 <div class="tabbar">
   <button class="tab-btn" id="btn-bangladesh" onclick="switchTab('bangladesh')">🇧🇩 Bangladesh</button>
   <button class="tab-btn" id="btn-pakistan"   onclick="switchTab('pakistan')">🇵🇰 Pakistan</button>
-  <button class="tab-btn" id="btn-nepal"        onclick="switchTab('nepal')">🇳🇵 Nepal</button>
-  <button class="tab-btn" id="btn-srilanka"    onclick="switchTab('srilanka')">🇱🇰 Sri Lanka</button>
-  <button class="tab-btn" id="btn-afghanistan" onclick="switchTab('afghanistan')">🇦🇫 Afghanistan</button>
-  <button class="tab-btn" id="btn-myanmar"     onclick="switchTab('myanmar')">🇲🇲 Myanmar</button>
-  <button class="tab-btn" id="btn-maldives"    onclick="switchTab('maldives')">🇲🇻 Maldives</button>
+  <button class="tab-btn" id="btn-nepal"    onclick="switchTab('nepal')">🇳🇵 Nepal</button>
+  <button class="tab-btn" id="btn-myanmar"  onclick="switchTab('myanmar')">🇲🇲 Myanmar</button>
   <button class="tab-btn" id="btn-live"     onclick="switchTab('live')">🔴 Live</button>
   <button class="tab-btn" id="btn-channels" onclick="switchTab('channels')">📺 By Channel</button>
 </div>
@@ -337,10 +334,7 @@
 <div class="tab-panel" id="panel-bangladesh"></div>
 <div class="tab-panel" id="panel-pakistan"></div>
 <div class="tab-panel" id="panel-nepal"></div>
-<div class="tab-panel" id="panel-srilanka"></div>
-<div class="tab-panel" id="panel-afghanistan"></div>
 <div class="tab-panel" id="panel-myanmar"></div>
-<div class="tab-panel" id="panel-maldives"></div>
 <div class="tab-panel" id="panel-live"></div>
 <div class="tab-panel" id="panel-channels"></div>
 
@@ -377,7 +371,7 @@ const MY_CHANNEL_NAME   = '';
 const MY_CHANNEL_VIDEOS = [];
 
 // ── Defaults ──────────────────────────────────────────────────────────────────
-const TAB_DEFAULTS      = { bangladesh: 'today', pakistan: 'today', nepal: 'today', srilanka: 'today', afghanistan: 'today', myanmar: 'today', maldives: 'today', live: '1h', channels: '24h' };
+const TAB_DEFAULTS      = { bangladesh: 'today', pakistan: 'today', nepal: 'today', myanmar: 'today', live: '1h', channels: '24h' };
 const SORT_DEFAULTS     = { bangladesh: 'velocity', live: 'views', channels: 'views' };
 const DURATION_DEFAULTS = { bangladesh: 'upto30', live: 'all', channels: 'all' };
 
@@ -510,10 +504,8 @@ function cardHtml(v, rank, isLive, hidden) {
     ? `<span class="live-badge"><span class="live-dot"></span> LIVE</span>`
     : rank ? `<span class="rank-badge">#${rank}</span>` : '';
   const dur = v.duration ? (() => { const m=Math.floor(v.duration/60),s=v.duration%60; return m>=60?`${Math.floor(m/60)}:${String(m%60).padStart(2,'0')}:${String(s).padStart(2,'0')}`:`${m}:${String(s).padStart(2,'0')}`; })() : '';
-  const displayTitle = v.title_en || v.title;
-  const safe   = displayTitle.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+  const safe   = v.title.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
   const safeCh = v.channel_name.replace(/'/g,"\\'");
-  const titleAttr = v.title_en ? ` title="${v.title.replace(/"/g,'&quot;')}"` : '';
   return `
     <div class="video-card${hidden?' hidden':''}" onclick="openPlayer('${v.video_id}','${safeCh}')">
       <div class="thumb-wrap">
@@ -524,7 +516,7 @@ function cardHtml(v, rank, isLive, hidden) {
       </div>
       <div class="card-body">
         <div class="card-channel">${v.channel_name}</div>
-        <div class="card-title"${titleAttr}>${displayTitle}</div>
+        <div class="card-title">${v.title}</div>
         <div class="card-meta">
           <span class="card-views">👁 ${fmtViews(v.view_count)}</span>
           <span>${formatAgo(v.timestamp)}</span>
@@ -545,26 +537,18 @@ function renderAll() {
   renderBangladesh();
   renderPakistan();
   renderNepal();
-  renderCountry('srilanka',    '🇱🇰', 'Sri Lanka');
-  renderCountry('afghanistan', '🇦🇫', 'Afghanistan');
-  renderCountry('myanmar',     '🇲🇲', 'Myanmar');
-  renderCountry('maldives',    '🇲🇻', 'Maldives');
+  renderMyanmar();
   renderLive();
   renderChannels();
 }
 
-function renderCountry(key, flag, label) {
-  const panel  = document.getElementById('panel-' + key);
-  if (!panel) return;
-  const videos = getVideos(allData[key] || [], currentFilter, currentSort);
-  if (!videos.length) { panel.innerHTML = emptyState(`No ${label} stories in this window`, 'Data refreshes 3× daily. Try a wider time filter.'); return; }
-  const gridId = key + 'Grid';
-  const moreId = key + 'More';
-  const cards  = videos.map((v,i) => cardHtml(v, i+1, false, i>=30)).join('');
-  const more   = videos.length > 30 ? `<div class="show-more-wrap" id="${moreId}"><button class="show-more-btn" onclick="showMore('${gridId}','${moreId}')">${videos.length-30} more stories</button></div>` : '';
-  const note   = ['myanmar','srilanka','afghanistan','maldives'].includes(key)
-    ? `<p style="font-size:0.75rem;color:#555;margin-bottom:12px">💬 Titles auto-translated to English · hover card to see original</p>` : '';
-  panel.innerHTML = note + `<p class="section-label">${flag} Top ${videos.length} ${label} stories · ${filterLabel()}</p><div class="video-grid" id="${gridId}">${cards}</div>${more}`;
+function renderMyanmar() {
+  const panel  = document.getElementById('panel-myanmar');
+  const videos = getVideos(allData.myanmar || [], currentFilter, currentSort);
+  if (!videos.length) { panel.innerHTML = emptyState('No Myanmar stories in this window', 'Data refreshes 3× daily. Try a wider time filter.'); return; }
+  const cards = videos.map((v,i) => cardHtml(v, i+1, false, i>=30)).join('');
+  const more  = videos.length > 30 ? `<div class="show-more-wrap" id="smMM"><button class="show-more-btn" onclick="showMore('mmGrid','smMM')">${videos.length-30} more stories</button></div>` : '';
+  panel.innerHTML = `<p class="section-label">Top ${videos.length} Myanmar stories · ${filterLabel()}</p><div class="video-grid" id="mmGrid">${cards}</div>${more}`;
 }
 
 function renderNepal() {
@@ -596,9 +580,7 @@ function renderBangladesh() {
 
 function renderLive() {
   const panel = document.getElementById('panel-live');
-  const allNeighbourLive = ['bangladesh','pakistan','nepal','srilanka','afghanistan','myanmar','maldives']
-    .flatMap(k => allData[k] || []);
-  let live = allNeighbourLive.filter(v => v.live_broadcast === 'live');
+  let live = ['bangladesh','pakistan','nepal','myanmar'].flatMap(k => allData[k] || []).filter(v => v.live_broadcast === 'live');
   live = live.filter(v => v.view_count >= getMinViewsNum(currentFilter));
   live = live.filter(v => matchesDuration(v));
   live = searchVideos(sortedVideos(live, currentFilter, currentSort));
@@ -612,7 +594,7 @@ function setSelectedChannel(name) { selectedChannel=name; renderChannels(); }
 
 function renderChannels() {
   const panel     = document.getElementById('panel-channels');
-  const allNeighbour = ['bangladesh','pakistan','nepal','srilanka','afghanistan','myanmar','maldives'].flatMap(k => allData[k] || []);
+  const allNeighbour = ['bangladesh','pakistan','nepal','myanmar'].flatMap(k => allData[k] || []);
   const byChannel = getVideosPerChannel(allNeighbour, currentFilter, currentSort);
   if (!Object.keys(byChannel).length) { panel.innerHTML = emptyState('No channel data in this window', 'Try a wider filter.'); return; }
 
@@ -781,12 +763,11 @@ window.addEventListener('DOMContentLoaded', async () => {
     const r = await fetch('data/videos.json');
     allData  = await r.json();
   } catch {
-    allData = { last_updated: null, bangladesh: [], pakistan: [], nepal: [], srilanka: [], afghanistan: [], myanmar: [], maldives: [] };
+    allData = { last_updated: null, bangladesh: [], pakistan: [], nepal: [], myanmar: [] };
     showToast('Could not load data.');
   }
   const ts = allData.last_updated;
-  const counts = ['bangladesh','pakistan','nepal','srilanka','afghanistan','myanmar','maldives']
-    .map(k => (allData[k]||[]).length).reduce((a,b) => a+b, 0);
+  const counts = ['bangladesh','pakistan','nepal','myanmar'].map(k => (allData[k]||[]).length).reduce((a,b)=>a+b,0);
   document.getElementById('metaInfo').textContent =
     `Refreshed: ${ts ? formatAgo(new Date(ts).getTime()/1000) : 'never'} | ${counts} neighbour videos`;
   renderAll();
