@@ -28,6 +28,14 @@
 
     .video-title  { margin-top: 14px; font-size: 1rem; line-height: 1.55; color: #e0e0e0; font-weight: 500; }
     .video-credit { margin-top: 6px; font-size: 0.88rem; color: #f5c518; font-weight: 700; letter-spacing: 0.02em; text-align: right; }
+
+    @media (max-width: 1366px) and (max-height: 768px) {
+      body { padding: 14px 12px; }
+      .player-container { max-width: min(900px, 88vw); }
+      .back-btn { padding-bottom: 10px; }
+      .video-title { margin-top: 10px; font-size: 0.95rem; line-height: 1.35; }
+      .video-credit { margin-top: 4px; font-size: 0.82rem; }
+    }
   </style>
 </head>
 <body>
