@@ -600,7 +600,7 @@ function searchVideos(videos) {
   const q=currentSearch.toLowerCase();
   return videos.filter(v=>v.title.toLowerCase().includes(q)||v.channel_name.toLowerCase().includes(q));
 }
-function getVideos(pool, filter, sort, n=100) {
+function getVideos(pool, filter, sort, n=Infinity) {
   let p=filterByRange(pool,filter).filter(v=>v.live_broadcast!=='live').filter(v=>v.view_count>=getMinViewsNum(filter)).filter(v=>matchesDuration(v));
   return searchVideos(sortedVideos(p,filter,sort)).slice(0,n);
 }
