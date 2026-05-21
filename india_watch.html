@@ -271,6 +271,8 @@
   </div>
   <input type="search" id="searchInput" class="toolbar-search" placeholder="Search title or channel…"
          oninput="setSearch(this.value)">
+  <button class="export-btn" onclick="downloadTxt()">Download Metadata</button>
+  <button class="export-btn" onclick="downloadUrls()">Download URLs</button>
 </div>
 
 <div class="tab-panel" id="panel-all"></div>
@@ -819,6 +821,32 @@ function renderToolbar() {
   document.getElementById('customViewsInput').style.display = currentMinViews==='custom'?'inline-block':'none';
 }
 function updateUrl() { history.replaceState(null,'',`?tab=${currentTab}&filter=${currentFilter}&sort=${currentSort}`); }
+function gatherExportVideos() {
+  if (currentTab === 'all') return getVideos(indiaPool, currentFilter, currentSort, Infinity);
+  if (currentTab === 'wb') return getVideos(wbPool, currentFilter, currentSort, Infinity);
+  return [];
+}
+function downloadTxt() {
+  const vids = gatherExportVideos();
+  if (!vids.length) return;
+  const rows = ['channel\ttitle\turl\tviews\tduration\tpublished_at', ...vids.map(v => [v.channel_name, v.title, `https://www.youtube.com/watch?v=${v.video_id}`, String(Math.round(v.view_count || 0)), v.duration || 0, new Date((v.timestamp || 0) * 1000).toISOString()].join('\t'))];
+  const blob = new Blob([rows.join('\n')], { type: 'text/plain;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `india-watch-${currentTab}-${currentFilter}.txt`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+function downloadUrls() {
+  const vids = gatherExportVideos();
+  if (!vids.length) return;
+  const blob = new Blob([vids.map(v => `https://www.youtube.com/watch?v=${v.video_id}`).join('\n')], { type: 'text/plain;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `india-watch-${currentTab}-${currentFilter}-urls.txt`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
 function showMore(gridId, wrapperId, step = 20) {
   const hidden = [...document.querySelectorAll(`#${gridId} .video-card.hidden`)];
   hidden.slice(0, step).forEach(c=>c.classList.remove('hidden'));

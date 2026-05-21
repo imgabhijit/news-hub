@@ -79,6 +79,8 @@
     }
     .toolbar-search:focus { border-color: #2ecc71; width: 260px; }
     .toolbar-search::placeholder { color: #555; }
+    .export-btn { background: #10331f; border: 1px solid #2ecc71; color: #2ecc71; padding: 6px 12px; border-radius: 8px; font-size: 0.82rem; cursor: pointer; white-space: nowrap; transition: all 0.2s; }
+    .export-btn:hover { background: #195132; color: #fff; }
 
     /* ── panels ── */
     .tab-panel { display: none; padding: 24px; }
@@ -374,6 +376,8 @@
 
   <input type="search" id="searchInput" class="toolbar-search" placeholder="Search title or channel…"
          oninput="setSearch(this.value)">
+  <button class="export-btn" onclick="downloadTxt()">Download Metadata</button>
+  <button class="export-btn" onclick="downloadUrls()">Download URLs</button>
   <span id="metaInfo" style="display:none"></span>
 </div>
 
@@ -601,6 +605,13 @@ function fmtViews(n) {
   if (n >= 1e3) return `${(n / 1e3).toFixed(1)}K`;
   return String(n);
 }
+function viewsNum(n) {
+  if (n >= 1e9) return `${(n / 1e9).toFixed(n >= 1e10 ? 0 : 1)}B`;
+  if (n >= 1e6) return `${(n / 1e6).toFixed(1)}M`;
+  if (n >= 1e3) return `${(n / 1e3).toFixed(1)}K`;
+  return String(n);
+}
+function viewsRaw(n) { return String(Math.round(n || 0)); }
 
 function medianViews(vids) {
   if (!vids || !vids.length) return 0;
@@ -637,6 +648,7 @@ function formatAgo(ts) {
   if (d < 86400) return `${Math.floor(d / 3600)}h ago`;
   return `${Math.floor(d / 86400)}d ago`;
 }
+function publishTime(ts) { return new Date(ts * 1000).toISOString(); }
 
 function filterLabel() {
   const m = { lastnight:'Last Night', today:'Today', tonight:'Tonight', '1h':'1h', '3h':'3h', '5h':'5h', '24h':'24h' };
@@ -822,6 +834,37 @@ function renderToolbar() {
 
 function updateUrl() {
   history.replaceState(null, '', `?tab=${currentTab}&filter=${currentFilter}&sort=${currentSort}`);
+}
+function gatherExportVideos() {
+  if (currentTab === 'top') return getVideos(allData.world_news || [], currentFilter, currentSort, Infinity);
+  if (currentTab === 'channels') return getVideos(allData.world_news || [], currentFilter, currentSort, Infinity);
+  return [];
+}
+function downloadTxt() {
+  const vids = gatherExportVideos();
+  if (!vids.length) return;
+  const rows = [
+    'channel\ttitle\turl\tviews\tduration\tpublished_at',
+    ...vids.map(v => `${v.channel_name}\t${v.title}\thttps://www.youtube.com/watch?v=${v.video_id}\t${viewsRaw(v.view_count || 0)}\t${v.duration || 0}\t${publishTime(v.timestamp || 0)}`)
+  ];
+  const text = rows.join('\n');
+  const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `world-${currentTab}-${currentFilter}.txt`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+function downloadUrls() {
+  const vids = gatherExportVideos();
+  if (!vids.length) return;
+  const text = vids.map(v => `https://www.youtube.com/watch?v=${v.video_id}`).join('\n');
+  const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `world-${currentTab}-${currentFilter}-urls.txt`;
+  a.click();
+  URL.revokeObjectURL(a.href);
 }
 
 function showMore(gridId, wrapperId, step = 20) {

@@ -388,6 +388,8 @@
 
   <input type="search" id="searchInput" class="toolbar-search" placeholder="Search title or channel…"
          oninput="setSearch(this.value)">
+  <button class="export-btn" onclick="downloadTxt()">Download Metadata</button>
+  <button class="export-btn" onclick="downloadUrls()">Download URLs</button>
   <span id="metaInfo" style="display:none"></span>
 </div>
 
@@ -919,6 +921,35 @@ function renderToolbar() {
 
 function updateUrl() {
   history.replaceState(null, '', `?tab=${currentTab}&filter=${currentFilter}&sort=${currentSort}`);
+}
+function gatherExportVideos() {
+  const pool = [];
+  if (currentTab === 'english') pool.push(...(allData.national_english || []));
+  if (currentTab === 'hindi') pool.push(...(allData.national_hindi || []));
+  if (currentTab === 'opinion-all' || currentTab === 'opinion-right' || currentTab === 'opinion-left' || currentTab === 'channels') pool.push(...(allData.national_english || []), ...(allData.national_hindi || []), ...(allData.hindi_right_opinion || []), ...(allData.hindi_left_opinion || []));
+  if (currentTab === 'states' || currentTab === 'regions' || currentTab === 'live') return [];
+  return getVideos(pool.length ? pool : [...(allData.national_english || []), ...(allData.national_hindi || [])], currentFilter, currentSort, Infinity);
+}
+function downloadTxt() {
+  const vids = gatherExportVideos();
+  if (!vids.length) return;
+  const rows = ['channel\ttitle\turl\tviews\tduration\tpublished_at', ...vids.map(v => [v.channel_name, v.title, `https://www.youtube.com/watch?v=${v.video_id}`, String(Math.round(v.view_count || 0)), v.duration || 0, new Date((v.timestamp || 0) * 1000).toISOString()].join('\t'))];
+  const blob = new Blob([rows.join('\n')], { type: 'text/plain;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `national-${currentTab}-${currentFilter}.txt`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+function downloadUrls() {
+  const vids = gatherExportVideos();
+  if (!vids.length) return;
+  const blob = new Blob([vids.map(v => `https://www.youtube.com/watch?v=${v.video_id}`).join('\n')], { type: 'text/plain;charset=utf-8' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `national-${currentTab}-${currentFilter}-urls.txt`;
+  a.click();
+  URL.revokeObjectURL(a.href);
 }
 
 function showMore(gridId, wrapperId, step = 20) {
