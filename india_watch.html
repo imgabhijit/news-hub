@@ -690,8 +690,8 @@ function renderIndiaAll() {
   const panel = document.getElementById('panel-all');
   const videos = getVideos(indiaPool, currentFilter, currentSort);
   if (!videos.length) { panel.innerHTML = emptyState('No India stories in this window', 'Try a wider time filter.'); return; }
-  const cards = videos.map((v,i) => cardHtml(v, i+1, false, i>=30)).join('');
-  const more  = videos.length > 30 ? `<div class="show-more-wrap" id="smAll"><button class="show-more-btn" onclick="showMore('allGrid','smAll')">${videos.length-30} more stories</button></div>` : '';
+  const cards = videos.map((v,i) => cardHtml(v, i+1, false, i>=20)).join('');
+  const more  = videos.length > 20 ? `<div class="show-more-wrap" id="smAll"><button class="show-more-btn" onclick="showMore('allGrid','smAll',20)">${videos.length-20} more stories</button><button class="show-more-btn show-all-btn" onclick="showAll('allGrid','smAll')">Show all</button></div>` : '';
   panel.innerHTML = `<p class="section-label">Top ${videos.length} India stories · ${filterLabel()}</p><div class="video-grid" id="allGrid">${cards}</div>${more}`;
 }
 
@@ -699,8 +699,8 @@ function renderWB() {
   const panel = document.getElementById('panel-wb');
   const videos = getVideos(wbPool, currentFilter, currentSort);
   if (!videos.length) { panel.innerHTML = emptyState('No West Bengal stories in this window', 'Try a wider time filter.'); return; }
-  const cards = videos.map((v,i) => cardHtml(v, i+1, false, i>=30)).join('');
-  const more  = videos.length > 30 ? `<div class="show-more-wrap" id="smWB"><button class="show-more-btn" onclick="showMore('wbGrid','smWB')">${videos.length-30} more stories</button></div>` : '';
+  const cards = videos.map((v,i) => cardHtml(v, i+1, false, i>=20)).join('');
+  const more  = videos.length > 20 ? `<div class="show-more-wrap" id="smWB"><button class="show-more-btn" onclick="showMore('wbGrid','smWB',20)">${videos.length-20} more stories</button><button class="show-more-btn show-all-btn" onclick="showAll('wbGrid','smWB')">Show all</button></div>` : '';
   panel.innerHTML = `<p class="section-label">Top ${videos.length} West Bengal stories · ${filterLabel()}</p><div class="video-grid" id="wbGrid">${cards}</div>${more}`;
 }
 
@@ -732,8 +732,8 @@ function renderChannels() {
     if (selectedChannel) {
       const vids   = allByChannel[selectedChannel] || [];
       const sorted = searchVideos(sortedVideos(vids, currentFilter, currentSort));
-      const cards  = sorted.map((v,i) => cardHtml(v, i+1, false, i>=30)).join('');
-      const more   = sorted.length > 30 ? `<div class="show-more-wrap" id="smChD"><button class="show-more-btn" onclick="showMore('chDetGrid','smChD')">${sorted.length-30} more</button></div>` : '';
+      const cards  = sorted.map((v,i) => cardHtml(v, i+1, false, i>=20)).join('');
+      const more   = sorted.length > 20 ? `<div class="show-more-wrap" id="smChD"><button class="show-more-btn" onclick="showMore('chDetGrid','smChD',20)">${sorted.length-20} more</button><button class="show-more-btn show-all-btn" onclick="showAll('chDetGrid','smChD')">Show all</button></div>` : '';
       panel.innerHTML = toggle +
         `<div class="ch-detail-header">
           <button class="ch-view-btn" onclick="setSelectedChannel(null)">← Back</button>
@@ -819,7 +819,15 @@ function renderToolbar() {
   document.getElementById('customViewsInput').style.display = currentMinViews==='custom'?'inline-block':'none';
 }
 function updateUrl() { history.replaceState(null,'',`?tab=${currentTab}&filter=${currentFilter}&sort=${currentSort}`); }
-function showMore(gridId, wrapperId) {
+function showMore(gridId, wrapperId, step = 20) {
+  const hidden = [...document.querySelectorAll(`#${gridId} .video-card.hidden`)];
+  hidden.slice(0, step).forEach(c=>c.classList.remove('hidden'));
+  const remaining = document.querySelectorAll(`#${gridId} .video-card.hidden`).length;
+  const wrap = document.getElementById(wrapperId);
+  if (remaining <= 0) wrap.style.display='none';
+  else wrap.querySelector('.show-more-btn').textContent = `${remaining} more stories`;
+}
+function showAll(gridId, wrapperId) {
   document.querySelectorAll(`#${gridId} .video-card.hidden`).forEach(c=>c.classList.remove('hidden'));
   document.getElementById(wrapperId).style.display='none';
 }

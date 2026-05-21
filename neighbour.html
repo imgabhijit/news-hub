@@ -140,9 +140,11 @@
     .card-meta    { display: flex; justify-content: space-between; font-size: 0.74rem; color: #777; }
     .card-views   { color: #aaa; font-weight: 600; }
 
-    .show-more-wrap { text-align: center; margin-top: 28px; }
+    .show-more-wrap { text-align: center; margin-top: 28px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
     .show-more-btn  { background: #2a2d3a; border: 1px solid #3a3d4a; color: #ccc; padding: 10px 32px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; transition: all 0.2s; }
     .show-more-btn:hover { background: #3a3d4a; color: #fff; }
+    .show-all-btn { background: #0a1a2a; border-color: #16a085; color: #16a085; }
+    .show-all-btn:hover { background: #123a34; color: #fff; }
 
     .channel-row   { margin-bottom: 36px; }
     .channel-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #2a2d3a; }
@@ -472,7 +474,7 @@ function searchVideos(videos) {
   const q = currentSearch.toLowerCase();
   return videos.filter(v => v.title.toLowerCase().includes(q) || v.channel_name.toLowerCase().includes(q));
 }
-function getVideos(videos, filter, sort, n = 100) {
+function getVideos(videos, filter, sort, n = Infinity) {
   let pool = filterByRange(videos, filter).filter(v => v.live_broadcast !== 'live');
   pool = pool.filter(v => v.view_count >= getMinViewsNum(filter));
   pool = pool.filter(v => matchesDuration(v));
@@ -597,8 +599,8 @@ function renderBangladesh() {
   const panel  = document.getElementById('panel-bangladesh');
   const videos = getVideos(allData.bangladesh || [], currentFilter, currentSort);
   if (!videos.length) { panel.innerHTML = emptyState('No Bangladesh stories in this window', 'Data refreshes 3× daily (morning, evening, night). Try a wider time filter.'); return; }
-  const cards = videos.map((v,i) => cardHtml(v, i+1, false, i>=30)).join('');
-  const more  = videos.length > 30 ? `<div class="show-more-wrap" id="smBD"><button class="show-more-btn" onclick="showMore('bdGrid','smBD')">${videos.length-30} more stories</button></div>` : '';
+  const cards = videos.map((v,i) => cardHtml(v, i+1, false, i>=20)).join('');
+  const more  = videos.length > 20 ? `<div class="show-more-wrap" id="smBD"><button class="show-more-btn" onclick="showMore('bdGrid','smBD',20)">${videos.length-20} more stories</button><button class="show-more-btn show-all-btn" onclick="showAll('bdGrid','smBD')">Show all</button></div>` : '';
   panel.innerHTML = `<p class="section-label">Top ${videos.length} Bangladesh stories · ${filterLabel()}</p><div class="video-grid" id="bdGrid">${cards}</div>${more}`;
 }
 
@@ -632,8 +634,8 @@ function renderChannels() {
     if (selectedChannel) {
       const vids   = allByChannel[selectedChannel] || [];
       const sorted = searchVideos(sortedVideos(vids, currentFilter, currentSort));
-      const cards  = sorted.map((v,i) => cardHtml(v, i+1, false, i>=30)).join('');
-      const more   = sorted.length > 30 ? `<div class="show-more-wrap" id="smChD"><button class="show-more-btn" onclick="showMore('chDetGrid','smChD')">${sorted.length-30} more</button></div>` : '';
+      const cards  = sorted.map((v,i) => cardHtml(v, i+1, false, i>=20)).join('');
+      const more   = sorted.length > 20 ? `<div class="show-more-wrap" id="smChD"><button class="show-more-btn" onclick="showMore('chDetGrid','smChD',20)">${sorted.length-20} more</button><button class="show-more-btn show-all-btn" onclick="showAll('chDetGrid','smChD')">Show all</button></div>` : '';
       panel.innerHTML = toggle +
         `<div class="ch-detail-header">
           <button class="ch-view-btn" onclick="setSelectedChannel(null)">← Back</button>
@@ -721,7 +723,15 @@ function renderToolbar() {
 function updateUrl() {
   history.replaceState(null, '', `?tab=${currentTab}&filter=${currentFilter}&sort=${currentSort}`);
 }
-function showMore(gridId, wrapperId) {
+function showMore(gridId, wrapperId, step = 20) {
+  const hidden = [...document.querySelectorAll(`#${gridId} .video-card.hidden`)];
+  hidden.slice(0, step).forEach(c => c.classList.remove('hidden'));
+  const remaining = document.querySelectorAll(`#${gridId} .video-card.hidden`).length;
+  const wrapper = document.getElementById(wrapperId);
+  if (remaining <= 0) wrapper.style.display = 'none';
+  else wrapper.querySelector('.show-more-btn').textContent = `${remaining} more stories`;
+}
+function showAll(gridId, wrapperId) {
   document.querySelectorAll(`#${gridId} .video-card.hidden`).forEach(c => c.classList.remove('hidden'));
   document.getElementById(wrapperId).style.display = 'none';
 }

@@ -127,9 +127,11 @@
     .card-meta    { display: flex; justify-content: space-between; font-size: 0.74rem; color: #777; }
     .card-views   { color: #aaa; font-weight: 600; }
 
-    .show-more-wrap { text-align: center; margin-top: 28px; }
+    .show-more-wrap { text-align: center; margin-top: 28px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
     .show-more-btn  { background: #2a2d3a; border: 1px solid #3a3d4a; color: #ccc; padding: 10px 32px; border-radius: 6px; cursor: pointer; font-size: 0.9rem; transition: all 0.2s; }
     .show-more-btn:hover { background: #3a3d4a; color: #fff; }
+    .show-all-btn { background: #10331f; border-color: #2ecc71; color: #2ecc71; }
+    .show-all-btn:hover { background: #195132; color: #fff; }
 
     .channel-row   { margin-bottom: 36px; }
     .channel-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #2a2d3a; }
@@ -687,7 +689,7 @@ function renderTop() {
   if (!videos.length) { panel.innerHTML = emptyState('No stories found', currentSearch ? 'Try a different search.' : 'Try a wider time filter.'); return; }
   const cards = videos.map((v, i) => cardHtml(v, i + 1, false, i >= 20)).join('');
   const more  = videos.length > 20
-    ? `<div class="show-more-wrap" id="smTop"><button class="show-more-btn" onclick="showMore('topGrid','smTop')">${videos.length - 20} more stories</button></div>` : '';
+    ? `<div class="show-more-wrap" id="smTop"><button class="show-more-btn" onclick="showMore('topGrid','smTop',20)">${videos.length - 20} more stories</button><button class="show-more-btn show-all-btn" onclick="showAll('topGrid','smTop')">Show all</button></div>` : '';
   panel.innerHTML = `<p class="section-label">Top ${videos.length} world stories · ${filterLabel()}</p><div class="video-grid" id="topGrid">${cards}</div>${more}`;
 }
 
@@ -721,7 +723,7 @@ function renderChannels() {
       const vids   = allByChannel[selectedChannel] || [];
       const sorted = searchVideos(sortedVideos(vids, currentFilter, currentSort));
       const cards  = sorted.map((v, i) => cardHtml(v, i + 1, false, i >= 30)).join('');
-      const more   = sorted.length > 30 ? `<div class="show-more-wrap" id="smChD"><button class="show-more-btn" onclick="showMore('chDetGrid','smChD')">${sorted.length - 30} more</button></div>` : '';
+      const more   = sorted.length > 20 ? `<div class="show-more-wrap" id="smChD"><button class="show-more-btn" onclick="showMore('chDetGrid','smChD',20)">${sorted.length - 20} more</button><button class="show-more-btn show-all-btn" onclick="showAll('chDetGrid','smChD')">Show all</button></div>` : '';
       panel.innerHTML = toggle +
         `<div class="ch-detail-header">
           <button class="ch-view-btn" onclick="setSelectedChannel(null)">← Back</button>
@@ -822,16 +824,20 @@ function updateUrl() {
   history.replaceState(null, '', `?tab=${currentTab}&filter=${currentFilter}&sort=${currentSort}`);
 }
 
-function showMore(gridId, wrapperId) {
+function showMore(gridId, wrapperId, step = 20) {
   const hidden = [...document.querySelectorAll(`#${gridId} .video-card.hidden`)];
-  hidden.slice(0, 20).forEach(c => c.classList.remove('hidden'));
-  const remaining = hidden.length - 20;
+  hidden.slice(0, step).forEach(c => c.classList.remove('hidden'));
+  const remaining = document.querySelectorAll(`#${gridId} .video-card.hidden`).length;
   const wrapper = document.getElementById(wrapperId);
   if (remaining <= 0) {
     wrapper.style.display = 'none';
   } else {
-    wrapper.querySelector('button').textContent = `${remaining} more stories`;
+    wrapper.querySelector('.show-more-btn').textContent = `${remaining} more stories`;
   }
+}
+function showAll(gridId, wrapperId) {
+  document.querySelectorAll(`#${gridId} .video-card.hidden`).forEach(c => c.classList.remove('hidden'));
+  document.getElementById(wrapperId).style.display = 'none';
 }
 
 function showToast(msg, ms = 3500) {
