@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
@@ -329,9 +329,7 @@
   <button class="tab-btn" id="btn-regions"       onclick="switchTab('regions')">🌐 By Region</button>
   <button class="tab-btn" id="btn-live"          onclick="switchTab('live')">🔴 Live</button>
   <button class="tab-btn" id="btn-channels"      onclick="switchTab('channels')">📺 By Channel</button>
-  <button class="tab-btn" id="btn-opinion-all"   onclick="switchTab('opinion-all')">🎙️ All Opinion</button>
-  <button class="tab-btn" id="btn-opinion-right" onclick="switchTab('opinion-right')">🏛️ Right</button>
-  <button class="tab-btn" id="btn-opinion-left"  onclick="switchTab('opinion-left')">✊ Left</button>
+
 </div>
 
 <div class="toolbar-wrap" id="toolbarWrap">
@@ -405,9 +403,7 @@
 <div class="tab-panel" id="panel-channels"></div>
 <div class="tab-panel" id="panel-states"></div>
 <div class="tab-panel" id="panel-regions"></div>
-<div class="tab-panel" id="panel-opinion-all"></div>
-<div class="tab-panel" id="panel-opinion-right"></div>
-<div class="tab-panel" id="panel-opinion-left"></div>
+
 
 <div class="modal-overlay" id="playerModal" onclick="onModalClick(event)">
   <div class="modal-wrapper">
@@ -444,9 +440,9 @@ const MY_CHANNEL_NAME   = '';
 const MY_CHANNEL_VIDEOS = [];
 
 // ── Filter & sort setup ───────────────────────────────────────────────────────
-const TAB_DEFAULTS      = { english: 'today', hindi: 'today', live: '1h', channels: '24h', states: '24h', regions: '24h', 'opinion-all': '24h', 'opinion-right': '24h', 'opinion-left': '24h' };
-const DURATION_DEFAULTS = { english: 'upto60', hindi: 'upto60', live: 'all', channels: 'all', states: 'all', regions: 'all', 'opinion-all': 'upto60', 'opinion-right': 'upto60', 'opinion-left': 'upto60' };
-const SORT_DEFAULTS     = { english: 'velocity', hindi: 'velocity', live: 'views', channels: 'views', states: 'views', regions: 'views', 'opinion-all': 'velocity', 'opinion-right': 'velocity', 'opinion-left': 'velocity' };
+const TAB_DEFAULTS      = { english: 'today', hindi: 'today', live: '1h', channels: '24h', states: '24h', regions: '24h' };
+const DURATION_DEFAULTS = { english: 'upto60', hindi: 'upto60', live: 'all', channels: 'all', states: 'all', regions: 'all' };
+const SORT_DEFAULTS     = { english: 'velocity', hindi: 'velocity', live: 'views', channels: 'views', states: 'views', regions: 'views' };
 
 const THRESHOLDS = {
   lastnight: 40000,
@@ -711,40 +707,10 @@ function renderAll() {
   renderChannels();
   renderStates();
   renderRegions();
-  renderOpinionAll();
-  renderOpinionRight();
-  renderOpinionLeft();
+
 }
 
-function renderOpinionAll() {
-  const panel  = document.getElementById('panel-opinion-all');
-  const videos = searchVideos(getVideos([...(allData.hindi_right_opinion || []), ...(allData.hindi_left_opinion || [])], currentFilter, currentSort));
-  if (!videos.length) { panel.innerHTML = emptyState('No opinion videos found', 'Opinion channels are fetched 3 times daily (morning, evening, night).'); return; }
-  const cards = videos.map((v, i) => cardHtml(v, i + 1, false, i >= 20, false)).join('');
-  const more  = videos.length > 20
-    ? `<div class="show-more-wrap" id="smOpAll"><button class="show-more-btn" onclick="showMore('opAllGrid','smOpAll',20)">${videos.length - 20} more</button><button class="show-more-btn show-all-btn" onclick="showAll('opAllGrid','smOpAll')">Show all</button></div>` : '';
-  panel.innerHTML = `<p class="section-label">Top ${videos.length} opinion videos · ${filterLabel()}</p><div class="video-grid" id="opAllGrid">${cards}</div>${more}`;
-}
 
-function renderOpinionRight() {
-  const panel  = document.getElementById('panel-opinion-right');
-  const videos = searchVideos(getVideos(allData.hindi_right_opinion || [], currentFilter, currentSort));
-  if (!videos.length) { panel.innerHTML = emptyState('No Right opinion videos found', 'Opinion channels are fetched 3 times daily (morning, evening, night).'); return; }
-  const cards = videos.map((v, i) => cardHtml(v, i + 1, false, i >= 20, false)).join('');
-  const more  = videos.length > 20
-    ? `<div class="show-more-wrap" id="smOpR"><button class="show-more-btn" onclick="showMore('opRGrid','smOpR',20)">${videos.length - 20} more</button><button class="show-more-btn show-all-btn" onclick="showAll('opRGrid','smOpR')">Show all</button></div>` : '';
-  panel.innerHTML = `<p class="section-label">Top ${videos.length} Right opinion videos · ${filterLabel()}</p><div class="video-grid" id="opRGrid">${cards}</div>${more}`;
-}
-
-function renderOpinionLeft() {
-  const panel  = document.getElementById('panel-opinion-left');
-  const videos = searchVideos(getVideos(allData.hindi_left_opinion || [], currentFilter, currentSort));
-  if (!videos.length) { panel.innerHTML = emptyState('No Left opinion videos found', 'Left opinion channels coming soon.'); return; }
-  const cards = videos.map((v, i) => cardHtml(v, i + 1, false, i >= 20, false)).join('');
-  const more  = videos.length > 20
-    ? `<div class="show-more-wrap" id="smOpL"><button class="show-more-btn" onclick="showMore('opLGrid','smOpL',20)">${videos.length - 20} more</button><button class="show-more-btn show-all-btn" onclick="showAll('opLGrid','smOpL')">Show all</button></div>` : '';
-  panel.innerHTML = `<p class="section-label">Top ${videos.length} Left opinion videos · ${filterLabel()}</p><div class="video-grid" id="opLGrid">${cards}</div>${more}`;
-}
 
 function renderEnglish() {
   const panel  = document.getElementById('panel-english');
@@ -932,7 +898,7 @@ function gatherExportVideos() {
   const pool = [];
   if (currentTab === 'english') pool.push(...(allData.national_english || []));
   if (currentTab === 'hindi') pool.push(...(allData.national_hindi || []));
-  if (currentTab === 'opinion-all' || currentTab === 'opinion-right' || currentTab === 'opinion-left' || currentTab === 'channels') pool.push(...(allData.national_english || []), ...(allData.national_hindi || []), ...(allData.hindi_right_opinion || []), ...(allData.hindi_left_opinion || []));
+  if (currentTab === 'channels') pool.push(...(allData.national_english || []), ...(allData.national_hindi || []));
   if (currentTab === 'states' || currentTab === 'regions' || currentTab === 'live') return [];
   return getVideos(pool.length ? pool : [...(allData.national_english || []), ...(allData.national_hindi || [])], currentFilter, currentSort, Infinity);
 }
@@ -1219,7 +1185,7 @@ window.addEventListener('DOMContentLoaded', async () => {
     const r = await fetch('data/videos.json');
     allData  = await r.json();
   } catch {
-    allData = { last_updated: null, national_english: [], national_hindi: [], hindi_right_opinion: [], hindi_left_opinion: [] };
+    allData = { last_updated: null, national_english: [], national_hindi: [] };
     showToast('Could not load data.');
   }
 
