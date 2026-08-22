@@ -277,6 +277,11 @@ HINDI_RIGHT_OPINION_CHANNELS = [
     {"id": "UCgQRMdlDCV1f83MjIJb3LKQ", "name": "Pulkit NPC"},
     {"id": "UCGZgJ4bM3Kc0owkF4pvrMfw", "name": "Vyalok Pathak"},
     {"id": "UCio2EyNIItdER5t1obHTtSw", "name": "The Rajdharma"},
+    {"id": "UCsIDYMSVVT2lwkP7BYmg8UA", "name": "Channel 1"},
+    {"id": "UCIBQmCCxU_BSQYp29uwUwbA", "name": "Channel 2"},
+    {"id": "UCUFVFRkjmH_N-DZm4j-1rgg", "name": "Channel 3"},
+    {"id": "UCzg4__GnT_ivStgXyxv6jsg", "name": "Channel 4"},
+    {"id": "UC5OhhLoILL7Mhm-NJXHucSQ", "name": "Channel 5"},
 ]
 
 HINDI_LEFT_OPINION_CHANNELS = [

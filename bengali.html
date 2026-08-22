@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="bn">
 <head>
   <meta charset="UTF-8">
@@ -377,7 +377,7 @@
       <option value="all">All</option>
       <option value="upto60">Up to 1 hr</option>
       <option value="upto30">Up to 30 min</option>
-      <option value="1to3">Under 3 min</option>
+      <option value="upto3">Under 3 min</option>
       <option value="3to15">3–15 min</option>
       <option value="15to30">15–30 min</option>
       <option value="long">1 hr+</option>
@@ -588,7 +588,7 @@ function matchesDuration(v) {
   switch (currentDuration) {
     case 'upto60': return d < 3600;
     case 'upto30': return d < 1800;
-    case '1to3':  return d < 180;
+    case 'upto3':  return d < 180;
     case '3to15':  return d >= 180  && d < 900;
     case '15to30': return d >= 900  && d < 1800;
     case 'long':   return d >= 3600;

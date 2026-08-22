@@ -195,6 +195,10 @@ def fetch_playlist_videos(youtube, playlist_id, days, known_ids=None):
 
     Stops early when a known (already-cached) video ID is encountered,
     since the playlist is newest-first and everything after is already known.
+
+    NOTE: Active live streams often have an empty videoPublishedAt field.
+    We always include them (treat missing pub as "now") so live videos
+    from opinion/news channels are never silently dropped.
     """
     cutoff = (
         datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=days)
@@ -220,7 +224,11 @@ def fetch_playlist_videos(youtube, playlist_id, days, known_ids=None):
             if known_ids and vid in known_ids:
                 return video_ids  # hit a known ID — everything after is already cached
 
-            if pub >= cutoff:
+            # Empty pub = active live stream (YouTube omits publishedAt for ongoing streams)
+            # Always include these so live videos are never dropped.
+            if not pub:
+                video_ids.append(vid)
+            elif pub >= cutoff:
                 video_ids.append(vid)
             else:
                 return video_ids  # hit a video older than our window
@@ -229,6 +237,7 @@ def fetch_playlist_videos(youtube, playlist_id, days, known_ids=None):
         if not next_token:
             break
     return video_ids
+
 
 
 def fetch_video_details(youtube, video_ids):
@@ -282,12 +291,16 @@ def fetch_region(youtube, region, channels, meta_channels, video_cache):
 
             pub = vd["snippet"].get("publishedAt", "")
             try:
-                dt = datetime.datetime.strptime(pub, "%Y-%m-%dT%H:%M:%SZ").replace(
-                    tzinfo=datetime.timezone.utc
-                )
-                timestamp = int(dt.timestamp())
+                if pub:
+                    dt = datetime.datetime.strptime(pub, "%Y-%m-%dT%H:%M:%SZ").replace(
+                        tzinfo=datetime.timezone.utc
+                    )
+                    timestamp = int(dt.timestamp())
+                else:
+                    # Active live stream — publishedAt is empty; use current time
+                    timestamp = int(datetime.datetime.now(datetime.timezone.utc).timestamp())
             except Exception:
-                timestamp = 0
+                timestamp = int(datetime.datetime.now(datetime.timezone.utc).timestamp())
 
             # Cache ALL video IDs (including shorts) so early-stop works correctly
             if cid not in video_cache:
