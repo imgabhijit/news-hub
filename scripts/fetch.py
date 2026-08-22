@@ -141,8 +141,8 @@ def save_video_cache(cache):
     print(f"[cache] Saved {total} video IDs across {len(cache)} channels")
 
 
-def refresh_meta(youtube, meta):
-    print("[meta] Refreshing channel metadata (playlist IDs + subscribers)...")
+def configured_channels():
+    """Return every configured channel, keyed by its YouTube channel ID."""
     all_channels = {}
     for channels in REGIONS.values():
         for ch in channels:
@@ -151,9 +151,27 @@ def refresh_meta(youtube, meta):
                BANGLADESH_NEWS_CHANNELS + PAKISTAN_NEWS_CHANNELS +
                NEPAL_NEWS_CHANNELS + MYANMAR_NEWS_CHANNELS):
         all_channels[ch["id"]] = ch["name"]
+    return all_channels
+
+
+def missing_metadata_channels(meta):
+    """Configured IDs which cannot yet be fetched from cached metadata."""
+    cached_channels = meta.get("channels", {})
+    unresolved = set(meta.get("unresolved_channel_ids", []))
+    return [
+        channel_id for channel_id in configured_channels()
+        if (not cached_channels.get(channel_id, {}).get("playlist_id") and
+            channel_id not in unresolved)
+    ]
+
+
+def refresh_meta(youtube, meta):
+    print("[meta] Refreshing channel metadata (playlist IDs + subscribers)...")
+    all_channels = configured_channels()
 
     ids = list(all_channels.keys())
     channel_data = {}
+    refresh_failed = False
 
     for i in range(0, len(ids), 50):
         chunk = ids[i:i + 50]
@@ -171,8 +189,14 @@ def refresh_meta(youtube, meta):
                 }
         except HttpError as e:
             print(f"[meta] API error: {e}")
+            refresh_failed = True
 
     meta["channels"]     = channel_data
+    # Do not spend quota refreshing on every run for a deleted or invalid channel
+    # ID.  New IDs are still missing and trigger an immediate refresh; unresolved
+    # IDs are retried with the normal weekly metadata refresh.
+    if not refresh_failed:
+        meta["unresolved_channel_ids"] = sorted(set(all_channels) - set(channel_data))
     meta["last_updated"] = datetime.datetime.now(datetime.timezone.utc).isoformat()
     DATA_DIR.mkdir(exist_ok=True)
     META_FILE.write_text(json.dumps(meta, indent=2, ensure_ascii=False), encoding="utf-8")
@@ -349,8 +373,11 @@ def fetch_region(youtube, region, channels, meta_channels, video_cache):
 def main():
     youtube = get_youtube()
     meta    = load_meta()
+    missing_metadata = missing_metadata_channels(meta)
 
-    if is_stale(meta):
+    if is_stale(meta) or missing_metadata:
+        if missing_metadata:
+            print(f"[meta] Refreshing because {len(missing_metadata)} configured channel(s) are missing metadata")
         meta = refresh_meta(youtube, meta)
     else:
         print(f"[meta] Using cached metadata (updated {meta.get('last_updated', '?')})")
