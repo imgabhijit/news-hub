@@ -13,6 +13,7 @@ import re
 import sys
 import json
 import datetime
+import hashlib
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -76,11 +77,25 @@ def current_opinion_window(hour):
     return None
 
 
+def periodic_channel_signature():
+    """Stable fingerprint of channel lists fetched in the periodic job."""
+    channels = (HINDI_RIGHT_OPINION_CHANNELS + HINDI_LEFT_OPINION_CHANNELS +
+                BANGLADESH_NEWS_CHANNELS + PAKISTAN_NEWS_CHANNELS +
+                NEPAL_NEWS_CHANNELS + MYANMAR_NEWS_CHANNELS)
+    channel_ids = ",".join(ch["id"] for ch in channels)
+    return hashlib.sha256(channel_ids.encode("utf-8")).hexdigest()
+
+
 def should_fetch_periodic(now_ist):
     window = current_opinion_window(now_ist.hour)
+    state = load_periodic_state()
+    # Do not leave newly configured channels empty until the next scheduled
+    # window. This is a one-time fetch; the saved signature restores the normal
+    # quota-saving schedule on subsequent runs.
+    if state.get("channel_config_signature") != periodic_channel_signature():
+        return True, window or "configuration"
     if not window:
         return False, None
-    state = load_periodic_state()
     today = now_ist.strftime("%Y-%m-%d")
     if state.get("last_window") == window and state.get("last_date") == today:
         return False, window
@@ -460,7 +475,11 @@ def main():
         output["myanmar"] = [v for v in mm_videos if v["timestamp"] >= cutoff_24h]
         print(f"[neighbour] myanmar: {len(output['myanmar'])} videos")
 
-        save_periodic_state({"last_window": window, "last_date": now_ist.strftime("%Y-%m-%d")})
+        save_periodic_state({
+            "last_window": current_opinion_window(now_ist.hour),
+            "last_date": now_ist.strftime("%Y-%m-%d"),
+            "channel_config_signature": periodic_channel_signature(),
+        })
         print(f"[opinion] State saved: window={window}, date={now_ist.strftime('%Y-%m-%d')}")
     elif window:
         print(f"\n[opinion] Already fetched '{window}' window today, carrying forward {len(output['hindi_right_opinion'])} right + {len(output['hindi_left_opinion'])} left videos")
