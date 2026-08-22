@@ -193,7 +193,6 @@ BENGALI_CHANNELS = [
     {"id": "UCPYZ_TMaFSsAGyedFpwyufA",  "name": "Ei Samay"},
     {"id": "UCkwTQGJelg1F-gV2ZmfPg8Q",  "name": "Aajkaal"},
     {"id": "UCLPCvTftdZpZQSM-mckfqXQ",  "name": "Sangbad Pratidin"},
-    {"id": "UCdx_kjAFLinvdnEkdklgoNQ",  "name": "Ganashakti"},
     {"id": "UCXDw7ADM9CnoGPEk3aSsHaQ",  "name": "Uttar Banga Sambad"},
     {"id": "UCpthbAb5DDRfcG68VMn6q0g",  "name": "Indian Express Bangla"},
 ]
