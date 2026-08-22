@@ -195,9 +195,9 @@ def fetch_playlist_videos(youtube, playlist_id, days, known_ids=None):
 
     Playlist entries are usually newest-first, but active/scheduled live streams
     are not reliably ordered by their video publication time.  Therefore a cached
-    live stream is *not* a safe boundary: there can be a newer upload after it.
-    We scan through the current time window and only return IDs that are not
-    already cached.
+    live stream is not an immediate safe boundary: there can be a newer upload
+    later in that page.  Scan the rest of that page, then stop at the cache so
+    normal refreshes still need only one playlist request per channel.
     """
     cutoff = (
         datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=days)
@@ -216,20 +216,31 @@ def fetch_playlist_videos(youtube, playlist_id, days, known_ids=None):
             print(f"[fetch] playlistItems error: {e}")
             break
 
+        saw_cached_id = False
         for item in res.get("items", []):
             pub = item.get("contentDetails", {}).get("videoPublishedAt", "")
             vid = item["contentDetails"]["videoId"]
+            is_cached = bool(known_ids and vid in known_ids)
+
+            if is_cached:
+                saw_cached_id = True
 
             # An empty publication time can be an active live stream.  Include it
             # so its state and view count can be refreshed in fetch_video_details.
             if not pub:
-                if not known_ids or vid not in known_ids:
+                if not is_cached:
                     video_ids.append(vid)
             elif pub >= cutoff:
-                if not known_ids or vid not in known_ids:
+                if not is_cached:
                     video_ids.append(vid)
             else:
                 return video_ids  # hit a video older than our window
+
+        # A cached item proves the next page is old cache territory in the normal
+        # ordering case.  We have still checked every item beside it on this page
+        # for uploads that a live stream may have displaced.
+        if saw_cached_id:
+            return video_ids
 
         next_token = res.get("nextPageToken")
         if not next_token:
