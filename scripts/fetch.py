@@ -396,21 +396,25 @@ def main():
         except Exception:
             pass
 
+    cutoff_24h = int(datetime.datetime.now(datetime.timezone.utc).timestamp()) - 86400
+
+    def recent_videos(videos):
+        """Keep only videos inside the same rolling 24-hour window as the cache."""
+        return [video for video in videos if video.get("timestamp", 0) >= cutoff_24h]
+
     output = {
         "last_updated":          datetime.datetime.now(datetime.timezone.utc).isoformat(),
         "bengali":               [],
         "opinion":               [],
         "national_english":      [],
         "national_hindi":        [],
-        "hindi_right_opinion":   existing.get("hindi_right_opinion", []),
-        "hindi_left_opinion":    existing.get("hindi_left_opinion", []),
-        "bangladesh":            existing.get("bangladesh", []),
-        "pakistan":              existing.get("pakistan", []),
-        "nepal":                 existing.get("nepal", []),
-        "myanmar":               existing.get("myanmar", []),
+        "hindi_right_opinion":   recent_videos(existing.get("hindi_right_opinion", [])),
+        "hindi_left_opinion":    recent_videos(existing.get("hindi_left_opinion", [])),
+        "bangladesh":            recent_videos(existing.get("bangladesh", [])),
+        "pakistan":              recent_videos(existing.get("pakistan", [])),
+        "nepal":                 recent_videos(existing.get("nepal", [])),
+        "myanmar":               recent_videos(existing.get("myanmar", [])),
     }
-
-    cutoff_24h = int(datetime.datetime.now(datetime.timezone.utc).timestamp()) - 86400
 
     for region, channels in REGIONS.items():
         print(f"\n[fetch] === {region.upper()} ({len(channels)} channels) ===")
