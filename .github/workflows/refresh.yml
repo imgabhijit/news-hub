@@ -24,6 +24,11 @@ jobs:
       - name: Install dependencies
         run: pip install google-api-python-client python-dotenv
 
+      # A manually re-run workflow can start from an older commit. Sync first so
+      # the fetch and its cache use the newest generated data.
+      - name: Sync latest data
+        run: git pull --rebase origin main
+
       - name: Run fetcher
         env:
           YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
@@ -36,5 +41,7 @@ jobs:
           git add data/videos.json data/channels_meta.json data/video_id_cache.json
           git add data/periodic_state.json 2>/dev/null || true
           git diff --staged --quiet || git commit -m "chore: refresh videos [skip ci]"
-          git pull --rebase origin main
+          # Another refresh can finish while this one is fetching. On a
+          # generated-data conflict, keep this run's newer generated data.
+          git pull --rebase -X theirs origin main
           git push
