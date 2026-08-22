@@ -300,9 +300,130 @@
       body { padding-bottom: env(safe-area-inset-bottom); }
     }
 
-    @media (min-width: 1100px) {
-      .modal-overlay { justify-content: center; padding-left: 0; }
-      .modal-wrapper { max-width: min(1200px, 79vw); }
+    /* ── Shorts / Reels Vertical Swipe Experience ──────────── */
+    .shorts-view-toggle {
+      display: flex; gap: 8px; margin-bottom: 12px; align-items: center; justify-content: space-between;
+    }
+    .shorts-mode-btn {
+      background: #2a2d3a; border: 1px solid #3a3d4a; color: #aaa;
+      padding: 6px 14px; border-radius: 20px; font-size: 0.8rem; cursor: pointer;
+      display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s;
+    }
+    .shorts-mode-btn.active {
+      background: #f4a261; color: #111; font-weight: 700; border-color: #f4a261;
+    }
+
+    /* Vertical Reels Feed Container */
+    .reels-feed {
+      display: flex; flex-direction: column; align-items: center;
+      gap: 0; max-width: 440px; margin: 0 auto;
+      height: calc(100vh - 140px); min-height: 520px;
+      overflow-y: scroll; scroll-snap-type: y mandatory;
+      border-radius: 16px; background: #000;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.8);
+      position: relative; -webkit-overflow-scrolling: touch;
+      border: 1px solid #2a2d3a;
+      touch-action: pan-y;
+    }
+
+    /* Individual Reel Card */
+    .reel-card {
+      width: 100%; height: 100%; min-height: 100%;
+      scroll-snap-align: start; scroll-snap-stop: always;
+      position: relative; overflow: hidden; background: #111;
+      display: flex; flex-direction: column; justify-content: space-between;
+      flex-shrink: 0; box-sizing: border-box;
+    }
+
+    .reel-media {
+      position: absolute; inset: 0; width: 100%; height: 100%;
+      object-fit: cover; background: #050505; opacity: 0.85;
+      transition: opacity 0.3s;
+    }
+    .reel-card:hover .reel-media { opacity: 0.95; }
+
+    .reel-overlay-top {
+      position: absolute; top: 0; left: 0; right: 0; padding: 14px 16px;
+      background: linear-gradient(to bottom, rgba(0,0,0,0.85), transparent);
+      z-index: 10; display: flex; justify-content: space-between; align-items: center;
+    }
+
+    .reel-overlay-bottom {
+      position: absolute; bottom: 0; left: 0; right: 64px; padding: 24px 16px;
+      background: linear-gradient(to top, rgba(0,0,0,0.95) 20%, rgba(0,0,0,0.6) 70%, transparent);
+      z-index: 10; pointer-events: none; text-align: left;
+    }
+
+    .reel-overlay-bottom * { pointer-events: auto; }
+
+    .reel-channel-row {
+      display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap;
+    }
+
+    .reel-channel-badge {
+      background: #f4a261; color: #111; font-weight: 800; font-size: 0.7rem;
+      padding: 3px 8px; border-radius: 12px; text-transform: uppercase; letter-spacing: 0.04em;
+    }
+
+    .reel-lang-tag {
+      font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 4px; color: #fff;
+    }
+    .reel-lang-tag.eng { background: #3a86ff; }
+    .reel-lang-tag.hin { background: #e63946; }
+
+    .reel-channel-name {
+      font-size: 0.92rem; font-weight: 700; color: #fff; text-shadow: 0 1px 4px rgba(0,0,0,0.9);
+    }
+
+    .reel-title {
+      font-size: 0.95rem; line-height: 1.35; color: #fff; font-weight: 600;
+      display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+      overflow: hidden; text-shadow: 0 2px 6px rgba(0,0,0,0.9); margin-bottom: 10px;
+    }
+
+    .reel-meta-row {
+      display: flex; align-items: center; gap: 10px; font-size: 0.78rem; color: #ddd;
+    }
+
+    .reel-views-pill {
+      background: rgba(255,255,255,0.18); backdrop-filter: blur(8px);
+      padding: 3px 9px; border-radius: 12px; font-weight: 700; color: #ffd166;
+    }
+
+    /* Vertical Right Action Bar */
+    .reel-actions {
+      position: absolute; right: 10px; bottom: 30px;
+      z-index: 12; display: flex; flex-direction: column; gap: 16px; align-items: center;
+    }
+
+    .reel-action-btn {
+      background: rgba(20,20,25,0.65); backdrop-filter: blur(12px);
+      border: 1px solid rgba(255,255,255,0.2); color: #fff;
+      width: 44px; height: 44px; border-radius: 50%; display: flex;
+      flex-direction: column; align-items: center; justify-content: center;
+      cursor: pointer; transition: all 0.2s; font-size: 1.1rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.6);
+    }
+    .reel-action-btn:hover, .reel-action-btn:active {
+      background: #f4a261; color: #111; transform: scale(1.1); border-color: #f4a261;
+    }
+
+    .reel-play-btn {
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      z-index: 11; width: 68px; height: 68px; background: rgba(244, 162, 97, 0.9);
+      border-radius: 50%; border: none; color: #fff; font-size: 1.8rem;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 0 24px rgba(244, 162, 97, 0.7); cursor: pointer;
+      transition: transform 0.2s, background 0.2s;
+    }
+    .reel-play-btn:hover { transform: translate(-50%, -50%) scale(1.1); background: #f4a261; }
+
+    @media (max-width: 600px) {
+      .reels-feed {
+        max-width: 100%; width: 100%; height: calc(100vh - 110px);
+        border-radius: 0; border: none;
+      }
+      #panel-shorts { padding: 0 !important; }
     }
   </style>
 </head>
@@ -712,6 +833,31 @@ function renderAll() {
   renderRegions();
 }
 
+let shortsViewMode = 'reels'; // 'reels' or 'grid'
+
+function setShortsViewMode(mode) {
+  shortsViewMode = mode;
+  renderShorts();
+}
+
+function scrollReel(direction) {
+  const container = document.getElementById('reelsFeedContainer');
+  if (!container) return;
+  const cardHeight = container.clientHeight;
+  container.scrollBy({ top: direction * cardHeight, behavior: 'smooth' });
+}
+
+function shareShort(video_id, title) {
+  const url = `https://www.youtube.com/watch?v=${video_id}`;
+  if (navigator.share) {
+    navigator.share({ title: title, url: url }).catch(() => {});
+  } else {
+    navigator.clipboard.writeText(url).then(() => {
+      showToast('Video link copied!');
+    }).catch(() => {});
+  }
+}
+
 function renderShorts() {
   const panel  = document.getElementById('panel-shorts');
   if (!allData) return;
@@ -736,10 +882,65 @@ function renderShorts() {
     return;
   }
 
-  const cards = shorts.map((v, i) => cardHtml(v, i + 1, false, i >= 20, true)).join('');
-  const more  = shorts.length > 20
-    ? `<div class="show-more-wrap" id="smShorts"><button class="show-more-btn" onclick="showMore('shortsGrid','smShorts',20)">${shorts.length - 20} more shorts</button><button class="show-more-btn show-all-btn" onclick="showAll('shortsGrid','smShorts')">Show all</button></div>` : '';
-  panel.innerHTML = `<p class="section-label">⚡ Top ${shorts.length} National Quick Clips (< 3 min) · English & Hindi · ${filterLabel()}</p><div class="video-grid" id="shortsGrid">${cards}</div>${more}`;
+  const toggleHeader = `
+    <div class="shorts-view-toggle">
+      <span class="section-label" style="margin:0">⚡ ${shorts.length} Quick Clips (< 3 min)</span>
+      <div style="display:flex;gap:6px">
+        <button class="shorts-mode-btn ${shortsViewMode === 'reels' ? 'active' : ''}" onclick="setShortsViewMode('reels')">📱 Reels Feed</button>
+        <button class="shorts-mode-btn ${shortsViewMode === 'grid' ? 'active' : ''}" onclick="setShortsViewMode('grid')">⊞ Grid</button>
+      </div>
+    </div>`;
+
+  if (shortsViewMode === 'grid') {
+    const cards = shorts.map((v, i) => cardHtml(v, i + 1, false, i >= 20, true)).join('');
+    const more  = shorts.length > 20
+      ? `<div class="show-more-wrap" id="smShorts"><button class="show-more-btn" onclick="showMore('shortsGrid','smShorts',20)">${shorts.length - 20} more shorts</button><button class="show-more-btn show-all-btn" onclick="showAll('shortsGrid','smShorts')">Show all</button></div>` : '';
+    panel.innerHTML = toggleHeader + `<div class="video-grid" id="shortsGrid">${cards}</div>${more}`;
+    return;
+  }
+
+  // Vertical Reels Swipe Feed
+  const reelCards = shorts.map((v, i) => {
+    const safeCh = v.channel_name.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    const safeTitle = v.title.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    const isEng = v.channel_type === 'national_english';
+    const langTag = `<span class="reel-lang-tag ${isEng ? 'eng' : 'hin'}">${isEng ? 'EN' : 'HI'}</span>`;
+    const durStr = fmtDuration(v.duration);
+
+    return `
+      <div class="reel-card" id="reel-${i}">
+        <img class="reel-media" src="${v.thumbnail}" alt="" loading="lazy" onerror="this.src='https://i.ytimg.com/vi/${v.video_id}/hqdefault.jpg'">
+        
+        <div class="reel-overlay-top">
+          <span class="reel-channel-badge">Clip #${i + 1}</span>
+          ${langTag}
+        </div>
+
+        <button class="reel-play-btn" onclick="openPlayer('${v.video_id}','${safeCh}')">▶</button>
+
+        <div class="reel-overlay-bottom">
+          <div class="reel-channel-row">
+            <span class="reel-channel-name">${v.channel_name}</span>
+          </div>
+          <div class="reel-title">${v.title}</div>
+          <div class="reel-meta-row">
+            <span class="reel-views-pill">👁 ${fmtViews(v.view_count)}</span>
+            <span>⏱ ${durStr}</span>
+            <span>· ${formatAgo(v.timestamp)}</span>
+          </div>
+        </div>
+
+        <div class="reel-actions">
+          <button class="reel-action-btn" onclick="scrollReel(-1)" title="Previous Short">▲<span class="reel-action-label">Prev</span></button>
+          <button class="reel-action-btn" onclick="scrollReel(1)" title="Next Short">▼<span class="reel-action-label">Next</span></button>
+          <button class="reel-action-btn" onclick="openPlayer('${v.video_id}','${safeCh}')" title="Play Full Screen">▶<span class="reel-action-label">Play</span></button>
+          <button class="reel-action-btn" onclick="openInNewTab(event,'${v.video_id}','${safeTitle}','${safeCh}')" title="Open YouTube">↗<span class="reel-action-label">YT</span></button>
+          <button class="reel-action-btn" onclick="shareShort('${v.video_id}','${safeTitle}')" title="Share Clip">🔗<span class="reel-action-label">Share</span></button>
+        </div>
+      </div>`;
+  }).join('');
+
+  panel.innerHTML = toggleHeader + `<div class="reels-feed" id="reelsFeedContainer">${reelCards}</div>`;
 }
 
 
