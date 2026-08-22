@@ -193,12 +193,11 @@ def duration_to_seconds(iso):
 def fetch_playlist_videos(youtube, playlist_id, days, known_ids=None):
     """Fetch new video IDs from a channel's uploads playlist.
 
-    Stops early when a known (already-cached) video ID is encountered,
-    since the playlist is newest-first and everything after is already known.
-
-    NOTE: Active live streams often have an empty videoPublishedAt field.
-    We always include them (treat missing pub as "now") so live videos
-    from opinion/news channels are never silently dropped.
+    Playlist entries are usually newest-first, but active/scheduled live streams
+    are not reliably ordered by their video publication time.  Therefore a cached
+    live stream is *not* a safe boundary: there can be a newer upload after it.
+    We scan through the current time window and only return IDs that are not
+    already cached.
     """
     cutoff = (
         datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=days)
@@ -221,15 +220,14 @@ def fetch_playlist_videos(youtube, playlist_id, days, known_ids=None):
             pub = item.get("contentDetails", {}).get("videoPublishedAt", "")
             vid = item["contentDetails"]["videoId"]
 
-            if known_ids and vid in known_ids:
-                return video_ids  # hit a known ID — everything after is already cached
-
-            # Empty pub = active live stream (YouTube omits publishedAt for ongoing streams)
-            # Always include these so live videos are never dropped.
+            # An empty publication time can be an active live stream.  Include it
+            # so its state and view count can be refreshed in fetch_video_details.
             if not pub:
-                video_ids.append(vid)
+                if not known_ids or vid not in known_ids:
+                    video_ids.append(vid)
             elif pub >= cutoff:
-                video_ids.append(vid)
+                if not known_ids or vid not in known_ids:
+                    video_ids.append(vid)
             else:
                 return video_ids  # hit a video older than our window
 
