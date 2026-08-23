@@ -145,34 +145,174 @@ NATIONAL_ENGLISH_CHANNELS = [
     {"id": "UCJFOER35ggIWwsXh2ZDnqyg", "name": "The Economic Times"},
 ]
 
-NATIONAL_HINDI_CHANNELS = [
+# ============================================================
+# NATIONAL HINDI
+# Grouped by network / ownership. NATIONAL_HINDI_CHANNELS at the bottom is the
+# union of every group and is what the fetcher actually reads; the groups exist
+# so a channel is easy to place, audit and move.
+# ============================================================
+
+# NATIONAL — LEGACY TV NEWS NETWORKS
+NATIONAL_TV_NEWS = [
     {"id": "UCt4t-jeY85JegMlZ-E5UWtA", "name": "Aaj Tak"},
-    {"id": "UCx8Z14PpntdaxCt2hakbQLQ", "name": "The Lallantop"},
-    {"id": "UCttspZesZIDEwwpVIgoZtWQ", "name": "India TV"},
+    {"id": "UClmlqOOktUTpfW0EkTiqSjQ", "name": "Aaj Tak HD"},
     {"id": "UCRWFSbif-RFENbBrSiez1DA", "name": "ABP News"},
-    {"id": "UCPP3etACgdUWvizcES1dJ8Q", "name": "News18 India"},
-    {"id": "UC9CYT9gSNLevX5ey2_6CK0Q", "name": "NDTV India"},
-    {"id": "UCOutOIcn_oho8pyVN3Ng-Pg", "name": "TV9 Bharatvarsh"},
-    {"id": "UCMk9Tdc-d1BIcAFaSppiVkw", "name": "Times Now Navbharat"},
-    {"id": "UC531MlZA5LUbeGwEN_zcppw", "name": "News18 Bihar Jharkhand"},
-    {"id": "UC7wXt18f2iA3EDXeqAVuKng", "name": "Republic Bharat"},
+    {"id": "UCmphdqZNmqL72WJ2uyiNw5w", "name": "ABP Live"},
+    {"id": "UCttspZesZIDEwwpVIgoZtWQ", "name": "India TV"},
     {"id": "UCIvaYmXn910QMdemBG3v1pQ", "name": "Zee News"},
+    {"id": "UCPP3etACgdUWvizcES1dJ8Q", "name": "News18 India"},
+    {"id": "UC7wXt18f2iA3EDXeqAVuKng", "name": "Republic Bharat"},
+    {"id": "UCOutOIcn_oho8pyVN3Ng-Pg", "name": "TV9 Bharatvarsh"},
+    {"id": "UC9CYT9gSNLevX5ey2_6CK0Q", "name": "NDTV India"},
+    {"id": "UCMk9Tdc-d1BIcAFaSppiVkw", "name": "Times Now Navbharat"},
+    {"id": "UCsNdeLwEZf86swPD3qJJ7Dw", "name": "News Nation"},
+    {"id": "UCuzS3rPQAYqHcLWqOFuY0pw", "name": "News24"},
     {"id": "UCKwucPzHZ7zCUIf7If-Wo1g", "name": "DD News"},
-    {"id": "UC8eEZ-l5z_zzG8GT0Tu0PaA", "name": "India Dot Com"},
-    {"id": "UCP_wvXToU5ohFLbTAkatvsw", "name": "Amar Ujala"},
-    {"id": "UCCJRFl1Qjo83GG_09U-DIBA", "name": "Hindustan"},
+    {"id": "UCCQmi1Bd-_tHRm6M2uPlGUA", "name": "Bharat 24"},
+    {"id": "UCNBEfg_PfpSjk8DqiafJJhg", "name": "Sudarshan News"},
+    {"id": "UCQC1wGbOOIoC23fRGxt4kbg", "name": "Good News Today"},
+    {"id": "UCBc13XYipnBIBE3Ff8QaaGg", "name": "IBC24"},
+]
+
+# NATIONAL — DIGITAL-FIRST NEWS BRANDS
+NATIONAL_DIGITAL_NEWS = [
+    {"id": "UCx8Z14PpntdaxCt2hakbQLQ", "name": "The Lallantop"},
     {"id": "UCvxi7_X1VSaMr_osIamYNaw", "name": "NMF News"},
     {"id": "UCOjgc1p2hJ4GZi6pQQoXWYQ", "name": "Oneindia Hindi"},
-    {"id": "UCsNdeLwEZf86swPD3qJJ7Dw", "name": "News Nation"},
-    {"id": "UCUGwnDFBHY52YhgVjn-Tvww", "name": "ABP Ganga"},
+    {"id": "UC8eEZ-l5z_zzG8GT0Tu0PaA", "name": "India.com"},
+    {"id": "UCRSy3nm6Jd6xLRGvsdLzzyg", "name": "Bharat Express"},
+]
+
+# NATIONAL — NEWSPAPER DIGITAL WINGS
+NATIONAL_NEWSPAPER_WINGS = [
+    {"id": "UCl8wUKzoUVzg7U6ky1ZR8hQ", "name": "Navbharat Times"},
+    {"id": "UCCJRFl1Qjo83GG_09U-DIBA", "name": "Hindustan"},
     {"id": "UCSKgOW8Pg_eZymYJyJc432g", "name": "Dainik Jagran"},
+    {"id": "UCP_wvXToU5ohFLbTAkatvsw", "name": "Amar Ujala"},
+    {"id": "UCICJyUwBYgUOE35F8klEoYw", "name": "Jansatta"},
+    {"id": "UC13KrBW4je1iUkEhIZO15AQ", "name": "Indian Express Hindi"},
+    {"id": "UCmqx3ukqhdbSJWJB_SdCbqA", "name": "Lokmat Hindi"},
+    {"id": "UCVZ57OkKPAuRJ_wA_Rt4XFg", "name": "Dainik Bhaskar"},
+    {"id": "UC3925QSRN5Pxd2GSre0l76g", "name": "Prabhat Khabar"},
+    {"id": "UCUwiVO9Uq7ks1LWHHY7ZARQ", "name": "Webdunia Hindi"},
+    {"id": "UCWk-7Yosyvzln9ZzJg8BvVg", "name": "Rajasthan Patrika"},
+    {"id": "UCIRAYFbJmrP--jyrC9MAIWQ", "name": "DNA India News"},
+    {"id": "UCQCt4xCodDgpeUQOSPK977Q", "name": "Navodaya Times"},
+]
+
+# REGIONAL — "TAK" NETWORK (India Today Group / TV Today Network)
+INDIA_TODAY_TAK_NETWORK = [
+    {"id": "UCskG03x3CoEW9W7s2c3IgbA", "name": "UP Tak"},
+    {"id": "UCnAp2J0bR9b8pM-Avp1GFOQ", "name": "Bihar Tak"},
+    {"id": "UCH6v_SxtFLtfD4Iptx2WbNg", "name": "MP Tak"},
+    {"id": "UCb1ScGnYiuIlc8AT5if67hg", "name": "Rajasthan Tak"},
+    {"id": "UCJ-F1ElALMfXS74xaWja8jg", "name": "Haryana Tak"},
+    {"id": "UC3nanyO9lyMMrTqd0iuXZoQ", "name": "Punjab Tak"},
+]
+
+# REGIONAL — NEWS18 NETWORK (Network18)
+NEWS18_REGIONAL = [
+    {"id": "UC531MlZA5LUbeGwEN_zcppw", "name": "News18 Bihar Jharkhand"},
     {"id": "UCafYgzpyw7aIUYOLjjADu7w", "name": "News18 UP Uttarakhand"},
     {"id": "UCBwc2cbPpvxNCNEI2-8YrqQ", "name": "News18 MP Chhattisgarh"},
-    {"id": "UCl8wUKzoUVzg7U6ky1ZR8hQ", "name": "Navbharat Times"},
-    {"id": "UC_cZYFovNQTsKw1ZLmO_AMA", "name": "First India News"},
-    {"id": "UClmlqOOktUTpfW0EkTiqSjQ", "name": "Aaj Tak HD"},
-    {"id": "UCmphdqZNmqL72WJ2uyiNw5w", "name": "ABP Live"},
+    {"id": "UC7FlLbNo66YsCEAPuJITiNg", "name": "News18 Rajasthan"},
+    {"id": "UCsD3wfOF5pkM5CyH4gA4b1Q", "name": "News18 Haryana"},
 ]
+
+# REGIONAL — ZEE NETWORK
+ZEE_REGIONAL = [
+    {"id": "UCZUjHLJivN0OZPC_Wj8JvkA", "name": "Zee Bihar Jharkhand"},
+    {"id": "UCWmwc3u2ikBG2Xfitc_26gg", "name": "Zee Uttar Pradesh Uttarakhand"},
+    {"id": "UCfnvGSUXKIuaCv-9E9a2UJg", "name": "Zee Rajasthan News"},
+    {"id": "UCQ79XyTiFbb28NvhmFPZOiw", "name": "Zee Madhya Pradesh Chhattisgarh"},
+    {"id": "UCmhe0p2-m_KURZYQNchK-QQ", "name": "Zee Punjab Haryana Himachal"},
+    {"id": "UCG6L5cIg2XZvXVksq5B9edw", "name": "Zee Delhi-NCR Haryana"},
+]
+
+# REGIONAL — ABP NETWORK
+ABP_REGIONAL = [
+    {"id": "UCUGwnDFBHY52YhgVjn-Tvww", "name": "ABP Ganga (UP/Uttarakhand)"},
+    {"id": "UCz-E4UIPP-4iKn9UKaGBRWA", "name": "ABP Bihar (Bihar/Jharkhand)"},
+]
+
+# REGIONAL — ETV BHARAT NETWORK (Ramoji Group)
+ETV_BHARAT_REGIONAL = [
+    {"id": "UCKVM5FMqX90AquMlhzNP82Q", "name": "ETV Bharat (national hub)"},
+    {"id": "UCsZgHPe9vlXgEHa6vf84cdQ", "name": "ETV Bharat Rajasthan"},
+    {"id": "UC1jvSfNEAMyFI3Kf3-Sa4sw", "name": "ETV Bharat Bihar"},
+    {"id": "UCnUbWb9bo7Yv0qCclp8foUw", "name": "ETV Bharat Madhya Pradesh"},
+]
+
+# REGIONAL — INDIA NEWS NETWORK (ITV Group)
+INDIA_NEWS_REGIONAL = [
+    {"id": "UCKHbJrgTK_cxPQki6PHt5kw", "name": "India News UP"},
+    {"id": "UCISKj2--Nxrs5s60T3wq5Pg", "name": "India News Haryana"},
+    {"id": "UCgJ02VYByDODEIkOlxjg4xg", "name": "India News Rajasthan"},
+]
+
+# REGIONAL — NEWS STATE NETWORK (News Nation Network Pvt Ltd)
+NEWS_STATE_REGIONAL = [
+    {"id": "UCeNP3dAy9_A32IWYZq_PZMQ", "name": "News State (UP/Uttarakhand)"},
+    {"id": "UCV8uDD-i5zBnwdyHYRHjlEg", "name": "News State MP Chhattisgarh"},
+]
+
+# REGIONAL — NEWS24 NETWORK (B.A.G Convergence)
+NEWS24_REGIONAL = [
+    {"id": "UC2LMxF5cbXIaej5ifKTQ6WQ", "name": "News24 UP & Uttarakhand"},
+    {"id": "UCsJO8p6lnyjZkuLO2k0qFXA", "name": "News24 MP & Chhattisgarh"},
+    {"id": "UCT0xtNe4KFiId1QWd0EFCJQ", "name": "News24 Rajasthan"},
+]
+
+# REGIONAL — PUNJAB KESARI NETWORK
+PUNJAB_KESARI_REGIONAL = [
+    {"id": "UC3_TTermAnf2fcLe-QX7BVQ", "name": "Punjab Kesari TV"},
+    {"id": "UC7DRVhyXnevPNvNWlZ8gbPQ", "name": "Punjab Kesari Haryana"},
+    {"id": "UCkrMe05HCOoz_R_4saWTDbA", "name": "Punjab Kesari MP"},
+]
+
+# OTHER REGIONAL TV / NEWSPAPER BRANDS
+OTHER_REGIONAL = [
+    {"id": "UCq7DM5jsVyFHdAe_9CoqxVQ", "name": "Amar Ujala Uttar Pradesh"},
+    {"id": "UCKrXAcPJPFewJ0z1G-GgjTw", "name": "Patrika Madhya Pradesh"},
+    {"id": "UCL_3_9PhDyZXu1oexm8gtFQ", "name": "Bansal News (MP/Chhattisgarh)"},
+    {"id": "UCHg-nKyyHqbraegYp1qkoUA", "name": "Haribhoomi TV"},
+    {"id": "UCGnqaEa5wmyxxXeP8NXo6qw", "name": "IBC24 Digital"},
+    {"id": "UC68JhJpCRYYhOcO054zw_Ew", "name": "Living India News Punjab"},
+    {"id": "UC8Xb-hkR53QVN4GlUHi1iZg", "name": "Bharat Samachar (UP/Uttarakhand)"},
+    {"id": "UC_cZYFovNQTsKw1ZLmO_AMA", "name": "First India News"},
+]
+
+
+def _merge_groups(*groups):
+    """Flatten channel groups, keeping the first occurrence of each channel ID.
+
+    A channel listed in two groups would otherwise be scanned twice per run,
+    which wastes quota and duplicates it in the output.
+    """
+    seen, merged = set(), []
+    for group in groups:
+        for channel in group:
+            if channel["id"] not in seen:
+                seen.add(channel["id"])
+                merged.append(channel)
+    return merged
+
+
+NATIONAL_HINDI_CHANNELS = _merge_groups(
+    NATIONAL_TV_NEWS,
+    NATIONAL_DIGITAL_NEWS,
+    NATIONAL_NEWSPAPER_WINGS,
+    INDIA_TODAY_TAK_NETWORK,
+    NEWS18_REGIONAL,
+    ZEE_REGIONAL,
+    ABP_REGIONAL,
+    ETV_BHARAT_REGIONAL,
+    INDIA_NEWS_REGIONAL,
+    NEWS_STATE_REGIONAL,
+    NEWS24_REGIONAL,
+    PUNJAB_KESARI_REGIONAL,
+    OTHER_REGIONAL,
+)
 
 BENGALI_CHANNELS = [
     {"id": "UCv3rFzn-GHGtqzXiaq3sWNg", "name": "ABP Ananda"},

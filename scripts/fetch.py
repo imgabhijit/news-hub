@@ -134,12 +134,25 @@ def load_video_cache():
     return {}
 
 
+# The video ID cache stores {video_id: timestamp}. A NEGATIVE timestamp marks a
+# video that was fetched and then deliberately left out of videos.json (a short
+# below MIN_DURATION), so it is never worth spending quota on again. A positive
+# timestamp with no matching record in videos.json means the record was lost and
+# has to be re-fetched.
+def cache_ts(value):
+    return abs(int(value))
+
+
+def cache_kept(value):
+    return int(value) > 0
+
+
 def purge_video_cache(cache):
     cutoff = int(now_utc().timestamp()) - 86400
     purged = 0
     for cid in list(cache.keys()):
         before = len(cache[cid])
-        cache[cid] = {vid: ts for vid, ts in cache[cid].items() if ts >= cutoff}
+        cache[cid] = {vid: ts for vid, ts in cache[cid].items() if cache_ts(ts) >= cutoff}
         purged += before - len(cache[cid])
         if not cache[cid]:
             del cache[cid]
@@ -316,13 +329,20 @@ def fetch_video_details(youtube, video_ids):
     return details
 
 
-def needs_stats_refresh(vid, published_ts, existing_by_id, now_ts):
+def needs_stats_refresh(vid, cached_value, existing_by_id, now_ts):
     """Whether a cached video is worth spending quota on again this run."""
-    if now_ts - published_ts <= STATS_REFRESH_WINDOW:
+    if now_ts - cache_ts(cached_value) <= STATS_REFRESH_WINDOW:
+        return True
+    if not cache_kept(cached_value):
+        return False  # a short we already looked at and deliberately dropped
+    if vid not in existing_by_id:
+        # Cached, but its record is not in videos.json - it was lost, most often
+        # because an earlier run ran out of quota before it could be stored.
+        # Without this the video stays invisible until it ages out of the cache.
         return True
     # A stream that is on air (or about to be) has to be re-checked so it can
     # flip to a finished video with a real duration and a final view count.
-    return existing_by_id.get(vid, {}).get("live_broadcast") in ("live", "upcoming")
+    return existing_by_id[vid].get("live_broadcast") in ("live", "upcoming")
 
 
 def fetch_section(youtube, section, channels, meta_channels, video_cache, existing_by_id):
@@ -387,10 +407,13 @@ def fetch_section(youtube, section, channels, meta_channels, video_cache, existi
         except Exception:
             timestamp = now_ts
 
-        # Cache ALL video IDs (including shorts) so early-stop works correctly
-        video_cache.setdefault(cid, {})[vd["id"]] = timestamp
+        # Cache ALL video IDs (including shorts) so early-stop works correctly.
+        # Shorts are stored with a negative timestamp so later runs know they
+        # were already looked at and dropped on purpose, not lost.
+        kept = not (dur < MIN_DURATION and live != "live")
+        video_cache.setdefault(cid, {})[vd["id"]] = timestamp if kept else -timestamp
 
-        if dur < MIN_DURATION and live != "live":
+        if not kept:
             continue
 
         stats = vd.get("statistics", {})
