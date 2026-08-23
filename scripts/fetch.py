@@ -419,10 +419,11 @@ def main():
 
     output = {
         "last_updated":          datetime.datetime.now(datetime.timezone.utc).isoformat(),
-        "bengali":               [],
-        "opinion":               [],
-        "national_english":      [],
-        "national_hindi":        [],
+        "bengali":               recent_videos(existing.get("bengali", [])),
+        "opinion":               recent_videos(existing.get("opinion", [])),
+        "national_english":      recent_videos(existing.get("national_english", [])),
+        "national_hindi":        recent_videos(existing.get("national_hindi", [])),
+        "world_news":            recent_videos(existing.get("world_news", [])),
         "hindi_right_opinion":   recent_videos(existing.get("hindi_right_opinion", [])),
         "hindi_left_opinion":    recent_videos(existing.get("hindi_left_opinion", [])),
         "bangladesh":            recent_videos(existing.get("bangladesh", [])),
@@ -431,12 +432,22 @@ def main():
         "myanmar":               recent_videos(existing.get("myanmar", [])),
     }
 
+    def update_section(key, new_videos):
+        purged = [v for v in new_videos if v["timestamp"] >= cutoff_24h]
+        if purged:
+            # Merge new videos with existing videos in the 24h window
+            existing_map = {v["video_id"]: v for v in output.get(key, [])}
+            for v in purged:
+                existing_map[v["video_id"]] = v
+            output[key] = list(existing_map.values())
+            print(f"[fetch] {key}: updated with {len(purged)} videos (total {len(output[key])})")
+        else:
+            print(f"[fetch] {key}: no new videos fetched, keeping {len(output.get(key, []))} existing videos")
+
     for region, channels in REGIONS.items():
         print(f"\n[fetch] === {region.upper()} ({len(channels)} channels) ===")
         videos = fetch_region(youtube, region, channels, meta_channels, video_cache)
-        purged = [v for v in videos if v["timestamp"] >= cutoff_24h]
-        print(f"[fetch] {region}: {len(purged)} videos (last 24h)")
-        output[region] = purged
+        update_section(region, videos)
 
     # Hindi opinion — window-based fetch (morning 6-10, evening 4-8, night 8-12 IST)
     now_ist = datetime.datetime.now(IST)
@@ -447,33 +458,27 @@ def main():
         if HINDI_RIGHT_OPINION_CHANNELS:
             print(f"[opinion] Fetching RIGHT ({len(HINDI_RIGHT_OPINION_CHANNELS)} channels)...")
             right_videos = fetch_region(youtube, "hindi_right_opinion", HINDI_RIGHT_OPINION_CHANNELS, meta_channels, video_cache)
-            output["hindi_right_opinion"] = [v for v in right_videos if v["timestamp"] >= cutoff_24h]
-            print(f"[opinion] RIGHT: {len(output['hindi_right_opinion'])} videos")
+            update_section("hindi_right_opinion", right_videos)
         if HINDI_LEFT_OPINION_CHANNELS:
             print(f"[opinion] Fetching LEFT ({len(HINDI_LEFT_OPINION_CHANNELS)} channels)...")
             left_videos = fetch_region(youtube, "hindi_left_opinion", HINDI_LEFT_OPINION_CHANNELS, meta_channels, video_cache)
-            output["hindi_left_opinion"] = [v for v in left_videos if v["timestamp"] >= cutoff_24h]
-            print(f"[opinion] LEFT: {len(output['hindi_left_opinion'])} videos")
+            update_section("hindi_left_opinion", left_videos)
         # Bangladesh & Pakistan — same window schedule as Hindi opinion
         print(f"\n[neighbour] === BANGLADESH ({len(BANGLADESH_NEWS_CHANNELS)} channels) ===")
         bd_videos = fetch_region(youtube, "bangladesh", BANGLADESH_NEWS_CHANNELS, meta_channels, video_cache)
-        output["bangladesh"] = [v for v in bd_videos if v["timestamp"] >= cutoff_24h]
-        print(f"[neighbour] bangladesh: {len(output['bangladesh'])} videos")
+        update_section("bangladesh", bd_videos)
 
         print(f"\n[neighbour] === PAKISTAN ({len(PAKISTAN_NEWS_CHANNELS)} channels) ===")
         pk_videos = fetch_region(youtube, "pakistan", PAKISTAN_NEWS_CHANNELS, meta_channels, video_cache)
-        output["pakistan"] = [v for v in pk_videos if v["timestamp"] >= cutoff_24h]
-        print(f"[neighbour] pakistan: {len(output['pakistan'])} videos")
+        update_section("pakistan", pk_videos)
 
         print(f"\n[neighbour] === NEPAL ({len(NEPAL_NEWS_CHANNELS)} channels) ===")
         np_videos = fetch_region(youtube, "nepal", NEPAL_NEWS_CHANNELS, meta_channels, video_cache)
-        output["nepal"] = [v for v in np_videos if v["timestamp"] >= cutoff_24h]
-        print(f"[neighbour] nepal: {len(output['nepal'])} videos")
+        update_section("nepal", np_videos)
 
         print(f"\n[neighbour] === MYANMAR ({len(MYANMAR_NEWS_CHANNELS)} channels) ===")
         mm_videos = fetch_region(youtube, "myanmar", MYANMAR_NEWS_CHANNELS, meta_channels, video_cache)
-        output["myanmar"] = [v for v in mm_videos if v["timestamp"] >= cutoff_24h]
-        print(f"[neighbour] myanmar: {len(output['myanmar'])} videos")
+        update_section("myanmar", mm_videos)
 
         save_periodic_state({
             "last_window": current_opinion_window(now_ist.hour),
