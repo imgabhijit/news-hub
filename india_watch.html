@@ -268,7 +268,8 @@
       <option value="all">All</option>
       <option value="upto60">Up to 1 hr</option>
       <option value="upto30">Up to 30 min</option>
-      <option value="upto3">Under 3 min</option>
+      <option value="upto3">Up to 3 min</option>
+      <option value="over3">Over 3 min</option>
       <option value="3to15">3–15 min</option>
       <option value="15to30">15–30 min</option>
       <option value="long">1 hr+</option>
@@ -521,7 +522,7 @@ function isIndiaRelatedWorld(v) {
 // ── Config & state ────────────────────────────────────────────────────────────
 const TAB_DEFAULTS      = { all: '24h', wb: '24h', bycountry: '24h', live: '1h', channels: '24h' };
 const SORT_DEFAULTS     = { all: 'views', wb: 'views', bycountry: 'views', live: 'views', channels: 'views' };
-const DURATION_DEFAULTS = { all: 'upto60', wb: 'upto60', bycountry: 'all', live: 'all', channels: 'all' };
+const DURATION_DEFAULTS = { all: 'over3', wb: 'over3', bycountry: 'over3', live: 'all', channels: 'over3' };
 
 const COUNTRY_META = {
   'bangladesh': { flag: '🇧🇩', name: 'Bangladesh' },
@@ -539,7 +540,7 @@ let currentFilter   = params.get('filter') || TAB_DEFAULTS[currentTab];
 let currentSort     = params.get('sort')   || SORT_DEFAULTS[currentTab];
 let currentMinViews = '0';
 let customMinViews  = 0;
-let currentDuration = DURATION_DEFAULTS[currentTab] || 'upto30';
+let currentDuration = DURATION_DEFAULTS[currentTab] || 'over3';
 let currentSearch   = '';
 let channelView     = 'grid';
 let selectedChannel = null;
@@ -586,7 +587,8 @@ function matchesDuration(v) {
   switch (currentDuration) {
     case 'upto60': return d<3600;
     case 'upto30': return d<1800;
-    case 'upto3':  return d<180;
+    case 'upto3':  return d <= 180;
+    case 'over3':  return d > 180;
     case '3to15':  return d>=180&&d<900;
     case '15to30': return d>=900&&d<1800;
     case 'long':   return d>=3600;
@@ -801,7 +803,7 @@ function switchTab(name, push = true) {
   if (push) {
     currentFilter   = TAB_DEFAULTS[name]   || 'today';
     currentSort     = SORT_DEFAULTS[name]  || 'velocity';
-    currentDuration = DURATION_DEFAULTS[name] || 'all';
+    currentDuration = DURATION_DEFAULTS[name] || 'over3';
     renderAll(); updateUrl();
   }
   renderToolbar();

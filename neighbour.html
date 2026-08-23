@@ -335,7 +335,8 @@
       <option value="all">All</option>
       <option value="upto60">Up to 1 hr</option>
       <option value="upto30">Up to 30 min</option>
-      <option value="upto3">Under 3 min</option>
+      <option value="upto3">Up to 3 min</option>
+      <option value="over3">Over 3 min</option>
       <option value="3to15">3–15 min</option>
       <option value="15to30">15–30 min</option>
       <option value="long">1 hr+</option>
@@ -395,7 +396,7 @@ const TAB_DEFAULTS      = { bangladesh: '24h', pakistan: '24h', nepal: '24h', sr
 // Sri Lanka channels already in world_news — filter by channel_id
 const SRILANKA_CHANNEL_IDS = new Set(['UCuOtdpOPjHeoEAT4i44mVOg']); // Ada Derana English
 const SORT_DEFAULTS     = { bangladesh: 'views', pakistan: 'views', nepal: 'views', srilanka: 'views', myanmar: 'views', live: 'views', channels: 'views' };
-const DURATION_DEFAULTS = { bangladesh: 'upto60', pakistan: 'upto60', nepal: 'upto60', srilanka: 'upto60', myanmar: 'upto60', live: 'all', channels: 'all' };
+const DURATION_DEFAULTS = { bangladesh: 'over3', pakistan: 'over3', nepal: 'over3', srilanka: 'over3', myanmar: 'over3', live: 'all', channels: 'over3' };
 
 const THRESHOLDS = {
   lastnight: 40000, today: 25000, tonight: 8000,
@@ -409,7 +410,7 @@ let currentFilter   = params.get('filter') || TAB_DEFAULTS[currentTab];
 let currentSort     = params.get('sort')   || SORT_DEFAULTS[currentTab];
 let currentMinViews = '0';
 let customMinViews  = 0;
-let currentDuration = DURATION_DEFAULTS[currentTab] || 'upto30';
+let currentDuration = DURATION_DEFAULTS[currentTab] || 'over3';
 let currentSearch   = '';
 let channelView     = 'grid';
 let selectedChannel = null;
@@ -468,7 +469,8 @@ function matchesDuration(v) {
   switch (currentDuration) {
     case 'upto60': return d < 3600;
     case 'upto30': return d < 1800;
-    case 'upto3':  return d < 180;
+    case 'upto3':  return d <= 180;
+    case 'over3':  return d > 180;
     case '3to15':  return d >= 180  && d < 900;
     case '15to30': return d >= 900  && d < 1800;
     case 'long':   return d >= 3600;
@@ -701,7 +703,7 @@ function switchTab(name, push = true) {
   if (push) {
     currentFilter   = TAB_DEFAULTS[name]   || 'today';
     currentSort     = SORT_DEFAULTS[name]  || 'velocity';
-    currentDuration = DURATION_DEFAULTS[name] || 'all';
+    currentDuration = DURATION_DEFAULTS[name] || 'over3';
     renderAll();
     updateUrl();
   }
