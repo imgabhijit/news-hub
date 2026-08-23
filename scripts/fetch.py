@@ -13,11 +13,11 @@ Quota budget (the YouTube Data API gives 10,000 units/day):
   live/upcoming are refreshed; everything else keeps the record already stored
   in videos.json.
 
-  Channels are scanned on a cadence set by how often they actually publish
-  (see CADENCE_HOURS), tightened through the Indian afternoon-to-midnight peak
-  and relaxed overnight. A run scans a channel when it is overdue rather than
-  on a fixed clock window, so a run that dies on quota leaves the channel
-  overdue for the next one instead of skipping it for a whole cycle.
+  Sections are scanned on their own cadence (see SECTION_CADENCE_HOURS): news
+  and opinion every run, the neighbour sections every third. A run scans a
+  channel when it is overdue rather than on a fixed clock window, so a run
+  that dies on quota leaves it overdue for the next one instead of skipping
+  it for a whole cycle.
 
   Playlist scans run on a thread pool: the same API calls and the same quota,
   but the run is latency-bound, so it finishes several times faster.
@@ -59,8 +59,9 @@ STATS_REFRESH_WINDOW  = 3 * 3600
 
 IST = datetime.timezone(datetime.timedelta(hours=5, minutes=30))
 
-# Every section is fetched on every run. The order is rotated between runs so a
-# quota shortfall never starves the same sections day after day.
+# Each section is visited on its own cadence (see SECTION_CADENCE_HOURS). The
+# order is rotated between runs so a quota shortfall never starves the same
+# sections day after day.
 SECTIONS = [
     ("bengali",             BENGALI_CHANNELS),
     ("opinion",             BENGALI_OPINION_CHANNELS),
@@ -355,61 +356,58 @@ def fetch_video_details(youtube, video_ids):
 
 
 # --- scan cadence --------------------------------------------------------
-# A channel is scanned as often as it actually publishes, and the cadence is
-# tighter through the Indian afternoon-to-midnight peak, when most uploads
-# happen (opinion channels especially), then relaxed through the quiet early
-# morning.  The peak deliberately runs past midnight: ~48% of opinion videos
-# go up between 17:00 and 24:00 IST, and they need a scan after that to be
-# picked up promptly.
-PEAK_START_IST = 12   # 12:00 IST ...
-PEAK_END_IST   = 3    # ... through 02:59 IST. The last peak slot is nominally
-                      # 01:30 IST and it is the one that catches late-evening
-                      # uploads; ending at 03:00 keeps it inside the peak even
-                      # when Actions fires it up to an hour late.
-#                          (peak, off-peak) hours between playlist scans
-CADENCE_HOURS  = {"hot": (2, 2), "mid": (4, 8), "slow": (4, 12)}
-HOT_VIDEOS_PER_DAY = 20
-MID_VIDEOS_PER_DAY = 5
+# How often each section's playlists are scanned. Everything a reader watches
+# for freshness stays on the 2h run; only the neighbour sections, which are
+# browsed rather than followed, are stretched out.
+#
+# Opinion sits at 2h deliberately. Most opinion uploads land between roughly
+# midday and midnight IST, and scanning every run covers that peak without any
+# time-of-day logic - which also removes the thing most likely to misbehave,
+# since Actions cron drift can push a run across any hour boundary you pick.
 RUN_INTERVAL_HOURS = 2  # the workflow cron; keep in sync with refresh.yml
+SECTION_CADENCE_HOURS = {
+    "bengali":             2,
+    "opinion":             2,   # Bengali opinion
+    "national_english":    2,
+    "national_hindi":      2,
+    "world_news":          2,
+    "hindi_right_opinion": 2,
+    "hindi_left_opinion":  2,
+    "bangladesh":          6,
+    "pakistan":            6,
+    "nepal":               6,
+    "myanmar":             6,
+}
+
+# A cadence must be a whole number of run intervals. Measured against real
+# Actions timestamps, 2h/4h/6h each land on a fixed number of runs apart, but
+# 3h alternates between every run and every second run - the cadence is then
+# neither 2h nor 4h and cannot be reasoned about.
+for _section, _hours in SECTION_CADENCE_HOURS.items():
+    if _hours % RUN_INTERVAL_HOURS:
+        raise ValueError(
+            f"{_section}: cadence {_hours}h is not a multiple of the "
+            f"{RUN_INTERVAL_HOURS}h run interval, so it would fire irregularly")
+
 # GitHub Actions cron drifts badly: for a nominal 2h schedule the observed gaps
 # between runs range from 1.55h to 2.64h. Allowing half an interval of slack
 # means a run that arrives early still counts, instead of being judged "not due"
-# and pushing the channel to the next slot - which silently doubled the cadence
-# of the hot tier (11.6 scans/day, worst gap 3.6h) when this was 15 minutes.
-SCAN_GRACE     = RUN_INTERVAL_HOURS * 3600 // 2
-SCAN_WORKERS   = 8    # parallel playlist scans; quota is unaffected
+# and pushing the section to the next slot - which silently doubled the cadence
+# (11.6 scans/day, worst gap 3.6h against an intended 12 and 2h) when this was
+# 15 minutes.
+SCAN_GRACE   = RUN_INTERVAL_HOURS * 3600 // 2
+SCAN_WORKERS = 8      # parallel playlist scans; quota is unaffected
 
 
-def in_peak(now_ist):
-    hour = now_ist.hour
-    return hour >= PEAK_START_IST or hour < PEAK_END_IST
-
-
-def channel_tier(cid, video_cache):
-    """hot / mid / slow, from how many videos the channel put out in 24h."""
-    known = video_cache.get(cid)
-    if not known:
-        # No history yet - a newly added channel. Treat it as hot so it is
-        # picked up on the very next run, in whichever section it was added to.
-        return "hot"
-    per_day = len(known)
-    if per_day >= HOT_VIDEOS_PER_DAY:
-        return "hot"
-    if per_day >= MID_VIDEOS_PER_DAY:
-        return "mid"
-    return "slow"
-
-
-def is_due(cid, video_cache, last_scan, now_ts, peak):
+def is_due(cid, last_scan, now_ts, cadence_hours):
     """Whether this channel's playlist is overdue for a scan.
 
     Asking "is it overdue?" rather than "is it this run's turn?" means a run
     that dies on quota leaves the channel overdue, so the next run picks it up.
-    Nothing can be silently skipped for a whole cycle.
+    Nothing can be silently skipped for a whole cycle, and a channel that has
+    never been scanned - a newly added one - is due immediately.
     """
-    tier  = channel_tier(cid, video_cache)
-    hours = CADENCE_HOURS[tier][0 if peak else 1]
-    return now_ts - last_scan.get(cid, 0) >= hours * 3600 - SCAN_GRACE
+    return now_ts - last_scan.get(cid, 0) >= cadence_hours * 3600 - SCAN_GRACE
 
 
 def needs_stats_refresh(vid, cached_value, existing_by_id, now_ts):
@@ -429,7 +427,7 @@ def needs_stats_refresh(vid, cached_value, existing_by_id, now_ts):
 
 
 def fetch_section(youtube, section, channels, meta_channels, video_cache,
-                  existing_by_id, last_scan, peak):
+                  existing_by_id, last_scan):
     """Fetch one section in two passes: parallel playlist scans of the channels
     that are due, then a single batched videos.list over every ID needed."""
     now_ts       = int(now_utc().timestamp())
@@ -438,6 +436,7 @@ def fetch_section(youtube, section, channels, meta_channels, video_cache,
     channel_info = {}   # channel id -> (display name, subscribers)
     new_counts, cached_counts = {}, {}
 
+    cadence      = SECTION_CADENCE_HOURS[section]
     due, skipped = [], 0
     for ch in channels:
         cid         = ch["id"]
@@ -449,7 +448,7 @@ def fetch_section(youtube, section, channels, meta_channels, video_cache,
         if not playlist_id:
             print(f"  {ch['name']}: no playlist ID in meta, skipping")
             continue
-        if not is_due(cid, video_cache, last_scan, now_ts, peak):
+        if not is_due(cid, last_scan, now_ts, cadence):
             # Not overdue. Its videos still carry forward from videos.json.
             skipped += 1
             continue
@@ -549,7 +548,8 @@ def fetch_section(youtube, section, channels, meta_channels, video_cache,
                   f"({new_counts[cid]} new, {cached_counts[cid]} cached)")
 
     print(f"[fetch] {section}: scanned {len(due)} of {len(channels)} channels "
-          f"({skipped} not due yet), refreshed {len(ids_to_get)} video IDs "
+          f"every {cadence}h ({skipped} not due yet), "
+          f"refreshed {len(ids_to_get)} video IDs "
           f"(~{-(-len(ids_to_get) // 50)} videos.list units)")
     return videos
 
@@ -614,11 +614,12 @@ def main():
     order     = SECTIONS[offset:] + SECTIONS[:offset]
     last_scan = {cid: int(ts) for cid, ts in state.get("last_scan", {}).items()}
 
-    now_ist = datetime.datetime.now(IST)
-    peak    = in_peak(now_ist)
-    print(f"[cadence] {now_ist:%H:%M} IST - {'PEAK' if peak else 'off-peak'}: "
-          + ", ".join(f"{tier} every {hours[0 if peak else 1]}h"
-                      for tier, hours in CADENCE_HOURS.items()))
+    by_cadence = {}
+    for _s, _h in SECTION_CADENCE_HOURS.items():
+        by_cadence.setdefault(_h, []).append(_s)
+    print("[cadence] " + "  |  ".join(
+        f"every {hours}h: {', '.join(sections)}"
+        for hours, sections in sorted(by_cadence.items())))
 
     for section, channels in order:
         if QUOTA_EXCEEDED:
@@ -627,7 +628,7 @@ def main():
         print(f"\n[fetch] === {section.upper()} ({len(channels)} channels) ===")
         update_section(section, fetch_section(
             youtube, section, channels, meta_channels, video_cache,
-            existing_by_id, last_scan, peak))
+            existing_by_id, last_scan))
 
     # Drop channels that are no longer configured so the file cannot grow forever.
     configured = set(configured_channels())
