@@ -281,6 +281,9 @@ HINDI_RIGHT_OPINION_CHANNELS = [
     {"id": "UCUFVFRkjmH_N-DZm4j-1rgg", "name": "Ashok Shrivastav"},
     {"id": "UCzg4__GnT_ivStgXyxv6jsg", "name": "AKHIL KOTHARI"},
     {"id": "UC5OhhLoILL7Mhm-NJXHucSQ", "name": "Mayur Mogre"},
+    {"id": "UCIUd9149-XvdV0giPROH-eg", "name": "Harsh Ki Baat LIVE"},
+    {"id": "UCxhSggLG7BwfesenFaLuTMw", "name": "Harsh Kumar"},
+    {"id": "UCf2b07fjX6qlQh_pPUOB2Ew", "name": "Harsh Kumar Official"},
 ]
 
 HINDI_LEFT_OPINION_CHANNELS = [
