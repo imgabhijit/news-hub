@@ -11,14 +11,24 @@ Quota budget (the YouTube Data API gives 10,000 units/day):
   Video details are NOT re-fetched for every cached video on every run. Only
   brand-new IDs, videos younger than STATS_REFRESH_WINDOW, and videos that are
   live/upcoming are refreshed; everything else keeps the record already stored
-  in videos.json. That keeps a full run near ~450 units instead of ~800, so
-  every section can be fetched on every run instead of a few times a day.
+  in videos.json.
+
+  Channels are scanned on a cadence set by how often they actually publish
+  (see CADENCE_HOURS), tightened through the Indian afternoon-to-midnight peak
+  and relaxed overnight. A run scans a channel when it is overdue rather than
+  on a fixed clock window, so a run that dies on quota leaves the channel
+  overdue for the next one instead of skipping it for a whole cycle.
+
+  Playlist scans run on a thread pool: the same API calls and the same quota,
+  but the run is latency-bound, so it finishes several times faster.
 """
 
 import os
 import re
 import json
 import datetime
+import threading
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -105,7 +115,22 @@ def get_youtube():
     key = os.environ.get("YOUTUBE_API_KEY", "").strip()
     if not key:
         raise RuntimeError("YOUTUBE_API_KEY not set. Add it to .env or GitHub Secrets.")
-    return build("youtube", "v3", developerKey=key)
+    return build("youtube", "v3", developerKey=key, cache_discovery=False)
+
+
+_thread_local = threading.local()
+
+
+def thread_youtube():
+    """A client for the calling thread.
+
+    googleapiclient's resource objects are not thread-safe, so each worker
+    thread builds and reuses its own.
+    """
+    client = getattr(_thread_local, "youtube", None)
+    if client is None:
+        client = _thread_local.youtube = get_youtube()
+    return client
 
 
 def load_meta():
@@ -329,6 +354,55 @@ def fetch_video_details(youtube, video_ids):
     return details
 
 
+# --- scan cadence --------------------------------------------------------
+# A channel is scanned as often as it actually publishes, and the cadence is
+# tighter through the Indian afternoon-to-midnight peak, when most uploads
+# happen (opinion channels especially), then relaxed through the quiet early
+# morning.  The peak deliberately runs past midnight: ~48% of opinion videos
+# go up between 17:00 and 24:00 IST, and they need a scan after that to be
+# picked up promptly.
+PEAK_START_IST = 12   # 12:00 IST ...
+PEAK_END_IST   = 2    # ... through 01:59 IST
+#                          (peak, off-peak) hours between playlist scans
+CADENCE_HOURS  = {"hot": (2, 2), "mid": (4, 8), "slow": (4, 12)}
+HOT_VIDEOS_PER_DAY = 20
+MID_VIDEOS_PER_DAY = 5
+SCAN_GRACE     = 900  # runs drift a few minutes; don't let that skip a slot
+SCAN_WORKERS   = 8    # parallel playlist scans; quota is unaffected
+
+
+def in_peak(now_ist):
+    hour = now_ist.hour
+    return hour >= PEAK_START_IST or hour < PEAK_END_IST
+
+
+def channel_tier(cid, video_cache):
+    """hot / mid / slow, from how many videos the channel put out in 24h."""
+    known = video_cache.get(cid)
+    if not known:
+        # No history yet - a newly added channel. Treat it as hot so it is
+        # picked up on the very next run, in whichever section it was added to.
+        return "hot"
+    per_day = len(known)
+    if per_day >= HOT_VIDEOS_PER_DAY:
+        return "hot"
+    if per_day >= MID_VIDEOS_PER_DAY:
+        return "mid"
+    return "slow"
+
+
+def is_due(cid, video_cache, last_scan, now_ts, peak):
+    """Whether this channel's playlist is overdue for a scan.
+
+    Asking "is it overdue?" rather than "is it this run's turn?" means a run
+    that dies on quota leaves the channel overdue, so the next run picks it up.
+    Nothing can be silently skipped for a whole cycle.
+    """
+    tier  = channel_tier(cid, video_cache)
+    hours = CADENCE_HOURS[tier][0 if peak else 1]
+    return now_ts - last_scan.get(cid, 0) >= hours * 3600 - SCAN_GRACE
+
+
 def needs_stats_refresh(vid, cached_value, existing_by_id, now_ts):
     """Whether a cached video is worth spending quota on again this run."""
     if now_ts - cache_ts(cached_value) <= STATS_REFRESH_WINDOW:
@@ -345,15 +419,17 @@ def needs_stats_refresh(vid, cached_value, existing_by_id, now_ts):
     return existing_by_id[vid].get("live_broadcast") in ("live", "upcoming")
 
 
-def fetch_section(youtube, section, channels, meta_channels, video_cache, existing_by_id):
-    """Fetch one section in two passes: a playlist scan per channel, then a
-    single batched videos.list over every ID the whole section needs."""
+def fetch_section(youtube, section, channels, meta_channels, video_cache,
+                  existing_by_id, last_scan, peak):
+    """Fetch one section in two passes: parallel playlist scans of the channels
+    that are due, then a single batched videos.list over every ID needed."""
     now_ts       = int(now_utc().timestamp())
     ids_to_get   = []   # ordered, de-duplicated
     id_owner     = {}   # video_id -> configured channel id
     channel_info = {}   # channel id -> (display name, subscribers)
     new_counts, cached_counts = {}, {}
 
+    due, skipped = [], 0
     for ch in channels:
         cid         = ch["id"]
         ch_meta     = meta_channels.get(cid, {})
@@ -364,18 +440,37 @@ def fetch_section(youtube, section, channels, meta_channels, video_cache, existi
         if not playlist_id:
             print(f"  {ch['name']}: no playlist ID in meta, skipping")
             continue
-        if QUOTA_EXCEEDED:
+        if not is_due(cid, video_cache, last_scan, now_ts, peak):
+            # Not overdue. Its videos still carry forward from videos.json.
+            skipped += 1
             continue
+        due.append((cid, playlist_id))
 
-        known     = video_cache.get(cid, {})
-        known_ids = set(known.keys())
+    # Scan the due playlists in parallel. Same number of API calls and the same
+    # quota as before - the run is latency-bound, not rate-limited, so this only
+    # removes waiting.
+    def scan(entry):
+        cid, playlist_id = entry
+        known_ids = set(video_cache.get(cid, {}).keys())
+        return cid, fetch_playlist_videos(
+            thread_youtube(), playlist_id, FETCH_DAYS, known_ids)
 
-        new_ids   = fetch_playlist_videos(youtube, playlist_id, FETCH_DAYS, known_ids)
+    scanned = []
+    if due and not QUOTA_EXCEEDED:
+        with ThreadPoolExecutor(max_workers=SCAN_WORKERS) as pool:
+            scanned = list(pool.map(scan, due))
+
+    for cid, new_ids in scanned:
+        known = video_cache.get(cid, {})
         stale_ids = [vid for vid, ts in known.items()
                      if needs_stats_refresh(vid, ts, existing_by_id, now_ts)]
 
         new_counts[cid]    = len(new_ids)
-        cached_counts[cid] = len(known_ids)
+        cached_counts[cid] = len(known)
+        # Stamp the scan only once it has actually happened, so a quota failure
+        # leaves the channel overdue rather than marking it done.
+        if not QUOTA_EXCEEDED:
+            last_scan[cid] = now_ts
 
         for vid in new_ids + stale_ids:
             if vid not in id_owner:
@@ -444,7 +539,8 @@ def fetch_section(youtube, section, channels, meta_channels, video_cache, existi
             print(f"  {channel_info[cid][0]}: {per_channel.get(cid, 0)} videos "
                   f"({new_counts[cid]} new, {cached_counts[cid]} cached)")
 
-    print(f"[fetch] {section}: refreshed {len(ids_to_get)} video IDs "
+    print(f"[fetch] {section}: scanned {len(due)} of {len(channels)} channels "
+          f"({skipped} not due yet), refreshed {len(ids_to_get)} video IDs "
           f"(~{-(-len(ids_to_get) // 50)} videos.list units)")
     return videos
 
@@ -504,9 +600,16 @@ def main():
 
     # Rotate which section goes first so an exhausted quota cannot starve the
     # same sections on every run.
-    state  = load_state()
-    offset = int(state.get("section_offset", 0)) % len(SECTIONS)
-    order  = SECTIONS[offset:] + SECTIONS[:offset]
+    state     = load_state()
+    offset    = int(state.get("section_offset", 0)) % len(SECTIONS)
+    order     = SECTIONS[offset:] + SECTIONS[:offset]
+    last_scan = {cid: int(ts) for cid, ts in state.get("last_scan", {}).items()}
+
+    now_ist = datetime.datetime.now(IST)
+    peak    = in_peak(now_ist)
+    print(f"[cadence] {now_ist:%H:%M} IST - {'PEAK' if peak else 'off-peak'}: "
+          + ", ".join(f"{tier} every {hours[0 if peak else 1]}h"
+                      for tier, hours in CADENCE_HOURS.items()))
 
     for section, channels in order:
         if QUOTA_EXCEEDED:
@@ -514,12 +617,18 @@ def main():
             continue
         print(f"\n[fetch] === {section.upper()} ({len(channels)} channels) ===")
         update_section(section, fetch_section(
-            youtube, section, channels, meta_channels, video_cache, existing_by_id))
+            youtube, section, channels, meta_channels, video_cache,
+            existing_by_id, last_scan, peak))
+
+    # Drop channels that are no longer configured so the file cannot grow forever.
+    configured = set(configured_channels())
+    last_scan  = {cid: ts for cid, ts in last_scan.items() if cid in configured}
 
     save_state({
         "section_offset":  (offset + 1) % len(SECTIONS),
         "last_run":        now_utc().isoformat(),
         "quota_exhausted": QUOTA_EXCEEDED,
+        "last_scan":       last_scan,
     })
 
     DATA_DIR.mkdir(exist_ok=True)
