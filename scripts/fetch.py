@@ -362,12 +362,21 @@ def fetch_video_details(youtube, video_ids):
 # go up between 17:00 and 24:00 IST, and they need a scan after that to be
 # picked up promptly.
 PEAK_START_IST = 12   # 12:00 IST ...
-PEAK_END_IST   = 2    # ... through 01:59 IST
+PEAK_END_IST   = 3    # ... through 02:59 IST. The last peak slot is nominally
+                      # 01:30 IST and it is the one that catches late-evening
+                      # uploads; ending at 03:00 keeps it inside the peak even
+                      # when Actions fires it up to an hour late.
 #                          (peak, off-peak) hours between playlist scans
 CADENCE_HOURS  = {"hot": (2, 2), "mid": (4, 8), "slow": (4, 12)}
 HOT_VIDEOS_PER_DAY = 20
 MID_VIDEOS_PER_DAY = 5
-SCAN_GRACE     = 900  # runs drift a few minutes; don't let that skip a slot
+RUN_INTERVAL_HOURS = 2  # the workflow cron; keep in sync with refresh.yml
+# GitHub Actions cron drifts badly: for a nominal 2h schedule the observed gaps
+# between runs range from 1.55h to 2.64h. Allowing half an interval of slack
+# means a run that arrives early still counts, instead of being judged "not due"
+# and pushing the channel to the next slot - which silently doubled the cadence
+# of the hot tier (11.6 scans/day, worst gap 3.6h) when this was 15 minutes.
+SCAN_GRACE     = RUN_INTERVAL_HOURS * 3600 // 2
 SCAN_WORKERS   = 8    # parallel playlist scans; quota is unaffected
 
 
