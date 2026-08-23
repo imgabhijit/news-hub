@@ -1,19 +1,24 @@
 """
 Fetches YouTube videos for all channels and saves to data/videos.json.
-Channel metadata (playlist IDs + subscribers) is cached in data/channels_meta.json
-and only refreshed when older than META_STALE_DAYS (saves ~98% of API quota).
 
-Quota cost per run:
-  - Normal (meta cached):  ~2 units per channel (playlistItems + videos.list)
-  - Meta refresh (weekly): +1 unit per 50 channels
+Channel metadata (playlist IDs + subscribers) is cached in data/channels_meta.json
+and only refreshed when older than META_STALE_DAYS.
+
+Quota budget (the YouTube Data API gives 10,000 units/day):
+  - 1 unit per channel     -> playlistItems.list, one page in the steady state
+  - 1 unit per 50 video IDs -> videos.list, batched across the whole section
+
+  Video details are NOT re-fetched for every cached video on every run. Only
+  brand-new IDs, videos younger than STATS_REFRESH_WINDOW, and videos that are
+  live/upcoming are refreshed; everything else keeps the record already stored
+  in videos.json. That keeps a full run near ~450 units instead of ~800, so
+  every section can be fetched on every run instead of a few times a day.
 """
 
 import os
 import re
-import sys
 import json
 import datetime
-import hashlib
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -30,76 +35,70 @@ from channels import (
 
 load_dotenv(dotenv_path=Path(__file__).parent.parent / ".env")
 
-DATA_DIR             = Path(__file__).parent.parent / "data"
-META_FILE            = DATA_DIR / "channels_meta.json"
-VIDEOS_FILE          = DATA_DIR / "videos.json"
-CACHE_FILE           = DATA_DIR / "video_id_cache.json"
-PERIODIC_STATE_FILE  = DATA_DIR / "periodic_state.json"
-FETCH_DAYS           = 1
-MIN_DURATION         = 60
-META_STALE_DAYS      = 7
+DATA_DIR              = Path(__file__).parent.parent / "data"
+META_FILE             = DATA_DIR / "channels_meta.json"
+VIDEOS_FILE           = DATA_DIR / "videos.json"
+CACHE_FILE            = DATA_DIR / "video_id_cache.json"
+STATE_FILE            = DATA_DIR / "periodic_state.json"
+FETCH_DAYS            = 1
+MIN_DURATION          = 60
+META_STALE_DAYS       = 7
+# View counts are only refreshed for videos younger than this. Older videos in
+# the 24h window keep their last known stats, which saves most of the quota.
+STATS_REFRESH_WINDOW  = 3 * 3600
 
 IST = datetime.timezone(datetime.timedelta(hours=5, minutes=30))
 
-OPINION_WINDOWS = {
-    "morning": (6,  10),
-    "evening": (16, 20),
-    "night":   (20, 24),
-}
+# Every section is fetched on every run. The order is rotated between runs so a
+# quota shortfall never starves the same sections day after day.
+SECTIONS = [
+    ("bengali",             BENGALI_CHANNELS),
+    ("opinion",             BENGALI_OPINION_CHANNELS),
+    ("national_english",    NATIONAL_ENGLISH_CHANNELS),
+    ("national_hindi",      NATIONAL_HINDI_CHANNELS),
+    ("world_news",          WORLD_NEWS_CHANNELS),
+    ("hindi_right_opinion", HINDI_RIGHT_OPINION_CHANNELS),
+    ("hindi_left_opinion",  HINDI_LEFT_OPINION_CHANNELS),
+    ("bangladesh",          BANGLADESH_NEWS_CHANNELS),
+    ("pakistan",            PAKISTAN_NEWS_CHANNELS),
+    ("nepal",               NEPAL_NEWS_CHANNELS),
+    ("myanmar",             MYANMAR_NEWS_CHANNELS),
+]
 
-REGIONS = {
-    "bengali":          BENGALI_CHANNELS,
-    "opinion":          BENGALI_OPINION_CHANNELS,
-    "national_english": NATIONAL_ENGLISH_CHANNELS,
-    "national_hindi":   NATIONAL_HINDI_CHANNELS,
-    "world_news":       WORLD_NEWS_CHANNELS,
-}
+# Set once the API reports the daily quota is gone. Every later call is skipped
+# so the run finishes quickly and carries existing data forward untouched.
+QUOTA_EXCEEDED = False
 
 
-def load_periodic_state():
-    if PERIODIC_STATE_FILE.exists():
+def note_api_error(where, error):
+    """Record an API failure; flag daily-quota exhaustion so the run bails out."""
+    global QUOTA_EXCEEDED
+    text = str(error)
+    if "quotaExceeded" in text or "dailyLimitExceeded" in text:
+        if not QUOTA_EXCEEDED:
+            print(f"[quota] Daily API quota exhausted during {where} - "
+                  f"skipping all further API calls and keeping existing data")
+        QUOTA_EXCEEDED = True
+    else:
+        print(f"[{where}] API error: {error}")
+
+
+def now_utc():
+    return datetime.datetime.now(datetime.timezone.utc)
+
+
+def load_state():
+    if STATE_FILE.exists():
         try:
-            return json.loads(PERIODIC_STATE_FILE.read_text(encoding="utf-8"))
+            return json.loads(STATE_FILE.read_text(encoding="utf-8"))
         except Exception:
             pass
     return {}
 
 
-def save_periodic_state(state):
+def save_state(state):
     DATA_DIR.mkdir(exist_ok=True)
-    PERIODIC_STATE_FILE.write_text(json.dumps(state, indent=2, ensure_ascii=False), encoding="utf-8")
-
-
-def current_opinion_window(hour):
-    for name, (start, end) in OPINION_WINDOWS.items():
-        if start <= hour < end:
-            return name
-    return None
-
-
-def periodic_channel_signature():
-    """Stable fingerprint of channel lists fetched in the periodic job."""
-    channels = (HINDI_RIGHT_OPINION_CHANNELS + HINDI_LEFT_OPINION_CHANNELS +
-                BANGLADESH_NEWS_CHANNELS + PAKISTAN_NEWS_CHANNELS +
-                NEPAL_NEWS_CHANNELS + MYANMAR_NEWS_CHANNELS)
-    channel_ids = ",".join(ch["id"] for ch in channels)
-    return hashlib.sha256(channel_ids.encode("utf-8")).hexdigest()
-
-
-def should_fetch_periodic(now_ist):
-    window = current_opinion_window(now_ist.hour)
-    state = load_periodic_state()
-    # Do not leave newly configured channels empty until the next scheduled
-    # window. This is a one-time fetch; the saved signature restores the normal
-    # quota-saving schedule on subsequent runs.
-    if state.get("channel_config_signature") != periodic_channel_signature():
-        return True, window or "configuration"
-    if not window:
-        return False, None
-    today = now_ist.strftime("%Y-%m-%d")
-    if state.get("last_window") == window and state.get("last_date") == today:
-        return False, window
-    return True, window
+    STATE_FILE.write_text(json.dumps(state, indent=2, ensure_ascii=False), encoding="utf-8")
 
 
 def get_youtube():
@@ -122,7 +121,7 @@ def is_stale(meta):
     ts = meta.get("last_updated")
     if not ts:
         return True
-    age = datetime.datetime.now(datetime.timezone.utc) - datetime.datetime.fromisoformat(ts)
+    age = now_utc() - datetime.datetime.fromisoformat(ts)
     return age.days >= META_STALE_DAYS
 
 
@@ -136,7 +135,7 @@ def load_video_cache():
 
 
 def purge_video_cache(cache):
-    cutoff = int(datetime.datetime.now(datetime.timezone.utc).timestamp()) - 86400
+    cutoff = int(now_utc().timestamp()) - 86400
     purged = 0
     for cid in list(cache.keys()):
         before = len(cache[cid])
@@ -159,13 +158,9 @@ def save_video_cache(cache):
 def configured_channels():
     """Return every configured channel, keyed by its YouTube channel ID."""
     all_channels = {}
-    for channels in REGIONS.values():
+    for _, channels in SECTIONS:
         for ch in channels:
             all_channels[ch["id"]] = ch["name"]
-    for ch in (HINDI_RIGHT_OPINION_CHANNELS + HINDI_LEFT_OPINION_CHANNELS +
-               BANGLADESH_NEWS_CHANNELS + PAKISTAN_NEWS_CHANNELS +
-               NEPAL_NEWS_CHANNELS + MYANMAR_NEWS_CHANNELS):
-        all_channels[ch["id"]] = ch["name"]
     return all_channels
 
 
@@ -181,6 +176,12 @@ def missing_metadata_channels(meta):
 
 
 def refresh_meta(youtube, meta):
+    """Resolve uploads-playlist IDs and subscriber counts for every channel.
+
+    Results are merged into the existing metadata instead of replacing it, so a
+    partial failure (quota, transient 5xx) can never wipe metadata that is still
+    good and leave every channel unfetchable on the runs that follow.
+    """
     print("[meta] Refreshing channel metadata (playlist IDs + subscribers)...")
     all_channels = configured_channels()
 
@@ -189,6 +190,9 @@ def refresh_meta(youtube, meta):
     refresh_failed = False
 
     for i in range(0, len(ids), 50):
+        if QUOTA_EXCEEDED:
+            refresh_failed = True
+            break
         chunk = ids[i:i + 50]
         try:
             res = youtube.channels().list(
@@ -203,19 +207,28 @@ def refresh_meta(youtube, meta):
                     "subscribers": int(item["statistics"].get("subscriberCount", 0)),
                 }
         except HttpError as e:
-            print(f"[meta] API error: {e}")
+            note_api_error("meta", e)
             refresh_failed = True
 
-    meta["channels"]     = channel_data
+    merged = dict(meta.get("channels", {}))
+    merged.update(channel_data)
+    meta["channels"] = merged
+
     # Do not spend quota refreshing on every run for a deleted or invalid channel
     # ID.  New IDs are still missing and trigger an immediate refresh; unresolved
     # IDs are retried with the normal weekly metadata refresh.
     if not refresh_failed:
         meta["unresolved_channel_ids"] = sorted(set(all_channels) - set(channel_data))
-    meta["last_updated"] = datetime.datetime.now(datetime.timezone.utc).isoformat()
+        meta["last_updated"] = now_utc().isoformat()
+        print(f"[meta] Saved metadata for {len(channel_data)} channels")
+    else:
+        # Leave last_updated alone so the next run retries instead of treating
+        # this incomplete refresh as a fresh one.
+        print(f"[meta] Partial refresh: resolved {len(channel_data)}/{len(ids)} "
+              f"channels, will retry next run")
+
     DATA_DIR.mkdir(exist_ok=True)
     META_FILE.write_text(json.dumps(meta, indent=2, ensure_ascii=False), encoding="utf-8")
-    print(f"[meta] Saved metadata for {len(channel_data)} channels")
     return meta
 
 
@@ -232,18 +245,22 @@ def duration_to_seconds(iso):
 def fetch_playlist_videos(youtube, playlist_id, days, known_ids=None):
     """Fetch new video IDs from a channel's uploads playlist.
 
+    The uploads playlist covers everything a channel published - regular
+    uploads, live streams (the /streams tab) and podcast episodes - so one scan
+    per channel is enough; there is no separate endpoint to call for lives.
+
     Playlist entries are usually newest-first, but active/scheduled live streams
-    are not reliably ordered by their video publication time.  Therefore a cached
-    live stream is not an immediate safe boundary: there can be a newer upload
-    later in that page.  Scan the rest of that page, then stop at the cache so
-    normal refreshes still need only one playlist request per channel.
+    are not reliably ordered by their video publication time.  So neither a
+    cached ID nor an out-of-window date is a safe boundary mid-page: a newer
+    upload can sit further down the same page.  Scan the whole page, then stop,
+    so a normal refresh still needs only one playlist request per channel.
     """
-    cutoff = (
-        datetime.datetime.now(datetime.timezone.utc) - datetime.timedelta(days=days)
-    ).strftime("%Y-%m-%dT%H:%M:%SZ")
+    cutoff = (now_utc() - datetime.timedelta(days=days)).strftime("%Y-%m-%dT%H:%M:%SZ")
 
     video_ids, next_token = [], None
     while True:
+        if QUOTA_EXCEEDED:
+            break
         try:
             res = youtube.playlistItems().list(
                 part="contentDetails",
@@ -252,33 +269,27 @@ def fetch_playlist_videos(youtube, playlist_id, days, known_ids=None):
                 pageToken=next_token,
             ).execute()
         except HttpError as e:
-            print(f"[fetch] playlistItems error: {e}")
+            note_api_error("fetch", e)
             break
 
-        saw_cached_id = False
+        stop_after_page = False
         for item in res.get("items", []):
             pub = item.get("contentDetails", {}).get("videoPublishedAt", "")
             vid = item["contentDetails"]["videoId"]
-            is_cached = bool(known_ids and vid in known_ids)
 
-            if is_cached:
-                saw_cached_id = True
-
-            # An empty publication time can be an active live stream.  Include it
-            # so its state and view count can be refreshed in fetch_video_details.
-            if not pub:
-                if not is_cached:
-                    video_ids.append(vid)
+            if known_ids and vid in known_ids:
+                # Already known: everything below is old cache territory, but
+                # finish this page in case a live stream reordered it.
+                stop_after_page = True
+            elif not pub:
+                # An empty publication time can be an active live stream.
+                video_ids.append(vid)
             elif pub >= cutoff:
-                if not is_cached:
-                    video_ids.append(vid)
+                video_ids.append(vid)
             else:
-                return video_ids  # hit a video older than our window
+                stop_after_page = True
 
-        # A cached item proves the next page is old cache territory in the normal
-        # ordering case.  We have still checked every item beside it on this page
-        # for uploads that a live stream may have displaced.
-        if saw_cached_id:
+        if stop_after_page:
             return video_ids
 
         next_token = res.get("nextPageToken")
@@ -287,10 +298,12 @@ def fetch_playlist_videos(youtube, playlist_id, days, known_ids=None):
     return video_ids
 
 
-
 def fetch_video_details(youtube, video_ids):
+    """videos.list over any number of IDs, batched 50 at a time (1 unit each)."""
     details = []
     for i in range(0, len(video_ids), 50):
+        if QUOTA_EXCEEDED:
+            break
         chunk = video_ids[i:i + 50]
         try:
             res = youtube.videos().list(
@@ -299,89 +312,117 @@ def fetch_video_details(youtube, video_ids):
             ).execute()
             details.extend(res.get("items", []))
         except HttpError as e:
-            print(f"[fetch] videos.list error: {e}")
+            note_api_error("fetch", e)
     return details
 
 
-def fetch_region(youtube, region, channels, meta_channels, video_cache):
-    videos = []
-    channel_type = region  # "bengali", "opinion", "national_english", "national_hindi"
+def needs_stats_refresh(vid, published_ts, existing_by_id, now_ts):
+    """Whether a cached video is worth spending quota on again this run."""
+    if now_ts - published_ts <= STATS_REFRESH_WINDOW:
+        return True
+    # A stream that is on air (or about to be) has to be re-checked so it can
+    # flip to a finished video with a real duration and a final view count.
+    return existing_by_id.get(vid, {}).get("live_broadcast") in ("live", "upcoming")
+
+
+def fetch_section(youtube, section, channels, meta_channels, video_cache, existing_by_id):
+    """Fetch one section in two passes: a playlist scan per channel, then a
+    single batched videos.list over every ID the whole section needs."""
+    now_ts       = int(now_utc().timestamp())
+    ids_to_get   = []   # ordered, de-duplicated
+    id_owner     = {}   # video_id -> configured channel id
+    channel_info = {}   # channel id -> (display name, subscribers)
+    new_counts, cached_counts = {}, {}
 
     for ch in channels:
         cid         = ch["id"]
         ch_meta     = meta_channels.get(cid, {})
         playlist_id = ch_meta.get("playlist_id")
-        subscribers = ch_meta.get("subscribers", 0)
         ch_name     = ch_meta.get("name") or ch["name"]  # prefer API name over placeholder
+        channel_info[cid] = (ch_name, ch_meta.get("subscribers", 0))
 
         if not playlist_id:
             print(f"  {ch['name']}: no playlist ID in meta, skipping")
             continue
-
-        # Known IDs for this channel (already cached, published within 24h)
-        known = video_cache.get(cid, {})
-        known_ids = set(known.keys())
-
-        # Only fetch IDs we haven't seen before; stop early on first known ID
-        new_ids = fetch_playlist_videos(youtube, playlist_id, FETCH_DAYS, known_ids)
-
-        # All IDs to fetch metadata for = new + cached (views need refreshing every run)
-        all_ids = new_ids + list(known_ids)
-        if not all_ids:
-            print(f"  {ch['name']}: no videos in last {FETCH_DAYS}d")
+        if QUOTA_EXCEEDED:
             continue
 
-        details = fetch_video_details(youtube, all_ids)
-        count = 0
-        for vd in details:
-            dur  = duration_to_seconds(vd.get("contentDetails", {}).get("duration", ""))
-            live = vd["snippet"].get("liveBroadcastContent", "none")
+        known     = video_cache.get(cid, {})
+        known_ids = set(known.keys())
 
-            pub = vd["snippet"].get("publishedAt", "")
-            try:
-                if pub:
-                    dt = datetime.datetime.strptime(pub, "%Y-%m-%dT%H:%M:%SZ").replace(
-                        tzinfo=datetime.timezone.utc
-                    )
-                    timestamp = int(dt.timestamp())
-                else:
-                    # Active live stream — publishedAt is empty; use current time
-                    timestamp = int(datetime.datetime.now(datetime.timezone.utc).timestamp())
-            except Exception:
-                timestamp = int(datetime.datetime.now(datetime.timezone.utc).timestamp())
+        new_ids   = fetch_playlist_videos(youtube, playlist_id, FETCH_DAYS, known_ids)
+        stale_ids = [vid for vid, ts in known.items()
+                     if needs_stats_refresh(vid, ts, existing_by_id, now_ts)]
 
-            # Cache ALL video IDs (including shorts) so early-stop works correctly
-            if cid not in video_cache:
-                video_cache[cid] = {}
-            video_cache[cid][vd["id"]] = timestamp
+        new_counts[cid]    = len(new_ids)
+        cached_counts[cid] = len(known_ids)
 
-            if dur < MIN_DURATION and live != "live":
-                continue
+        for vid in new_ids + stale_ids:
+            if vid not in id_owner:
+                id_owner[vid] = cid
+                ids_to_get.append(vid)
 
-            stats = vd.get("statistics", {})
-            thumb = (
-                vd["snippet"].get("thumbnails", {})
-                .get("high", {})
-                .get("url", f"https://i.ytimg.com/vi/{vd['id']}/mqdefault.jpg")
-            )
+    details = fetch_video_details(youtube, ids_to_get)
 
-            videos.append({
-                "video_id":       vd["id"],
-                "title":          vd["snippet"].get("title", ""),
-                "channel_id":     cid,
-                "channel_name":   ch_name,
-                "channel_type":   channel_type,
-                "view_count":     int(stats.get("viewCount", 0)),
-                "subscribers":    subscribers,
-                "timestamp":      timestamp,
-                "duration":       dur,
-                "thumbnail":      thumb,
-                "live_broadcast": live,
-            })
-            count += 1
+    videos      = []
+    per_channel = {}
+    for vd in details:
+        cid = id_owner.get(vd["id"], vd["snippet"].get("channelId", ""))
+        ch_name, subscribers = channel_info.get(
+            cid, (vd["snippet"].get("channelTitle", ""), 0))
 
-        print(f"  {ch['name']}: {count} videos ({len(new_ids)} new, {len(known_ids)} cached)")
+        dur  = duration_to_seconds(vd.get("contentDetails", {}).get("duration", ""))
+        live = vd["snippet"].get("liveBroadcastContent", "none")
 
+        pub = vd["snippet"].get("publishedAt", "")
+        try:
+            if pub:
+                dt = datetime.datetime.strptime(pub, "%Y-%m-%dT%H:%M:%SZ").replace(
+                    tzinfo=datetime.timezone.utc
+                )
+                timestamp = int(dt.timestamp())
+            else:
+                # Active live stream - publishedAt is empty; use current time
+                timestamp = now_ts
+        except Exception:
+            timestamp = now_ts
+
+        # Cache ALL video IDs (including shorts) so early-stop works correctly
+        video_cache.setdefault(cid, {})[vd["id"]] = timestamp
+
+        if dur < MIN_DURATION and live != "live":
+            continue
+
+        stats = vd.get("statistics", {})
+        thumb = (
+            vd["snippet"].get("thumbnails", {})
+            .get("high", {})
+            .get("url", f"https://i.ytimg.com/vi/{vd['id']}/mqdefault.jpg")
+        )
+
+        videos.append({
+            "video_id":       vd["id"],
+            "title":          vd["snippet"].get("title", ""),
+            "channel_id":     cid,
+            "channel_name":   ch_name,
+            "channel_type":   section,
+            "view_count":     int(stats.get("viewCount", 0)),
+            "subscribers":    subscribers,
+            "timestamp":      timestamp,
+            "duration":       dur,
+            "thumbnail":      thumb,
+            "live_broadcast": live,
+        })
+        per_channel[cid] = per_channel.get(cid, 0) + 1
+
+    for ch in channels:
+        cid = ch["id"]
+        if cid in new_counts:
+            print(f"  {channel_info[cid][0]}: {per_channel.get(cid, 0)} videos "
+                  f"({new_counts[cid]} new, {cached_counts[cid]} cached)")
+
+    print(f"[fetch] {section}: refreshed {len(ids_to_get)} video IDs "
+          f"(~{-(-len(ids_to_get) // 50)} videos.list units)")
     return videos
 
 
@@ -392,7 +433,8 @@ def main():
 
     if is_stale(meta) or missing_metadata:
         if missing_metadata:
-            print(f"[meta] Refreshing because {len(missing_metadata)} configured channel(s) are missing metadata")
+            print(f"[meta] Refreshing because {len(missing_metadata)} configured "
+                  f"channel(s) are missing metadata")
         meta = refresh_meta(youtube, meta)
     else:
         print(f"[meta] Using cached metadata (updated {meta.get('last_updated', '?')})")
@@ -403,7 +445,6 @@ def main():
     video_cache = load_video_cache()
     video_cache = purge_video_cache(video_cache)
 
-    # Carry forward existing hindi opinion data (overwritten only when in fetch window)
     existing = {}
     if VIDEOS_FILE.exists():
         try:
@@ -411,96 +452,64 @@ def main():
         except Exception:
             pass
 
-    cutoff_24h = int(datetime.datetime.now(datetime.timezone.utc).timestamp()) - 86400
+    cutoff_24h = int(now_utc().timestamp()) - 86400
 
-    def recent_videos(videos):
-        """Keep only videos inside the same rolling 24-hour window as the cache."""
-        return [video for video in videos if video.get("timestamp", 0) >= cutoff_24h]
+    def keep(video):
+        """Inside the rolling 24h window, or still on air."""
+        return (video.get("timestamp", 0) >= cutoff_24h or
+                video.get("live_broadcast") == "live")
 
-    output = {
-        "last_updated":          datetime.datetime.now(datetime.timezone.utc).isoformat(),
-        "bengali":               recent_videos(existing.get("bengali", [])),
-        "opinion":               recent_videos(existing.get("opinion", [])),
-        "national_english":      recent_videos(existing.get("national_english", [])),
-        "national_hindi":        recent_videos(existing.get("national_hindi", [])),
-        "world_news":            recent_videos(existing.get("world_news", [])),
-        "hindi_right_opinion":   recent_videos(existing.get("hindi_right_opinion", [])),
-        "hindi_left_opinion":    recent_videos(existing.get("hindi_left_opinion", [])),
-        "bangladesh":            recent_videos(existing.get("bangladesh", [])),
-        "pakistan":              recent_videos(existing.get("pakistan", [])),
-        "nepal":                 recent_videos(existing.get("nepal", [])),
-        "myanmar":               recent_videos(existing.get("myanmar", [])),
-    }
+    output         = {"last_updated": now_utc().isoformat()}
+    existing_by_id = {}
+    for section, _ in SECTIONS:
+        output[section] = [v for v in existing.get(section, []) if keep(v)]
+        for v in output[section]:
+            existing_by_id[v["video_id"]] = v
 
     def update_section(key, new_videos):
-        purged = [v for v in new_videos if v["timestamp"] >= cutoff_24h]
-        if purged:
-            # Merge new videos with existing videos in the 24h window
-            existing_map = {v["video_id"]: v for v in output.get(key, [])}
-            for v in purged:
-                existing_map[v["video_id"]] = v
-            output[key] = list(existing_map.values())
-            print(f"[fetch] {key}: updated with {len(purged)} videos (total {len(output[key])})")
+        fresh = [v for v in new_videos if keep(v)]
+        if fresh:
+            merged = {v["video_id"]: v for v in output.get(key, [])}
+            for v in fresh:
+                merged[v["video_id"]] = v
+            output[key] = list(merged.values())
+            print(f"[fetch] {key}: updated with {len(fresh)} videos "
+                  f"(total {len(output[key])})")
         else:
-            print(f"[fetch] {key}: no new videos fetched, keeping {len(output.get(key, []))} existing videos")
+            print(f"[fetch] {key}: no new videos fetched, keeping "
+                  f"{len(output.get(key, []))} existing videos")
 
-    for region, channels in REGIONS.items():
-        print(f"\n[fetch] === {region.upper()} ({len(channels)} channels) ===")
-        videos = fetch_region(youtube, region, channels, meta_channels, video_cache)
-        update_section(region, videos)
+    # Rotate which section goes first so an exhausted quota cannot starve the
+    # same sections on every run.
+    state  = load_state()
+    offset = int(state.get("section_offset", 0)) % len(SECTIONS)
+    order  = SECTIONS[offset:] + SECTIONS[:offset]
 
-    # Hindi opinion — window-based fetch (morning 6-10, evening 4-8, night 8-12 IST)
-    now_ist = datetime.datetime.now(IST)
-    fetch_opinion, window = should_fetch_periodic(now_ist)
+    for section, channels in order:
+        if QUOTA_EXCEEDED:
+            print(f"\n[fetch] === {section.upper()} - skipped, quota exhausted ===")
+            continue
+        print(f"\n[fetch] === {section.upper()} ({len(channels)} channels) ===")
+        update_section(section, fetch_section(
+            youtube, section, channels, meta_channels, video_cache, existing_by_id))
 
-    if fetch_opinion:
-        print(f"\n[opinion] === HINDI OPINION ({window} window) ===")
-        if HINDI_RIGHT_OPINION_CHANNELS:
-            print(f"[opinion] Fetching RIGHT ({len(HINDI_RIGHT_OPINION_CHANNELS)} channels)...")
-            right_videos = fetch_region(youtube, "hindi_right_opinion", HINDI_RIGHT_OPINION_CHANNELS, meta_channels, video_cache)
-            update_section("hindi_right_opinion", right_videos)
-        if HINDI_LEFT_OPINION_CHANNELS:
-            print(f"[opinion] Fetching LEFT ({len(HINDI_LEFT_OPINION_CHANNELS)} channels)...")
-            left_videos = fetch_region(youtube, "hindi_left_opinion", HINDI_LEFT_OPINION_CHANNELS, meta_channels, video_cache)
-            update_section("hindi_left_opinion", left_videos)
-        # Bangladesh & Pakistan — same window schedule as Hindi opinion
-        print(f"\n[neighbour] === BANGLADESH ({len(BANGLADESH_NEWS_CHANNELS)} channels) ===")
-        bd_videos = fetch_region(youtube, "bangladesh", BANGLADESH_NEWS_CHANNELS, meta_channels, video_cache)
-        update_section("bangladesh", bd_videos)
-
-        print(f"\n[neighbour] === PAKISTAN ({len(PAKISTAN_NEWS_CHANNELS)} channels) ===")
-        pk_videos = fetch_region(youtube, "pakistan", PAKISTAN_NEWS_CHANNELS, meta_channels, video_cache)
-        update_section("pakistan", pk_videos)
-
-        print(f"\n[neighbour] === NEPAL ({len(NEPAL_NEWS_CHANNELS)} channels) ===")
-        np_videos = fetch_region(youtube, "nepal", NEPAL_NEWS_CHANNELS, meta_channels, video_cache)
-        update_section("nepal", np_videos)
-
-        print(f"\n[neighbour] === MYANMAR ({len(MYANMAR_NEWS_CHANNELS)} channels) ===")
-        mm_videos = fetch_region(youtube, "myanmar", MYANMAR_NEWS_CHANNELS, meta_channels, video_cache)
-        update_section("myanmar", mm_videos)
-
-        save_periodic_state({
-            "last_window": current_opinion_window(now_ist.hour),
-            "last_date": now_ist.strftime("%Y-%m-%d"),
-            "channel_config_signature": periodic_channel_signature(),
-        })
-        print(f"[opinion] State saved: window={window}, date={now_ist.strftime('%Y-%m-%d')}")
-    elif window:
-        print(f"\n[opinion] Already fetched '{window}' window today, carrying forward {len(output['hindi_right_opinion'])} right + {len(output['hindi_left_opinion'])} left videos")
-    else:
-        print(f"\n[opinion] Not in opinion window (IST hour={now_ist.hour}), carrying forward data")
+    save_state({
+        "section_offset":  (offset + 1) % len(SECTIONS),
+        "last_run":        now_utc().isoformat(),
+        "quota_exhausted": QUOTA_EXCEEDED,
+    })
 
     DATA_DIR.mkdir(exist_ok=True)
     VIDEOS_FILE.write_text(json.dumps(output, ensure_ascii=False), encoding="utf-8")
 
     save_video_cache(video_cache)
 
-    total = sum(len(output[r]) for r in ["bengali", "opinion", "national_english", "national_hindi", "world_news"])
-    neighbour_total = sum(len(output.get(r, [])) for r in
-                          ["bangladesh","pakistan","nepal","myanmar"])
-    opinion_total = len(output["hindi_right_opinion"]) + len(output["hindi_left_opinion"])
-    print(f"\n[done] {total} news + {opinion_total} opinion + {neighbour_total} neighbour videos saved to {VIDEOS_FILE}")
+    print("\n[done] videos per section:")
+    for section, _ in SECTIONS:
+        print(f"  {section:22} {len(output[section])}")
+    total = sum(len(output[s]) for s, _ in SECTIONS)
+    print(f"[done] {total} videos saved to {VIDEOS_FILE}"
+          + (" (INCOMPLETE - daily quota exhausted)" if QUOTA_EXCEEDED else ""))
 
 
 if __name__ == "__main__":
