@@ -133,7 +133,7 @@
     "UC9Ea502V2IJnBve8i7tdJ8w": {
       "name": "Jagran Bangla ",
       "playlist_id": "UU9Ea502V2IJnBve8i7tdJ8w",
-      "subscribers": 86000
+      "subscribers": 86100
     },
     "UC9YivGoN6UKWkl0k-8G1qyQ": {
       "name": "Hothat Jodi Uthlo Kotha / হঠাৎ যদি উঠল কথা",
@@ -173,7 +173,7 @@
     "UCkwTQGJelg1F-gV2ZmfPg8Q": {
       "name": "Aajkaal",
       "playlist_id": "UUkwTQGJelg1F-gV2ZmfPg8Q",
-      "subscribers": 75500
+      "subscribers": 75600
     },
     "UCxhf49wOiJeWiUzkBfuAEcQ": {
       "name": "The Wall News",
@@ -733,7 +733,7 @@
     "UCfBfBd-1kvCOPxVll8tBJ9Q": {
       "name": "Bharatvaarta",
       "playlist_id": "UUfBfBd-1kvCOPxVll8tBJ9Q",
-      "subscribers": 48600
+      "subscribers": 48700
     },
     "UCuOtdpOPjHeoEAT4i44mVOg": {
       "name": "Ada Derana News Channel | English",
@@ -933,7 +933,7 @@
     "UCaf0wu3R1I6MdXG_upOk2vw": {
       "name": "The News",
       "playlist_id": "UUaf0wu3R1I6MdXG_upOk2vw",
-      "subscribers": 4880000
+      "subscribers": 4890000
     },
     "UCln9HY5pf2oXm0x2GwUfrHQ": {
       "name": "MahaMTB",
@@ -1193,7 +1193,7 @@
     "UCIBQmCCxU_BSQYp29uwUwbA": {
       "name": "Karan Verma ",
       "playlist_id": "UUIBQmCCxU_BSQYp29uwUwbA",
-      "subscribers": 172000
+      "subscribers": 173000
     },
     "UCSaf-7p3J_N-02p7jHzm5tA": {
       "name": "The Quint",
@@ -1418,7 +1418,7 @@
     "UCYK3F9E4PKyBRZnWfVTQ5lQ": {
       "name": "the reporters' collective",
       "playlist_id": "UUYK3F9E4PKyBRZnWfVTQ5lQ",
-      "subscribers": 18800
+      "subscribers": 18900
     },
     "UCH-KE6xAOfOtPdt0mpTMexA": {
       "name": "NewsMeter",
@@ -1468,7 +1468,7 @@
     "UCjfYRVmU3JrKN78mLJHHUPQ": {
       "name": "Indian National Congress",
       "playlist_id": "UUjfYRVmU3JrKN78mLJHHUPQ",
-      "subscribers": 7830000
+      "subscribers": 7840000
     },
     "UCPREnbhKQP-hsVfsfKP-mCw": {
       "name": "NEWS24",
@@ -1488,7 +1488,7 @@
     "UCoz0O9z6RWoUYZQMBEhh6zw": {
       "name": "The Ken",
       "playlist_id": "UUoz0O9z6RWoUYZQMBEhh6zw",
-      "subscribers": 42100
+      "subscribers": 42200
     },
     "UC8NcXMG3A3f2aFQyGTpSNww": {
       "name": "Channel i News",
@@ -1603,7 +1603,7 @@
     "UC2HXZuHFLddZib4gDl1m6cA": {
       "name": "Star News",
       "playlist_id": "UU2HXZuHFLddZib4gDl1m6cA",
-      "subscribers": 735000
+      "subscribers": 736000
     },
     "UCO2Ds5LXqzQSH6HMnJFWYBA": {
       "name": "UNB - United News of Bangladesh",
@@ -2014,8 +2014,263 @@
       "name": "The Irrawaddy News",
       "playlist_id": "UUgEI7TvwuNGVGpd1M0icWJQ",
       "subscribers": 1590000
+    },
+    "UCQC1wGbOOIoC23fRGxt4kbg": {
+      "name": "Good News Today",
+      "playlist_id": "UUQC1wGbOOIoC23fRGxt4kbg",
+      "subscribers": 7780000
+    },
+    "UCBc13XYipnBIBE3Ff8QaaGg": {
+      "name": "IBC24",
+      "playlist_id": "UUBc13XYipnBIBE3Ff8QaaGg",
+      "subscribers": 6820000
+    },
+    "UCRSy3nm6Jd6xLRGvsdLzzyg": {
+      "name": "Bharat Express",
+      "playlist_id": "UURSy3nm6Jd6xLRGvsdLzzyg",
+      "subscribers": 257000
+    },
+    "UCNBEfg_PfpSjk8DqiafJJhg": {
+      "name": "Sudarshan News",
+      "playlist_id": "UUNBEfg_PfpSjk8DqiafJJhg",
+      "subscribers": 2860000
+    },
+    "UCuzS3rPQAYqHcLWqOFuY0pw": {
+      "name": "News 24",
+      "playlist_id": "UUuzS3rPQAYqHcLWqOFuY0pw",
+      "subscribers": 27400000
+    },
+    "UCCQmi1Bd-_tHRm6M2uPlGUA": {
+      "name": "Bharat 24 - Vision Of New India ",
+      "playlist_id": "UUCQmi1Bd-_tHRm6M2uPlGUA",
+      "subscribers": 3520000
+    },
+    "UCWk-7Yosyvzln9ZzJg8BvVg": {
+      "name": "Rajasthan Patrika",
+      "playlist_id": "UUWk-7Yosyvzln9ZzJg8BvVg",
+      "subscribers": 5090000
+    },
+    "UCHg-nKyyHqbraegYp1qkoUA": {
+      "name": "Haribhoomi TV (हरिभूमि टीवी)",
+      "playlist_id": "UUHg-nKyyHqbraegYp1qkoUA",
+      "subscribers": 582000
+    },
+    "UCGnqaEa5wmyxxXeP8NXo6qw": {
+      "name": "IBC24 Digital",
+      "playlist_id": "UUGnqaEa5wmyxxXeP8NXo6qw",
+      "subscribers": 396000
+    },
+    "UCH6v_SxtFLtfD4Iptx2WbNg": {
+      "name": "MP Tak",
+      "playlist_id": "UUH6v_SxtFLtfD4Iptx2WbNg",
+      "subscribers": 3470000
+    },
+    "UCISKj2--Nxrs5s60T3wq5Pg": {
+      "name": "India News Haryana",
+      "playlist_id": "UUISKj2--Nxrs5s60T3wq5Pg",
+      "subscribers": 803000
+    },
+    "UCsD3wfOF5pkM5CyH4gA4b1Q": {
+      "name": "News18 Haryana",
+      "playlist_id": "UUsD3wfOF5pkM5CyH4gA4b1Q",
+      "subscribers": 73900
+    },
+    "UCnUbWb9bo7Yv0qCclp8foUw": {
+      "name": "ETV Bharat Madhya Pradesh",
+      "playlist_id": "UUnUbWb9bo7Yv0qCclp8foUw",
+      "subscribers": 157000
+    },
+    "UC7DRVhyXnevPNvNWlZ8gbPQ": {
+      "name": "Punjab Kesari Haryana",
+      "playlist_id": "UU7DRVhyXnevPNvNWlZ8gbPQ",
+      "subscribers": 3020000
+    },
+    "UCfnvGSUXKIuaCv-9E9a2UJg": {
+      "name": "Zee Rajasthan News",
+      "playlist_id": "UUfnvGSUXKIuaCv-9E9a2UJg",
+      "subscribers": 3480000
+    },
+    "UCgJ02VYByDODEIkOlxjg4xg": {
+      "name": "India News Rajasthan",
+      "playlist_id": "UUgJ02VYByDODEIkOlxjg4xg",
+      "subscribers": 213000
+    },
+    "UC2LMxF5cbXIaej5ifKTQ6WQ": {
+      "name": "News24 UP & Uttarakhand",
+      "playlist_id": "UU2LMxF5cbXIaej5ifKTQ6WQ",
+      "subscribers": 1150000
+    },
+    "UC68JhJpCRYYhOcO054zw_Ew": {
+      "name": "Living India News Punjab",
+      "playlist_id": "UU68JhJpCRYYhOcO054zw_Ew",
+      "subscribers": 1280000
+    },
+    "UCnAp2J0bR9b8pM-Avp1GFOQ": {
+      "name": "Bihar Tak",
+      "playlist_id": "UUnAp2J0bR9b8pM-Avp1GFOQ",
+      "subscribers": 4670000
+    },
+    "UCT0xtNe4KFiId1QWd0EFCJQ": {
+      "name": "News24Rajasthan",
+      "playlist_id": "UUT0xtNe4KFiId1QWd0EFCJQ",
+      "subscribers": 135000
+    },
+    "UCWmwc3u2ikBG2Xfitc_26gg": {
+      "name": "Zee Uttar Pradesh UttaraKhand",
+      "playlist_id": "UUWmwc3u2ikBG2Xfitc_26gg",
+      "subscribers": 3230000
+    },
+    "UCKHbJrgTK_cxPQki6PHt5kw": {
+      "name": "India News UP",
+      "playlist_id": "UUKHbJrgTK_cxPQki6PHt5kw",
+      "subscribers": 335000
+    },
+    "UCeNP3dAy9_A32IWYZq_PZMQ": {
+      "name": "News State",
+      "playlist_id": "UUeNP3dAy9_A32IWYZq_PZMQ",
+      "subscribers": 5080000
+    },
+    "UCmqx3ukqhdbSJWJB_SdCbqA": {
+      "name": "LokmatHindi",
+      "playlist_id": "UUmqx3ukqhdbSJWJB_SdCbqA",
+      "subscribers": 3840000
+    },
+    "UCskG03x3CoEW9W7s2c3IgbA": {
+      "name": "UP Tak",
+      "playlist_id": "UUskG03x3CoEW9W7s2c3IgbA",
+      "subscribers": 11900000
+    },
+    "UC1jvSfNEAMyFI3Kf3-Sa4sw": {
+      "name": "ETV Bharat Bihar",
+      "playlist_id": "UU1jvSfNEAMyFI3Kf3-Sa4sw",
+      "subscribers": 290000
+    },
+    "UCQ79XyTiFbb28NvhmFPZOiw": {
+      "name": "Zee Madhya Pradesh Chhattisgarh",
+      "playlist_id": "UUQ79XyTiFbb28NvhmFPZOiw",
+      "subscribers": 2270000
+    },
+    "UCJ-F1ElALMfXS74xaWja8jg": {
+      "name": "Haryana Tak",
+      "playlist_id": "UUJ-F1ElALMfXS74xaWja8jg",
+      "subscribers": 1630000
+    },
+    "UCIRAYFbJmrP--jyrC9MAIWQ": {
+      "name": "DNAIndiaNews",
+      "playlist_id": "UUIRAYFbJmrP--jyrC9MAIWQ",
+      "subscribers": 1370000
+    },
+    "UCKrXAcPJPFewJ0z1G-GgjTw": {
+      "name": "Patrika Madhya Pradesh",
+      "playlist_id": "UUKrXAcPJPFewJ0z1G-GgjTw",
+      "subscribers": 228000
+    },
+    "UCKVM5FMqX90AquMlhzNP82Q": {
+      "name": "ETV Bharat",
+      "playlist_id": "UUKVM5FMqX90AquMlhzNP82Q",
+      "subscribers": 158000
+    },
+    "UC7FlLbNo66YsCEAPuJITiNg": {
+      "name": "News18 Rajasthan",
+      "playlist_id": "UU7FlLbNo66YsCEAPuJITiNg",
+      "subscribers": 9330000
+    },
+    "UCb1ScGnYiuIlc8AT5if67hg": {
+      "name": "Rajasthan Tak",
+      "playlist_id": "UUb1ScGnYiuIlc8AT5if67hg",
+      "subscribers": 2030000
+    },
+    "UC3_TTermAnf2fcLe-QX7BVQ": {
+      "name": "Punjab Kesari TV",
+      "playlist_id": "UU3_TTermAnf2fcLe-QX7BVQ",
+      "subscribers": 5330000
+    },
+    "UCICJyUwBYgUOE35F8klEoYw": {
+      "name": "Jansatta",
+      "playlist_id": "UUICJyUwBYgUOE35F8klEoYw",
+      "subscribers": 4710000
+    },
+    "UC3nanyO9lyMMrTqd0iuXZoQ": {
+      "name": "Punjab Tak",
+      "playlist_id": "UU3nanyO9lyMMrTqd0iuXZoQ",
+      "subscribers": 329000
+    },
+    "UCG6L5cIg2XZvXVksq5B9edw": {
+      "name": "Zee Delhi-NCR Haryana ",
+      "playlist_id": "UUG6L5cIg2XZvXVksq5B9edw",
+      "subscribers": 196000
+    },
+    "UCVZ57OkKPAuRJ_wA_Rt4XFg": {
+      "name": "Dainik Bhaskar",
+      "playlist_id": "UUVZ57OkKPAuRJ_wA_Rt4XFg",
+      "subscribers": 2080000
+    },
+    "UCsJO8p6lnyjZkuLO2k0qFXA": {
+      "name": "News 24 MP & Chhattisgarh",
+      "playlist_id": "UUsJO8p6lnyjZkuLO2k0qFXA",
+      "subscribers": 503000
+    },
+    "UCQCt4xCodDgpeUQOSPK977Q": {
+      "name": "Navodaya Times",
+      "playlist_id": "UUQCt4xCodDgpeUQOSPK977Q",
+      "subscribers": 790000
+    },
+    "UCL_3_9PhDyZXu1oexm8gtFQ": {
+      "name": "Bansal News",
+      "playlist_id": "UUL_3_9PhDyZXu1oexm8gtFQ",
+      "subscribers": 1090000
+    },
+    "UCmhe0p2-m_KURZYQNchK-QQ": {
+      "name": "Zee Punjab Haryana Himachal",
+      "playlist_id": "UUmhe0p2-m_KURZYQNchK-QQ",
+      "subscribers": 430000
+    },
+    "UC13KrBW4je1iUkEhIZO15AQ": {
+      "name": "Indian Express Hindi",
+      "playlist_id": "UU13KrBW4je1iUkEhIZO15AQ",
+      "subscribers": 687000
+    },
+    "UCZUjHLJivN0OZPC_Wj8JvkA": {
+      "name": "Zee Bihar Jharkhand",
+      "playlist_id": "UUZUjHLJivN0OZPC_Wj8JvkA",
+      "subscribers": 6530000
+    },
+    "UCsZgHPe9vlXgEHa6vf84cdQ": {
+      "name": "ETV Bharat Rajasthan",
+      "playlist_id": "UUsZgHPe9vlXgEHa6vf84cdQ",
+      "subscribers": 168000
+    },
+    "UCV8uDD-i5zBnwdyHYRHjlEg": {
+      "name": "News State MP Chhattisgarh",
+      "playlist_id": "UUV8uDD-i5zBnwdyHYRHjlEg",
+      "subscribers": 770000
+    },
+    "UCq7DM5jsVyFHdAe_9CoqxVQ": {
+      "name": "Amar Ujala Uttar Pradesh",
+      "playlist_id": "UUq7DM5jsVyFHdAe_9CoqxVQ",
+      "subscribers": 776000
+    },
+    "UCz-E4UIPP-4iKn9UKaGBRWA": {
+      "name": "ABP BIHAR",
+      "playlist_id": "UUz-E4UIPP-4iKn9UKaGBRWA",
+      "subscribers": 2580000
+    },
+    "UC3925QSRN5Pxd2GSre0l76g": {
+      "name": "Prabhat Khabar",
+      "playlist_id": "UU3925QSRN5Pxd2GSre0l76g",
+      "subscribers": 2490000
+    },
+    "UCkrMe05HCOoz_R_4saWTDbA": {
+      "name": "PUNJAB KESARI MP",
+      "playlist_id": "UUkrMe05HCOoz_R_4saWTDbA",
+      "subscribers": 420000
+    },
+    "UC8Xb-hkR53QVN4GlUHi1iZg": {
+      "name": "Bharat Samachar",
+      "playlist_id": "UU8Xb-hkR53QVN4GlUHi1iZg",
+      "subscribers": 4240000
     }
   },
-  "last_updated": "2026-08-23T08:20:00.615893+00:00",
+  "last_updated": "2026-08-23T12:22:24.668565+00:00",
   "unresolved_channel_ids": []
 }
