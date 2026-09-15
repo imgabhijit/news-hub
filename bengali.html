@@ -459,7 +459,7 @@ let currentFilter   = params.get('filter') || TAB_DEFAULTS[currentTab];
 let currentSort     = params.get('sort')   || SORT_DEFAULTS[currentTab];
 let currentMinViews = '0';
 let customMinViews  = 0;
-let currentDuration = DURATION_DEFAULTS[currentTab] || 'over3';
+let currentDuration = DURATION_DEFAULTS[currentTab] || 'upto60';
 let channelView     = 'grid';
 let selectedChannel = null;
 let currentSearch   = '';
@@ -471,6 +471,7 @@ let currentVideoId        = null;
 let currentDistrictDetail = null;
 let currentBengalRegion   = null;
 let currentDistrictView   = localStorage.getItem('bengalDistrictView') || 'grid';
+let currentGroupSort      = 'median';
 let countdownTimer = null;
 
 // ── Time ranges ───────────────────────────────────────────────────────────────
@@ -830,11 +831,9 @@ function switchTab(name, push = true) {
   currentBengalRegion   = null;
 
   if (push) {
-    if (name !== 'districts' && name !== 'regions') {
-      currentFilter   = TAB_DEFAULTS[name];
-      currentSort     = SORT_DEFAULTS[name];
-      currentDuration = DURATION_DEFAULTS[name] || 'over3';
-    }
+    currentFilter   = TAB_DEFAULTS[name];
+    currentSort     = SORT_DEFAULTS[name];
+    currentDuration = DURATION_DEFAULTS[name] || 'upto60';
     renderAll();
     updateUrl();
   }
@@ -1038,6 +1037,18 @@ function setDistrictView(mode) {
   renderDistricts();
 }
 
+function setGroupSort(mode) {
+  currentGroupSort = mode;
+  renderAll();
+}
+
+function groupSortToggle() {
+  return `<div class="view-toggle">
+    <button class="view-btn${currentGroupSort==='median'?' active':''}" onclick="setGroupSort('median')">📊 By Median</button>
+    <button class="view-btn${currentGroupSort==='count'?' active':''}" onclick="setGroupSort('count')">🔢 By Count</button>
+  </div>`;
+}
+
 function openDistrictDetail(name)  { currentDistrictDetail = name; renderDistricts(); }
 function closeDistrictDetail()     { currentDistrictDetail = null; renderDistricts(); }
 function openBengalRegion(name)    { currentBengalRegion   = name; renderBengalRegions(); }
@@ -1046,14 +1057,16 @@ function closeBengalRegion()       { currentBengalRegion   = null; renderBengalR
 function renderDistricts() {
   if (!allData) return;
   const panel     = document.getElementById('panel-districts');
-  const videosAll = filterByRange((allData.bengali||[]).concat(allData.opinion||[]), '24h');
-  const videos    = videosAll.filter(v => matchesDuration(v));
+  const videosAll = filterByRange((allData.bengali||[]).concat(allData.opinion||[]), currentFilter);
+  const minViews  = getMinViewsNum(currentFilter);
+  const videos    = videosAll.filter(v => matchesDuration(v) && v.view_count >= minViews);
   const mapAll    = buildDistrictMap(videosAll);
   const map       = buildDistrictMap(videos);
-  const sorted = Object.values(map).sort((a, b) =>
-    medianViews((mapAll[b.district.name] || b).videos) - medianViews((mapAll[a.district.name] || a).videos));
+  const sorted = Object.values(map).sort((a, b) => currentGroupSort === 'count'
+    ? b.videos.length - a.videos.length
+    : medianViews((mapAll[b.district.name] || b).videos) - medianViews((mapAll[a.district.name] || a).videos));
 
-  if (!sorted.length) { panel.innerHTML = emptyState('No district data', 'Check back soon.'); return; }
+  if (!sorted.length) { panel.innerHTML = emptyState('No district data', 'Try a wider time filter or lower the min views.'); return; }
 
   if (currentDistrictDetail && map[currentDistrictDetail]) {
     renderDistrictDetail(panel, map[currentDistrictDetail]);
@@ -1063,7 +1076,7 @@ function renderDistricts() {
   const toggle = `<div class="view-toggle">
     <button class="view-btn${currentDistrictView==='list'?' active':''}" onclick="setDistrictView('list')">☰ List</button>
     <button class="view-btn${currentDistrictView==='grid'?' active':''}" onclick="setDistrictView('grid')">⊞ Grid</button>
-  </div>`;
+  </div>${groupSortToggle()}`;
 
   if (currentDistrictView === 'list') {
     const rows = sorted.map(({ district, videos }) => {
@@ -1078,7 +1091,7 @@ function renderDistricts() {
         <div class="video-row">${cards}</div>
       </div>`;
     }).join('');
-    panel.innerHTML = `<p class="section-label">By District · Last 24h</p>${toggle}${rows}`;
+    panel.innerHTML = `<p class="section-label">By District · ${filterLabel()}</p>${toggle}${rows}`;
   } else {
     const tiles = sorted.map(({ district, videos }) => {
       const allVideos = mapAll[district.name]?.videos || videos;
@@ -1089,7 +1102,7 @@ function renderDistricts() {
         <div class="district-tile-stats">${fmtViews(medianViews(allVideos))} median · ${videos.length} video${videos.length!==1?'s':''}</div>
       </div>`;
     }).join('');
-    panel.innerHTML = `<p class="section-label">By District · Last 24h</p>${toggle}<div class="district-tile-grid">${tiles}</div>`;
+    panel.innerHTML = `<p class="section-label">By District · ${filterLabel()}</p>${toggle}<div class="district-tile-grid">${tiles}</div>`;
   }
 }
 
@@ -1110,8 +1123,9 @@ function renderDistrictDetail(panel, { district, videos }) {
 function renderBengalRegions() {
   if (!allData) return;
   const panel     = document.getElementById('panel-regions');
-  const videosAll = filterByRange((allData.bengali||[]).concat(allData.opinion||[]), '24h');
-  const videos    = videosAll.filter(v => matchesDuration(v));
+  const videosAll = filterByRange((allData.bengali||[]).concat(allData.opinion||[]), currentFilter);
+  const minViews  = getMinViewsNum(currentFilter);
+  const videos    = videosAll.filter(v => matchesDuration(v) && v.view_count >= minViews);
   const dmapAll   = buildDistrictMap(videosAll);
   const dmap      = buildDistrictMap(videos);
 
@@ -1121,10 +1135,13 @@ function renderBengalRegions() {
       .filter(e => e && e.videos.length > 0)
       .map(e => ({ ...e, allVideos: dmapAll[e.district.name]?.videos || e.videos }));
     const allVideos = r.districts.flatMap(dn => dmapAll[dn]?.videos || []);
-    return { ...r, distEntries, allVideos };
-  }).filter(r => r.distEntries.length > 0).sort((a, b) => medianViews(b.allVideos) - medianViews(a.allVideos));
+    const count     = distEntries.reduce((s, e) => s + e.videos.length, 0);
+    return { ...r, distEntries, allVideos, count };
+  }).filter(r => r.distEntries.length > 0).sort((a, b) => currentGroupSort === 'count'
+    ? b.count - a.count
+    : medianViews(b.allVideos) - medianViews(a.allVideos));
 
-  if (!regionData.length) { panel.innerHTML = emptyState('No region data', 'Check back soon.'); return; }
+  if (!regionData.length) { panel.innerHTML = emptyState('No region data', 'Try a wider time filter or lower the min views.'); return; }
 
   if (currentBengalRegion) {
     const r = regionData.find(r => r.name === currentBengalRegion);
@@ -1141,15 +1158,17 @@ function renderBengalRegions() {
       <div class="region-tile-icon">${r.icon}</div>
       <div class="region-tile-name">${r.bn} · ${r.name}</div>
       <div class="region-dist-codes">${codes}</div>
-      <div class="region-tile-stats">${fmtViews(medianViews(r.allVideos))} median · ${r.distEntries.length} districts</div>
+      <div class="region-tile-stats">${fmtViews(medianViews(r.allVideos))} median · ${r.distEntries.length} districts · ${r.count} video${r.count!==1?'s':''}</div>
     </div>`;
   }).join('');
 
-  panel.innerHTML = `<p class="section-label">By Region · Last 24h · sorted by median views</p><div class="region-tile-grid-bengal">${tiles}</div>`;
+  panel.innerHTML = `<p class="section-label">By Region · ${filterLabel()} · sorted by ${currentGroupSort === 'count' ? 'video count' : 'median views'}</p>${groupSortToggle()}<div class="region-tile-grid-bengal">${tiles}</div>`;
 }
 
 function renderBengalRegionDetail(panel, region) {
-  const sorted = [...region.distEntries].sort((a, b) => medianViews(b.allVideos) - medianViews(a.allVideos));
+  const sorted = [...region.distEntries].sort((a, b) => currentGroupSort === 'count'
+    ? b.videos.length - a.videos.length
+    : medianViews(b.allVideos) - medianViews(a.allVideos));
   const rc     = DIST_REGION_COLORS[region.color];
   const rows   = sorted.map(({ district, videos, allVideos }) => {
     const cards = videos.map((v, i) => cardHtml(v, i+1, false, false)).join('');

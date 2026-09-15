@@ -585,7 +585,7 @@ let currentFilter   = params.get('filter') || TAB_DEFAULTS[currentTab];
 let currentSort     = params.get('sort')   || SORT_DEFAULTS[currentTab];
 let currentMinViews = '0';
 let customMinViews  = 0;
-let currentDuration = DURATION_DEFAULTS[currentTab] || 'over3';
+let currentDuration = DURATION_DEFAULTS[currentTab] || 'upto60';
 let channelView     = 'grid';
 let selectedChannel = null;
 let currentSearch   = '';
@@ -598,6 +598,7 @@ let countdownTimer      = null;
 let currentStateDetail  = null;
 let currentRegionDetail = null;
 let currentViewMode     = localStorage.getItem('indiaStateView') || 'grid';
+let currentGroupSort    = 'median';
 
 // ── Time ranges ───────────────────────────────────────────────────────────────
 function getTimeRange(filter) {
@@ -1072,11 +1073,9 @@ function switchTab(name, push = true) {
   currentRegionDetail = null;
 
   if (push) {
-    if (name !== 'states' && name !== 'regions') {
-      currentFilter   = TAB_DEFAULTS[name];
-      currentSort     = SORT_DEFAULTS[name];
-      currentDuration = DURATION_DEFAULTS[name] || 'over3';
-    }
+    currentFilter   = TAB_DEFAULTS[name];
+    currentSort     = SORT_DEFAULTS[name];
+    currentDuration = DURATION_DEFAULTS[name] || 'upto60';
     renderAll();
     updateUrl();
   }
@@ -1279,6 +1278,18 @@ function setViewMode(mode) {
   renderStates();
 }
 
+function setGroupSort(mode) {
+  currentGroupSort = mode;
+  renderAll();
+}
+
+function groupSortToggle() {
+  return `<div class="view-toggle">
+    <button class="view-btn${currentGroupSort==='median'?' active':''}" onclick="setGroupSort('median')">📊 By Median</button>
+    <button class="view-btn${currentGroupSort==='count'?' active':''}" onclick="setGroupSort('count')">🔢 By Count</button>
+  </div>`;
+}
+
 function openStateDetail(name)  { currentStateDetail = name; renderStates(); }
 function closeStateDetail()     { currentStateDetail = null; renderStates(); }
 function openRegionDetail(name) { currentRegionDetail = name; renderRegions(); }
@@ -1287,14 +1298,16 @@ function closeRegionDetail()    { currentRegionDetail = null; renderRegions(); }
 function renderStates() {
   if (!allData) return;
   const panel     = document.getElementById('panel-states');
-  const videosAll = filterByRange((allData.national_english||[]).concat(allData.national_hindi||[]), '24h');
-  const videos    = videosAll.filter(v => matchesDuration(v));
+  const videosAll = filterByRange((allData.national_english||[]).concat(allData.national_hindi||[]), currentFilter);
+  const minViews  = getMinViewsNum(currentFilter);
+  const videos    = videosAll.filter(v => matchesDuration(v) && v.view_count >= minViews);
   const mapAll    = buildStateMap(videosAll);
   const map       = buildStateMap(videos);
-  const sorted = Object.values(map).sort((a, b) =>
-    medianViews((mapAll[b.state.name] || b).videos) - medianViews((mapAll[a.state.name] || a).videos));
+  const sorted = Object.values(map).sort((a, b) => currentGroupSort === 'count'
+    ? b.videos.length - a.videos.length
+    : medianViews((mapAll[b.state.name] || b).videos) - medianViews((mapAll[a.state.name] || a).videos));
 
-  if (!sorted.length) { panel.innerHTML = emptyState('No state data', 'Check back soon.'); return; }
+  if (!sorted.length) { panel.innerHTML = emptyState('No state data', 'Try a wider time filter or lower the min views.'); return; }
 
   if (currentStateDetail && map[currentStateDetail]) {
     renderStateDetail(panel, map[currentStateDetail]);
@@ -1304,7 +1317,7 @@ function renderStates() {
   const toggle = `<div class="view-toggle">
     <button class="view-btn${currentViewMode==='list'?' active':''}" onclick="setViewMode('list')">☰ List</button>
     <button class="view-btn${currentViewMode==='grid'?' active':''}" onclick="setViewMode('grid')">⊞ Grid</button>
-  </div>`;
+  </div>${groupSortToggle()}`;
 
   if (currentViewMode === 'list') {
     const rows = sorted.map(({ state, videos }) => {
@@ -1319,7 +1332,7 @@ function renderStates() {
         <div class="video-row">${cards}</div>
       </div>`;
     }).join('');
-    panel.innerHTML = `<p class="section-label">By State/UT · Last 24h</p>${toggle}${rows}`;
+    panel.innerHTML = `<p class="section-label">By State/UT · ${filterLabel()}</p>${toggle}${rows}`;
   } else {
     const tiles = sorted.map(({ state, videos }) => {
       const allVideos = mapAll[state.name]?.videos || videos;
@@ -1330,7 +1343,7 @@ function renderStates() {
         <div class="state-tile-stats">${fmtViews(medianViews(allVideos))} median · ${videos.length} video${videos.length!==1?'s':''}</div>
       </div>`;
     }).join('');
-    panel.innerHTML = `<p class="section-label">By State/UT · Last 24h</p>${toggle}<div class="state-tile-grid">${tiles}</div>`;
+    panel.innerHTML = `<p class="section-label">By State/UT · ${filterLabel()}</p>${toggle}<div class="state-tile-grid">${tiles}</div>`;
   }
 }
 
@@ -1351,8 +1364,9 @@ function renderStateDetail(panel, { state, videos }) {
 function renderRegions() {
   if (!allData) return;
   const panel     = document.getElementById('panel-regions');
-  const videosAll = filterByRange((allData.national_english||[]).concat(allData.national_hindi||[]), '24h');
-  const videos    = videosAll.filter(v => matchesDuration(v));
+  const videosAll = filterByRange((allData.national_english||[]).concat(allData.national_hindi||[]), currentFilter);
+  const minViews  = getMinViewsNum(currentFilter);
+  const videos    = videosAll.filter(v => matchesDuration(v) && v.view_count >= minViews);
   const smapAll   = buildStateMap(videosAll);
   const smap      = buildStateMap(videos);
 
@@ -1362,10 +1376,13 @@ function renderRegions() {
       .filter(e => e && e.videos.length > 0)
       .map(e => ({ ...e, allVideos: smapAll[e.state.name]?.videos || e.videos }));
     const allVideos = r.states.flatMap(sn => smapAll[sn]?.videos || []);
-    return { ...r, stateEntries, allVideos };
-  }).filter(r => r.stateEntries.length > 0).sort((a, b) => medianViews(b.allVideos) - medianViews(a.allVideos));
+    const count     = stateEntries.reduce((s, e) => s + e.videos.length, 0);
+    return { ...r, stateEntries, allVideos, count };
+  }).filter(r => r.stateEntries.length > 0).sort((a, b) => currentGroupSort === 'count'
+    ? b.count - a.count
+    : medianViews(b.allVideos) - medianViews(a.allVideos));
 
-  if (!regionData.length) { panel.innerHTML = emptyState('No region data', 'Check back soon.'); return; }
+  if (!regionData.length) { panel.innerHTML = emptyState('No region data', 'Try a wider time filter or lower the min views.'); return; }
 
   if (currentRegionDetail) {
     const r = regionData.find(r => r.name === currentRegionDetail);
@@ -1382,15 +1399,17 @@ function renderRegions() {
       <div class="region-tile-icon">${r.icon}</div>
       <div class="region-tile-name">${r.name}</div>
       <div class="region-state-codes">${codes}</div>
-      <div class="region-tile-stats">${fmtViews(medianViews(r.allVideos))} median · ${r.stateEntries.length} states</div>
+      <div class="region-tile-stats">${fmtViews(medianViews(r.allVideos))} median · ${r.stateEntries.length} states · ${r.count} video${r.count!==1?'s':''}</div>
     </div>`;
   }).join('');
 
-  panel.innerHTML = `<p class="section-label">By Region · Last 24h · sorted by median views</p><div class="region-tile-grid-india">${tiles}</div>`;
+  panel.innerHTML = `<p class="section-label">By Region · ${filterLabel()} · sorted by ${currentGroupSort === 'count' ? 'video count' : 'median views'}</p>${groupSortToggle()}<div class="region-tile-grid-india">${tiles}</div>`;
 }
 
 function renderRegionDetail(panel, region) {
-  const sorted = [...region.stateEntries].sort((a, b) => medianViews(b.allVideos) - medianViews(a.allVideos));
+  const sorted = [...region.stateEntries].sort((a, b) => currentGroupSort === 'count'
+    ? b.videos.length - a.videos.length
+    : medianViews(b.allVideos) - medianViews(a.allVideos));
   const rc     = STATE_REGION_COLORS[region.color];
   const rows   = sorted.map(({ state, videos, allVideos }) => {
     const cards = videos.map((v, i) => cardHtml(v, i+1, false, false, false)).join('');
