@@ -503,12 +503,12 @@
     <span class="toolbar-label">Duration</span>
     <select class="toolbar-select" id="durationSelect" onchange="setDuration(this.value)">
       <option value="all">All</option>
-      <option value="upto60">Up to 1 hr</option>
-      <option value="upto30">Up to 30 min</option>
-      <option value="upto3">Up to 3 min</option>
+      <option value="upto60">Long vids (3–60 min)</option>
+      <option value="upto3">Short vids (≤ 3 min)</option>
       <option value="over3">Over 3 min</option>
       <option value="3to15">3–15 min</option>
       <option value="15to30">15–30 min</option>
+      <option value="upto30">Up to 30 min</option>
       <option value="long">1 hr+</option>
     </select>
   </div>
@@ -565,7 +565,7 @@ const MY_CHANNEL_VIDEOS = [];
 
 // ── Filter & sort setup ───────────────────────────────────────────────────────
 const TAB_DEFAULTS      = { english: 'today', hindi: 'today', shorts: 'today', live: '1h', channels: '24h', states: '24h', regions: '24h' };
-const DURATION_DEFAULTS = { english: 'over3', hindi: 'over3', shorts: 'upto3', live: 'all', channels: 'over3', states: 'over3', regions: 'over3' };
+const DURATION_DEFAULTS = { english: 'upto60', hindi: 'upto60', shorts: 'upto3', live: 'all', channels: 'upto60', states: 'upto60', regions: 'upto60' };
 const SORT_DEFAULTS     = { english: 'velocity', hindi: 'velocity', shorts: 'views', live: 'views', channels: 'views', states: 'views', regions: 'views' };
 
 const THRESHOLDS = {
@@ -705,7 +705,7 @@ function getMinViewsNum(filter) {
 function matchesDuration(v) {
   const d = v.duration || 0;
   switch (currentDuration) {
-    case 'upto60': return d < 3600;
+    case 'upto60': return d > 180 && d < 3600;
     case 'upto30': return d < 1800;
     case 'upto3':  return d <= 180;
     case 'over3':  return d > 180;
