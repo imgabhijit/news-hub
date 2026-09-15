@@ -398,6 +398,7 @@
     <select class="toolbar-select" id="durationSelect" onchange="setDuration(this.value)">
       <option value="all">All</option>
       <option value="upto60">Long vids (3–60 min)</option>
+      <option value="upto60any">Up to 1 hr (incl. shorts)</option>
       <option value="upto3">Short vids (≤ 3 min)</option>
       <option value="over3">Over 3 min</option>
       <option value="3to15">3–15 min</option>
@@ -623,6 +624,7 @@ function matchesDuration(v) {
   const d = v.duration || 0;
   switch (currentDuration) {
     case 'upto60': return d > 180 && d < 3600;
+    case 'upto60any': return d < 3600;
     case 'upto30': return d < 1800;
     case 'upto3':  return d <= 180;
     case 'over3':  return d > 180;
