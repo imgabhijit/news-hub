@@ -333,12 +333,12 @@
     <span class="toolbar-label">Duration</span>
     <select class="toolbar-select" id="durationSelect" onchange="setDuration(this.value)">
       <option value="all">All</option>
-      <option value="upto60">Up to 1 hr</option>
-      <option value="upto30">Up to 30 min</option>
-      <option value="upto3">Up to 3 min</option>
+      <option value="upto60">Long vids (3–60 min)</option>
+      <option value="upto3">Short vids (≤ 3 min)</option>
       <option value="over3">Over 3 min</option>
       <option value="3to15">3–15 min</option>
       <option value="15to30">15–30 min</option>
+      <option value="upto30">Up to 30 min</option>
       <option value="long">1 hr+</option>
     </select>
   </div>
@@ -396,7 +396,7 @@ const TAB_DEFAULTS      = { bangladesh: '24h', pakistan: '24h', nepal: '24h', sr
 // Sri Lanka channels already in world_news — filter by channel_id
 const SRILANKA_CHANNEL_IDS = new Set(['UCuOtdpOPjHeoEAT4i44mVOg']); // Ada Derana English
 const SORT_DEFAULTS     = { bangladesh: 'views', pakistan: 'views', nepal: 'views', srilanka: 'views', myanmar: 'views', live: 'views', channels: 'views' };
-const DURATION_DEFAULTS = { bangladesh: 'over3', pakistan: 'over3', nepal: 'over3', srilanka: 'over3', myanmar: 'over3', live: 'all', channels: 'over3' };
+const DURATION_DEFAULTS = { bangladesh: 'upto60', pakistan: 'upto60', nepal: 'upto60', srilanka: 'upto60', myanmar: 'upto60', live: 'all', channels: 'upto60' };
 
 const THRESHOLDS = {
   lastnight: 40000, today: 25000, tonight: 8000,
@@ -467,7 +467,7 @@ function getMinViewsNum(filter) {
 function matchesDuration(v) {
   const d = v.duration || 0;
   switch (currentDuration) {
-    case 'upto60': return d < 3600;
+    case 'upto60': return d > 180 && d < 3600;
     case 'upto30': return d < 1800;
     case 'upto3':  return d <= 180;
     case 'over3':  return d > 180;
