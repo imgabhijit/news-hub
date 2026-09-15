@@ -86,6 +86,28 @@
     }
     .export-btn:hover { background: #3b2400; color: #fff; }
 
+    .export-dropdown { position: relative; display: inline-block; }
+    .export-menu {
+      display: none; position: absolute; top: calc(100% + 4px); left: 0;
+      background: #2a1500; border: 1px solid #f4a261; border-radius: 8px;
+      min-width: 170px; overflow: hidden; z-index: 50;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+    }
+    .export-menu.open { display: block; }
+    .export-menu button {
+      display: block; width: 100%; text-align: left; padding: 9px 14px;
+      background: none; border: none; color: #ddd; font-size: 0.82rem;
+      cursor: pointer; white-space: nowrap;
+    }
+    .export-menu button:hover { background: rgba(255,255,255,0.08); color: #f4a261; }
+    .export-toast {
+      position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px);
+      background: #1a1a1a; color: #fff; padding: 10px 20px; border-radius: 8px;
+      font-size: 0.85rem; border: 1px solid #f4a261; opacity: 0; pointer-events: none;
+      transition: opacity 0.2s, transform 0.2s; z-index: 9999;
+    }
+    .export-toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
     .yt-open-btn {
       background: none; border: 1px solid #3a3d4a; color: #aaa;
       padding: 7px 14px; border-radius: 6px; cursor: pointer;
@@ -515,8 +537,20 @@
 
   <input type="search" id="searchInput" class="toolbar-search" placeholder="Search title or channel…"
          oninput="setSearch(this.value)">
-  <button class="export-btn" onclick="downloadTxt()">Download Metadata</button>
-  <button class="export-btn" onclick="downloadUrls()">Download URLs</button>
+  <div class="export-dropdown">
+    <button class="export-btn" onclick="toggleExportMenu(event,'meta')">Metadata &#9662;</button>
+    <div class="export-menu" id="exportMenu-meta">
+      <button onclick="copyMetadata()">Copy to Clipboard</button>
+      <button onclick="downloadTxt()">Download</button>
+    </div>
+  </div>
+  <div class="export-dropdown">
+    <button class="export-btn" onclick="toggleExportMenu(event,'urls')">URLs &#9662;</button>
+    <div class="export-menu" id="exportMenu-urls">
+      <button onclick="copyUrls()">Copy to Clipboard</button>
+      <button onclick="downloadUrls()">Download</button>
+    </div>
+  </div>
   <span id="metaInfo" style="display:none"></span>
 </div>
 
@@ -1128,19 +1162,82 @@ function renderToolbar() {
 function updateUrl() {
   history.replaceState(null, '', `?tab=${currentTab}&filter=${currentFilter}&sort=${currentSort}`);
 }
+function closeAllExportMenus() {
+  document.querySelectorAll('.export-menu.open').forEach(m => m.classList.remove('open'));
+}
+function toggleExportMenu(e, which) {
+  e.stopPropagation();
+  const menu = document.getElementById('exportMenu-' + which);
+  const wasOpen = menu.classList.contains('open');
+  closeAllExportMenus();
+  if (!wasOpen) menu.classList.add('open');
+}
+document.addEventListener('click', closeAllExportMenus);
+function showExportToast(msg) {
+  let t = document.getElementById('exportToast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'exportToast';
+    t.className = 'export-toast';
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._hideTimer);
+  t._hideTimer = setTimeout(() => t.classList.remove('show'), 1800);
+}
+async function copyToClipboard(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    showExportToast('Copied to clipboard');
+  } catch (e) {
+    showExportToast('Copy failed');
+  }
+}
+function copyMetadata() {
+  closeAllExportMenus();
+  const vids = gatherExportVideos();
+  if (!vids.length) { showExportToast('Nothing to copy'); return; }
+  copyToClipboard(buildMetadataRows(vids));
+}
+function copyUrls() {
+  closeAllExportMenus();
+  const vids = gatherExportVideos();
+  if (!vids.length) { showExportToast('Nothing to copy'); return; }
+  copyToClipboard(buildUrlsRows(vids));
+}
+
 function gatherExportVideos() {
+  if (currentTab === 'live') return [];
+  if (currentTab === 'states' || currentTab === 'regions') {
+    const pool     = (allData.national_english||[]).concat(allData.national_hindi||[]);
+    const minViews = getMinViewsNum(currentFilter);
+    const videos   = filterByRange(pool, currentFilter)
+      .filter(v => v.live_broadcast !== 'live')
+      .filter(v => matchesDuration(v) && v.view_count >= minViews)
+      .filter(v => detectStates(v.title).length > 0);
+    const seen = new Set();
+    return videos
+      .filter(v => (seen.has(v.video_id) ? false : (seen.add(v.video_id), true)))
+      .sort((a, b) => b.view_count - a.view_count);
+  }
   const pool = [];
   if (currentTab === 'english') pool.push(...(allData.national_english || []));
   if (currentTab === 'hindi') pool.push(...(allData.national_hindi || []));
   if (currentTab === 'shorts' || currentTab === 'channels') pool.push(...(allData.national_english || []), ...(allData.national_hindi || []));
-  if (currentTab === 'states' || currentTab === 'regions' || currentTab === 'live') return [];
   return getVideos(pool.length ? pool : [...(allData.national_english || []), ...(allData.national_hindi || [])], currentFilter, currentSort, Infinity);
 }
+function buildMetadataRows(vids) {
+  return ['channel\ttitle\turl\tviews\tduration\tpublished_at', ...vids.map(v => [v.channel_name, v.title, `https://www.youtube.com/watch?v=${v.video_id}`, String(Math.round(v.view_count || 0)), v.duration || 0, new Date((v.timestamp || 0) * 1000).toISOString()].join('\t'))].join('\n');
+}
+function buildUrlsRows(vids) {
+  return vids.map(v => `https://www.youtube.com/watch?v=${v.video_id}`).join('\n');
+}
 function downloadTxt() {
+  closeAllExportMenus();
   const vids = gatherExportVideos();
   if (!vids.length) return;
-  const rows = ['channel\ttitle\turl\tviews\tduration\tpublished_at', ...vids.map(v => [v.channel_name, v.title, `https://www.youtube.com/watch?v=${v.video_id}`, String(Math.round(v.view_count || 0)), v.duration || 0, new Date((v.timestamp || 0) * 1000).toISOString()].join('\t'))];
-  const blob = new Blob([rows.join('\n')], { type: 'text/plain;charset=utf-8' });
+  const blob = new Blob([buildMetadataRows(vids)], { type: 'text/plain;charset=utf-8' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = `national-${currentTab}-${currentFilter}.txt`;
@@ -1148,9 +1245,10 @@ function downloadTxt() {
   URL.revokeObjectURL(a.href);
 }
 function downloadUrls() {
+  closeAllExportMenus();
   const vids = gatherExportVideos();
   if (!vids.length) return;
-  const blob = new Blob([vids.map(v => `https://www.youtube.com/watch?v=${v.video_id}`).join('\n')], { type: 'text/plain;charset=utf-8' });
+  const blob = new Blob([buildUrlsRows(vids)], { type: 'text/plain;charset=utf-8' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
   a.download = `national-${currentTab}-${currentFilter}-urls.txt`;
