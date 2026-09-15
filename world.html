@@ -444,7 +444,7 @@ let currentFilter   = params.get('filter') || TAB_DEFAULTS[currentTab];
 let currentSort     = params.get('sort')   || SORT_DEFAULTS[currentTab];
 let currentMinViews = '0';
 let customMinViews  = 0;
-let currentDuration = DURATION_DEFAULTS[currentTab] || 'over3';
+let currentDuration = DURATION_DEFAULTS[currentTab] || 'upto60';
 let channelView     = 'grid';
 let selectedChannel = null;
 let currentSearch   = '';
@@ -457,6 +457,7 @@ let countdownTimer     = null;
 let currentViewMode      = localStorage.getItem('worldCountryView') || 'grid';
 let currentCountryDetail = null;
 let currentRegionDetail  = null;
+let currentGroupSort     = 'median';
 
 // ── Time ranges ───────────────────────────────────────────────────────────────
 function getTimeRange(filter) {
@@ -796,11 +797,9 @@ function switchTab(name, push = true) {
   currentRegionDetail  = null;
 
   if (push) {
-    if (name !== 'countries' && name !== 'regions') {
-      currentFilter   = TAB_DEFAULTS[name];
-      currentSort     = SORT_DEFAULTS[name];
-      currentDuration = DURATION_DEFAULTS[name] || 'over3';
-    }
+    currentFilter   = TAB_DEFAULTS[name];
+    currentSort     = SORT_DEFAULTS[name];
+    currentDuration = DURATION_DEFAULTS[name] || 'upto60';
     renderAll();
     updateUrl();
   }
@@ -1004,6 +1003,18 @@ function setViewMode(mode) {
   renderCountries();
 }
 
+function setGroupSort(mode) {
+  currentGroupSort = mode;
+  renderAll();
+}
+
+function groupSortToggle() {
+  return `<div class="view-toggle">
+    <button class="view-btn${currentGroupSort==='median'?' active':''}" onclick="setGroupSort('median')">📊 By Median</button>
+    <button class="view-btn${currentGroupSort==='count'?' active':''}" onclick="setGroupSort('count')">🔢 By Count</button>
+  </div>`;
+}
+
 function openCountryDetail(name) {
   currentCountryDetail = name;
   renderCountries();
@@ -1017,17 +1028,19 @@ function closeCountryDetail() {
 function renderCountries() {
   if (!allData) return;
   const panel     = document.getElementById('panel-countries');
-  const videosAll = filterByRange(allData.world_news || [], '24h');
-  const videos    = videosAll.filter(v => matchesDuration(v));
+  const videosAll = filterByRange(allData.world_news || [], currentFilter);
+  const minViews  = getMinViewsNum(currentFilter);
+  const videos    = videosAll.filter(v => matchesDuration(v) && v.view_count >= minViews);
   const mapAll    = buildCountryMap(videosAll);
   const map       = buildCountryMap(videos);
   const sorted = Object.values(map)
     .filter(e => e.certain.length > 0)
-    .sort((a, b) =>
-      medianViews(mapAll[b.country.name]?.certain || b.certain) -
-      medianViews(mapAll[a.country.name]?.certain || a.certain));
+    .sort((a, b) => currentGroupSort === 'count'
+      ? b.certain.length - a.certain.length
+      : medianViews(mapAll[b.country.name]?.certain || b.certain) -
+        medianViews(mapAll[a.country.name]?.certain || a.certain));
 
-  if (!sorted.length) { panel.innerHTML = emptyState('No country data', 'Check back soon.'); return; }
+  if (!sorted.length) { panel.innerHTML = emptyState('No country data', 'Try a wider time filter or lower the min views.'); return; }
 
   if (currentCountryDetail && map[currentCountryDetail]) {
     renderCountryDetail(panel, map[currentCountryDetail]);
@@ -1037,7 +1050,7 @@ function renderCountries() {
   const toggle = `<div class="view-toggle">
     <button class="view-btn${currentViewMode==='list'?' active':''}" onclick="setViewMode('list')">☰ List</button>
     <button class="view-btn${currentViewMode==='grid'?' active':''}" onclick="setViewMode('grid')">⊞ Grid</button>
-  </div>`;
+  </div>${groupSortToggle()}`;
 
   if (currentViewMode === 'list') {
     const rows = sorted.map(({ country, certain }) => {
@@ -1052,7 +1065,7 @@ function renderCountries() {
         <div class="video-row">${cards}</div>
       </div>`;
     }).join('');
-    panel.innerHTML = `<p class="section-label">By Country · Last 24h</p>${toggle}${rows}`;
+    panel.innerHTML = `<p class="section-label">By Country · ${filterLabel()}</p>${toggle}${rows}`;
   } else {
     const tiles = sorted.map(({ country, certain, uncertain }) => {
       const allCertain = mapAll[country.name]?.certain || certain;
@@ -1064,7 +1077,7 @@ function renderCountries() {
         <div class="country-tile-stats">${fmtViews(medianViews(allCertain))} median · ${certain.length} video${certain.length!==1?'s':''}${ub}</div>
       </div>`;
     }).join('');
-    panel.innerHTML = `<p class="section-label">By Country · Last 24h</p>${toggle}<div class="country-tile-grid">${tiles}</div>`;
+    panel.innerHTML = `<p class="section-label">By Country · ${filterLabel()}</p>${toggle}<div class="country-tile-grid">${tiles}</div>`;
   }
 }
 
@@ -1101,8 +1114,9 @@ function closeRegionDetail()    { currentRegionDetail = null; renderRegions(); }
 function renderRegions() {
   if (!allData) return;
   const panel     = document.getElementById('panel-regions');
-  const videosAll = filterByRange(allData.world_news || [], '24h');
-  const videos    = videosAll.filter(v => matchesDuration(v));
+  const videosAll = filterByRange(allData.world_news || [], currentFilter);
+  const minViews  = getMinViewsNum(currentFilter);
+  const videos    = videosAll.filter(v => matchesDuration(v) && v.view_count >= minViews);
   const cmap      = buildCountryMap(videos);
   const cmapAll   = buildCountryMap(videosAll);
 
@@ -1120,9 +1134,11 @@ function renderRegions() {
     }
     rVideos.sort((a, b) => b.view_count - a.view_count);
     return { ...r, videos: rVideos, allVideos: rVideosAll, topFlags: topFlags.slice(0, 6) };
-  }).filter(r => r.videos.length > 0).sort((a, b) => medianViews(b.allVideos) - medianViews(a.allVideos));
+  }).filter(r => r.videos.length > 0).sort((a, b) => currentGroupSort === 'count'
+    ? b.videos.length - a.videos.length
+    : medianViews(b.allVideos) - medianViews(a.allVideos));
 
-  if (!regionData.length) { panel.innerHTML = emptyState('No region data', 'Check back soon.'); return; }
+  if (!regionData.length) { panel.innerHTML = emptyState('No region data', 'Try a wider time filter or lower the min views.'); return; }
 
   if (currentRegionDetail) {
     const r = regionData.find(r => r.name === currentRegionDetail);
@@ -1139,16 +1155,17 @@ function renderRegions() {
     </div>`;
   }).join('');
 
-  panel.innerHTML = `<p class="section-label">By Region · Last 24h · sorted by median views</p><div class="region-tile-grid-world">${tiles}</div>`;
+  panel.innerHTML = `<p class="section-label">By Region · ${filterLabel()} · sorted by ${currentGroupSort === 'count' ? 'video count' : 'median views'}</p>${groupSortToggle()}<div class="region-tile-grid-world">${tiles}</div>`;
 }
 
 function renderRegionDetail(panel, region, cmap, cmapAll) {
   const countryEntries = region.countries
     .map(cn => cmap[cn])
     .filter(e => e && e.certain.length > 0)
-    .sort((a, b) =>
-      medianViews(cmapAll[b.country.name]?.certain || b.certain) -
-      medianViews(cmapAll[a.country.name]?.certain || a.certain));
+    .sort((a, b) => currentGroupSort === 'count'
+      ? b.certain.length - a.certain.length
+      : medianViews(cmapAll[b.country.name]?.certain || b.certain) -
+        medianViews(cmapAll[a.country.name]?.certain || a.certain));
 
   const rows = countryEntries.map(({ country, certain }) => {
     const allCertain = cmapAll[country.name]?.certain || certain;
