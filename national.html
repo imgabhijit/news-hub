@@ -1298,7 +1298,7 @@ function closeRegionDetail()    { currentRegionDetail = null; renderRegions(); }
 function renderStates() {
   if (!allData) return;
   const panel     = document.getElementById('panel-states');
-  const videosAll = filterByRange((allData.national_english||[]).concat(allData.national_hindi||[]), currentFilter);
+  const videosAll = filterByRange((allData.national_english||[]).concat(allData.national_hindi||[]), currentFilter).filter(v => v.live_broadcast !== 'live');
   const minViews  = getMinViewsNum(currentFilter);
   const videos    = videosAll.filter(v => matchesDuration(v) && v.view_count >= minViews);
   const mapAll    = buildStateMap(videosAll);
@@ -1364,7 +1364,7 @@ function renderStateDetail(panel, { state, videos }) {
 function renderRegions() {
   if (!allData) return;
   const panel     = document.getElementById('panel-regions');
-  const videosAll = filterByRange((allData.national_english||[]).concat(allData.national_hindi||[]), currentFilter);
+  const videosAll = filterByRange((allData.national_english||[]).concat(allData.national_hindi||[]), currentFilter).filter(v => v.live_broadcast !== 'live');
   const minViews  = getMinViewsNum(currentFilter);
   const videos    = videosAll.filter(v => matchesDuration(v) && v.view_count >= minViews);
   const smapAll   = buildStateMap(videosAll);

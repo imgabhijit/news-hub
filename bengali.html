@@ -1057,7 +1057,7 @@ function closeBengalRegion()       { currentBengalRegion   = null; renderBengalR
 function renderDistricts() {
   if (!allData) return;
   const panel     = document.getElementById('panel-districts');
-  const videosAll = filterByRange((allData.bengali||[]).concat(allData.opinion||[]), currentFilter);
+  const videosAll = filterByRange((allData.bengali||[]).concat(allData.opinion||[]), currentFilter).filter(v => v.live_broadcast !== 'live');
   const minViews  = getMinViewsNum(currentFilter);
   const videos    = videosAll.filter(v => matchesDuration(v) && v.view_count >= minViews);
   const mapAll    = buildDistrictMap(videosAll);
@@ -1123,7 +1123,7 @@ function renderDistrictDetail(panel, { district, videos }) {
 function renderBengalRegions() {
   if (!allData) return;
   const panel     = document.getElementById('panel-regions');
-  const videosAll = filterByRange((allData.bengali||[]).concat(allData.opinion||[]), currentFilter);
+  const videosAll = filterByRange((allData.bengali||[]).concat(allData.opinion||[]), currentFilter).filter(v => v.live_broadcast !== 'live');
   const minViews  = getMinViewsNum(currentFilter);
   const videos    = videosAll.filter(v => matchesDuration(v) && v.view_count >= minViews);
   const dmapAll   = buildDistrictMap(videosAll);
