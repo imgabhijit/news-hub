@@ -1028,7 +1028,7 @@ function closeCountryDetail() {
 function renderCountries() {
   if (!allData) return;
   const panel     = document.getElementById('panel-countries');
-  const videosAll = filterByRange(allData.world_news || [], currentFilter);
+  const videosAll = filterByRange(allData.world_news || [], currentFilter).filter(v => v.live_broadcast !== 'live');
   const minViews  = getMinViewsNum(currentFilter);
   const videos    = videosAll.filter(v => matchesDuration(v) && v.view_count >= minViews);
   const mapAll    = buildCountryMap(videosAll);
@@ -1114,7 +1114,7 @@ function closeRegionDetail()    { currentRegionDetail = null; renderRegions(); }
 function renderRegions() {
   if (!allData) return;
   const panel     = document.getElementById('panel-regions');
-  const videosAll = filterByRange(allData.world_news || [], currentFilter);
+  const videosAll = filterByRange(allData.world_news || [], currentFilter).filter(v => v.live_broadcast !== 'live');
   const minViews  = getMinViewsNum(currentFilter);
   const videos    = videosAll.filter(v => matchesDuration(v) && v.view_count >= minViews);
   const cmap      = buildCountryMap(videos);
