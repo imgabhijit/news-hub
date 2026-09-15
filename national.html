@@ -1286,10 +1286,13 @@ function closeRegionDetail()    { currentRegionDetail = null; renderRegions(); }
 
 function renderStates() {
   if (!allData) return;
-  const panel  = document.getElementById('panel-states');
-  const videos = filterByRange((allData.national_english||[]).concat(allData.national_hindi||[]), '24h');
-  const map    = buildStateMap(videos);
-  const sorted = Object.values(map).sort((a, b) => medianViews(b.videos) - medianViews(a.videos));
+  const panel     = document.getElementById('panel-states');
+  const videosAll = filterByRange((allData.national_english||[]).concat(allData.national_hindi||[]), '24h');
+  const videos    = videosAll.filter(v => matchesDuration(v));
+  const mapAll    = buildStateMap(videosAll);
+  const map       = buildStateMap(videos);
+  const sorted = Object.values(map).sort((a, b) =>
+    medianViews((mapAll[b.state.name] || b).videos) - medianViews((mapAll[a.state.name] || a).videos));
 
   if (!sorted.length) { panel.innerHTML = emptyState('No state data', 'Check back soon.'); return; }
 
@@ -1305,12 +1308,13 @@ function renderStates() {
 
   if (currentViewMode === 'list') {
     const rows = sorted.map(({ state, videos }) => {
+      const allVideos = mapAll[state.name]?.videos || videos;
       const cards = videos.slice(0, 10).map((v, i) => cardHtml(v, i+1, false, false, false)).join('');
       return `<div class="state-section">
         <div class="state-list-header">
           ${stateMapIcon(state, false)}
           <span class="state-name-lg">${state.name}</span>
-          <span class="state-views-lg">${fmtViews(medianViews(videos||[]))} median</span>
+          <span class="state-views-lg">${fmtViews(medianViews(allVideos))} median</span>
         </div>
         <div class="video-row">${cards}</div>
       </div>`;
@@ -1318,11 +1322,12 @@ function renderStates() {
     panel.innerHTML = `<p class="section-label">By State/UT · Last 24h</p>${toggle}${rows}`;
   } else {
     const tiles = sorted.map(({ state, videos }) => {
+      const allVideos = mapAll[state.name]?.videos || videos;
       const sn = state.name.replace(/'/g, "\\'");
       return `<div class="state-tile" onclick="openStateDetail('${sn}')">
         ${stateMapIcon(state, true)}
         <div class="state-tile-name">${state.name}</div>
-        <div class="state-tile-stats">${fmtViews(medianViews(videos||[]))} median · ${videos.length} video${videos.length!==1?'s':''}</div>
+        <div class="state-tile-stats">${fmtViews(medianViews(allVideos))} median · ${videos.length} video${videos.length!==1?'s':''}</div>
       </div>`;
     }).join('');
     panel.innerHTML = `<p class="section-label">By State/UT · Last 24h</p>${toggle}<div class="state-tile-grid">${tiles}</div>`;
@@ -1345,13 +1350,18 @@ function renderStateDetail(panel, { state, videos }) {
 // ── BY REGION (INDIA) ─────────────────────────────────────────────────────────
 function renderRegions() {
   if (!allData) return;
-  const panel  = document.getElementById('panel-regions');
-  const videos = filterByRange((allData.national_english||[]).concat(allData.national_hindi||[]), '24h');
-  const smap   = buildStateMap(videos);
+  const panel     = document.getElementById('panel-regions');
+  const videosAll = filterByRange((allData.national_english||[]).concat(allData.national_hindi||[]), '24h');
+  const videos    = videosAll.filter(v => matchesDuration(v));
+  const smapAll   = buildStateMap(videosAll);
+  const smap      = buildStateMap(videos);
 
   const regionData = INDIA_REGIONS.map(r => {
-    const stateEntries = r.states.map(sn => smap[sn]).filter(e => e && e.videos.length > 0);
-    const allVideos    = stateEntries.flatMap(e => e.videos);
+    const stateEntries = r.states
+      .map(sn => smap[sn])
+      .filter(e => e && e.videos.length > 0)
+      .map(e => ({ ...e, allVideos: smapAll[e.state.name]?.videos || e.videos }));
+    const allVideos = r.states.flatMap(sn => smapAll[sn]?.videos || []);
     return { ...r, stateEntries, allVideos };
   }).filter(r => r.stateEntries.length > 0).sort((a, b) => medianViews(b.allVideos) - medianViews(a.allVideos));
 
@@ -1380,15 +1390,15 @@ function renderRegions() {
 }
 
 function renderRegionDetail(panel, region) {
-  const sorted = [...region.stateEntries].sort((a, b) => medianViews(b.videos) - medianViews(a.videos));
+  const sorted = [...region.stateEntries].sort((a, b) => medianViews(b.allVideos) - medianViews(a.allVideos));
   const rc     = STATE_REGION_COLORS[region.color];
-  const rows   = sorted.map(({ state, videos }) => {
+  const rows   = sorted.map(({ state, videos, allVideos }) => {
     const cards = videos.map((v, i) => cardHtml(v, i+1, false, false, false)).join('');
     return `<div class="state-section">
       <div class="state-list-header">
         ${stateMapIcon(state, false)}
         <span class="state-name-lg">${state.name}</span>
-        <span class="state-views-lg">${fmtViews(medianViews(videos))} median</span>
+        <span class="state-views-lg">${fmtViews(medianViews(allVideos))} median</span>
       </div>
       <div class="video-row">${cards}</div>
     </div>`;
