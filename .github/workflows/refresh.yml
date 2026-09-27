@@ -2,11 +2,13 @@ name: Refresh Videos
 
 on:
   schedule:
-    # Every 30 min. GitHub's scheduler drifts and sometimes drops runs
-    # entirely, so this cadence exists to make sure the watchdog check below
-    # gets enough chances to catch a missed checkpoint - most of these firings
-    # do nothing but read a timestamp (see scripts/check_due.py).
-    - cron: '*/30 * * * *'
+    # Two offset hourly entries instead of one */30 entry. GitHub's scheduler
+    # drifts and sometimes drops runs entirely under load, and a single
+    # high-frequency entry seems to get deprioritized harder than a couple of
+    # separately-registered ones at the same total frequency. Most firings do
+    # nothing but read a timestamp (see scripts/check_due.py) and exit.
+    - cron: '15 * * * *'   # :15 past every hour
+    - cron: '45 * * * *'   # :45 past every hour
   workflow_dispatch:        # allow manual trigger from GitHub UI
 
 jobs:
