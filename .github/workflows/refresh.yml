@@ -2,7 +2,11 @@ name: Refresh Videos
 
 on:
   schedule:
-    - cron: '0 */2 * * *'  # every 2 hours
+    # Every 30 min. GitHub's scheduler drifts and sometimes drops runs
+    # entirely, so this cadence exists to make sure the watchdog check below
+    # gets enough chances to catch a missed checkpoint - most of these firings
+    # do nothing but read a timestamp (see scripts/check_due.py).
+    - cron: '*/30 * * * *'
   workflow_dispatch:        # allow manual trigger from GitHub UI
 
 jobs:
@@ -25,11 +29,16 @@ jobs:
         run: pip install google-api-python-client python-dotenv
 
       # A manually re-run workflow can start from an older commit. Sync first so
-      # the fetch and its cache use the newest generated data.
+      # the watchdog check and the fetch (if it runs) see the newest state.
       - name: Sync latest data
         run: git pull --rebase origin main
 
+      - name: Check whether a fetch is due
+        id: watchdog
+        run: python scripts/check_due.py
+
       - name: Run fetcher
+        if: steps.watchdog.outputs.due == 'true' || github.event_name == 'workflow_dispatch'
         env:
           YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
         run: python scripts/fetch.py

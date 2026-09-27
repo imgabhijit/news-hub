@@ -8,10 +8,11 @@ Quota budget (the YouTube Data API gives 10,000 units/day):
   - 1 unit per channel     -> playlistItems.list, one page in the steady state
   - 1 unit per 50 video IDs -> videos.list, batched across the whole section
 
-  Video details are NOT re-fetched for every cached video on every run. Only
-  brand-new IDs, videos younger than STATS_REFRESH_WINDOW, and videos that are
-  live/upcoming are refreshed; everything else keeps the record already stored
-  in videos.json.
+  Video details (including view_count) are re-fetched for every cached video
+  still inside the 24h ranking window on every run, so videos are always
+  ranked against each other on current view counts rather than whatever was
+  last recorded when each was first seen. Only videos that have aged out of
+  the window (and are no longer cached) stop being refreshed.
 
   Sections are scanned on their own cadence (see SECTION_CADENCE_HOURS): news
   and opinion every run, the neighbour sections every third. A run scans a
@@ -53,9 +54,14 @@ STATE_FILE            = DATA_DIR / "periodic_state.json"
 FETCH_DAYS            = 1
 MIN_DURATION          = 60
 META_STALE_DAYS       = 7
-# View counts are only refreshed for videos younger than this. Older videos in
-# the 24h window keep their last known stats, which saves most of the quota.
-STATS_REFRESH_WINDOW  = 3 * 3600
+# View counts are refreshed for every video still inside the ranking window
+# (see FETCH_DAYS/the 24h `keep` cutoff in main()), so videos are never ranked
+# against each other on stale counts - a video fetched at 6am and one fetched
+# just now both carry their view_count as of the current run, not whenever
+# each was first seen. Quota cost: ~1 unit per 50 videos in the window
+# (roughly 300 units for the ~15k videos currently tracked), which is cheap
+# next to the 10,000/day budget.
+STATS_REFRESH_WINDOW  = FETCH_DAYS * 86400
 
 IST = datetime.timezone(datetime.timedelta(hours=5, minutes=30))
 
