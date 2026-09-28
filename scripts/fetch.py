@@ -362,15 +362,12 @@ def fetch_video_details(youtube, video_ids):
 
 
 # --- scan cadence --------------------------------------------------------
-# How often each section's playlists are scanned. Everything a reader watches
-# for freshness stays on the 2h run; only the neighbour sections, which are
-# browsed rather than followed, are stretched out.
-#
-# Opinion sits at 2h deliberately. Most opinion uploads land between roughly
-# midday and midnight IST, and scanning every run covers that peak without any
-# time-of-day logic - which also removes the thing most likely to misbehave,
-# since Actions cron drift can push a run across any hour boundary you pick.
-RUN_INTERVAL_HOURS = 2  # the workflow cron; keep in sync with refresh.yml
+# How often each section's playlists are scanned, in elapsed hours since the
+# channel's last scan (not tied to a fixed run interval - runs now fire from
+# an external cron at 9 checkpoints a day, roughly every 2-3h apart; see
+# docs/cron-setup.md). Everything a reader watches for freshness is scanned
+# on every checkpoint; only the neighbour sections, which are browsed rather
+# than followed, are stretched out.
 SECTION_CADENCE_HOURS = {
     "bengali":             2,
     "opinion":             2,   # Bengali opinion
@@ -385,23 +382,11 @@ SECTION_CADENCE_HOURS = {
     "myanmar":             6,
 }
 
-# A cadence must be a whole number of run intervals. Measured against real
-# Actions timestamps, 2h/4h/6h each land on a fixed number of runs apart, but
-# 3h alternates between every run and every second run - the cadence is then
-# neither 2h nor 4h and cannot be reasoned about.
-for _section, _hours in SECTION_CADENCE_HOURS.items():
-    if _hours % RUN_INTERVAL_HOURS:
-        raise ValueError(
-            f"{_section}: cadence {_hours}h is not a multiple of the "
-            f"{RUN_INTERVAL_HOURS}h run interval, so it would fire irregularly")
-
-# GitHub Actions cron drifts badly: for a nominal 2h schedule the observed gaps
-# between runs range from 1.55h to 2.64h. Allowing half an interval of slack
-# means a run that arrives early still counts, instead of being judged "not due"
-# and pushing the section to the next slot - which silently doubled the cadence
-# (11.6 scans/day, worst gap 3.6h against an intended 12 and 2h) when this was
-# 15 minutes.
-SCAN_GRACE   = RUN_INTERVAL_HOURS * 3600 // 2
+# Checkpoint runs can themselves arrive a little early or late (cron-job.org
+# timing, GitHub Actions queueing). A short grace window means a run a few
+# minutes early still counts as covering its slot, instead of being judged
+# "not due" and pushing the section to the next checkpoint.
+SCAN_GRACE   = 15 * 60
 SCAN_WORKERS = 8      # parallel playlist scans; quota is unaffected
 
 

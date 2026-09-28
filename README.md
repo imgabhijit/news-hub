@@ -7,7 +7,7 @@
 
 A high-performance, serverless Progressive Web App (PWA) that aggregates, ranks, and filters top YouTube news bulletins and political commentary in real time across **Bengali, National (English & Hindi), World News, Neighboring Nations, and Regional/District feeds**. 
 
-Powered by **GitHub Pages**, **GitHub Actions (cron schedule)**, and **YouTube Data API v3**, the platform runs **100% free with zero backend hosting costs**.
+Powered by **GitHub Pages**, **GitHub Actions**, and **YouTube Data API v3**, the platform runs **100% free with zero backend hosting costs**. Refreshes are triggered by an external cron ([cron-job.org](https://cron-job.org)) calling GitHub's `workflow_dispatch` API on a schedule — see [docs/cron-setup.md](docs/cron-setup.md) for why and how.
 
 ---
 
@@ -27,7 +27,7 @@ Powered by **GitHub Pages**, **GitHub Actions (cron schedule)**, and **YouTube D
 
 ```
    ┌─────────────────────────────────────────────────────────┐
-   │ GitHub Actions Cron (Runs automatically every 2 hours)  │
+   │ cron-job.org → GitHub workflow_dispatch (9x/day, ~2-3h) │
    └──────────────────────────┬──────────────────────────────┘
                               │
                               ▼
@@ -121,7 +121,7 @@ To prevent exceeding the YouTube Data API free limit (10,000 units/day), `script
 Top_News_Portal_Github/
 ├── .github/
 │   └── workflows/
-│       └── refresh.yml       # GitHub Actions workflow (runs every 2 hours)
+│       └── refresh.yml       # GitHub Actions workflow (triggered by cron-job.org, ~9x/day)
 ├── data/
 │   ├── videos.json           # Aggregated video dataset (last 24h)
 │   ├── channels_meta.json    # Cached channel uploads playlist IDs & subscriber counts
@@ -197,7 +197,7 @@ Open `http://localhost:8000` in your web browser.
 The repository updates automatically via GitHub Actions:
 
 1. **Workflow:** `.github/workflows/refresh.yml`
-2. **Schedule:** Triggered every 2 hours (`0 */2 * * *`) + manual trigger (`workflow_dispatch`).
+2. **Trigger:** `workflow_dispatch`, fired by an external cron ([cron-job.org](https://cron-job.org)) at 9 checkpoints a day (~2-3h apart, tuned to reader-facing freshness needs), or manually from the GitHub UI. GitHub's own `schedule:` trigger was tried first but measured a ~44-50% checkpoint hit rate under real load — see [docs/cron-setup.md](docs/cron-setup.md) for the full writeup.
 3. **Action Steps:**
    - Checks out `main` branch.
    - Executes `python scripts/fetch.py` with secret `YOUTUBE_API_KEY`.

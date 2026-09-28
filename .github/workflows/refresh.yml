@@ -1,15 +1,15 @@
 name: Refresh Videos
 
+# Triggered by an external cron (cron-job.org) calling this repo's
+# workflow_dispatch API on a schedule - see docs/cron-setup.md. GitHub's own
+# `schedule:` trigger was tried first (both a dense */30 cadence and two
+# offset hourly entries) and measured at a ~44-50% checkpoint hit rate over a
+# day of real runs: GitHub deprioritizes/drops `schedule` ticks under load
+# with no retry, so it could not reliably hit the checkpoints reader
+# freshness depends on. workflow_dispatch is not subject to that same
+# best-effort scheduler and has been 100% reliable in testing.
 on:
-  schedule:
-    # Two offset hourly entries instead of one */30 entry. GitHub's scheduler
-    # drifts and sometimes drops runs entirely under load, and a single
-    # high-frequency entry seems to get deprioritized harder than a couple of
-    # separately-registered ones at the same total frequency. Most firings do
-    # nothing but read a timestamp (see scripts/check_due.py) and exit.
-    - cron: '15 * * * *'   # :15 past every hour
-    - cron: '45 * * * *'   # :45 past every hour
-  workflow_dispatch:        # allow manual trigger from GitHub UI
+  workflow_dispatch:        # fired by cron-job.org on schedule, and manually from the GitHub UI
 
 jobs:
   refresh:
@@ -30,17 +30,12 @@ jobs:
       - name: Install dependencies
         run: pip install google-api-python-client python-dotenv
 
-      # A manually re-run workflow can start from an older commit. Sync first so
-      # the watchdog check and the fetch (if it runs) see the newest state.
+      # A manually re-run workflow can start from an older commit. Sync first
+      # so the fetch and its cache use the newest generated data.
       - name: Sync latest data
         run: git pull --rebase origin main
 
-      - name: Check whether a fetch is due
-        id: watchdog
-        run: python scripts/check_due.py
-
       - name: Run fetcher
-        if: steps.watchdog.outputs.due == 'true' || github.event_name == 'workflow_dispatch'
         env:
           YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
         run: python scripts/fetch.py
