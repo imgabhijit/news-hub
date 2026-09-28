@@ -31,27 +31,31 @@ times.
 
 Data must be fresh by these times (IST), each ~2-3h apart:
 
-**02:30, 06:30, 09:30, 12:30, 15:30, 17:30, 19:30, 21:30, 23:30** IST
+**02:00, 06:00, 09:00, 12:00, 15:00, 17:00, 19:00, 21:00, 23:00** IST
+
+(Originally set 30 minutes later on each - e.g. 23:30 instead of 23:00 -
+but 23:30/11:30pm was judged too late to be useful to readers, so the whole
+schedule was shifted 30 minutes earlier to land on the hour in IST instead.)
 
 Converted to UTC (cron-job.org's job timezone is set to UTC) these land on
-the hour:
+the half-hour:
 
-| IST checkpoint | UTC (cron hour) |
+| IST checkpoint | UTC (cron time) |
 |---|---|
-| 02:30 | 21:00 (previous day) |
-| 06:30 | 01:00 |
-| 09:30 | 04:00 |
-| 12:30 | 07:00 |
-| 15:30 | 10:00 |
-| 17:30 | 12:00 |
-| 19:30 | 14:00 |
-| 21:30 | 16:00 |
-| 23:30 | 18:00 |
+| 02:00 | 20:30 (previous day) |
+| 06:00 | 00:30 |
+| 09:00 | 03:30 |
+| 12:00 | 06:30 |
+| 15:00 | 09:30 |
+| 17:00 | 11:30 |
+| 19:00 | 13:30 |
+| 21:00 | 15:30 |
+| 23:00 | 17:30 |
 
 Crontab expression used in cron-job.org (Custom schedule, timezone UTC):
 
 ```
-0 21,1,4,7,10,12,14,16,18 * * *
+30 20,0,3,6,9,11,13,15,17 * * *
 ```
 
 ## GitHub token setup
@@ -84,7 +88,7 @@ replacement, then update the header in cron-job.org (step below).
    ```
    https://api.github.com/repos/imgabhijit/news-hub/actions/workflows/refresh.yml/dispatches
    ```
-3. **Schedule**: Custom, crontab expression `0 21,1,4,7,10,12,14,16,18 * * *`,
+3. **Schedule**: Custom, crontab expression `30 20,0,3,6,9,11,13,15,17 * * *`,
    timezone UTC (see table above).
 4. **Advanced tab**:
    - Request method: **POST**
