@@ -129,3 +129,55 @@ It added no value once cron-job.org became the actual trigger (every
 measured-unreliable code path around as a false sense of redundancy. The
 workflow now only listens for `workflow_dispatch` - fired by cron-job.org on
 schedule, or manually from the GitHub UI's "Run workflow" button.
+
+## Cloudflare Pages deployment
+
+The site is also deployed to Cloudflare Pages (`news-hub-p9c.pages.dev`),
+connected to this same GitHub repo, alongside the original GitHub Pages
+deployment (kept running in parallel - GitHub Pages' terms restrict
+commercial use, so Cloudflare Pages is the deployment target for anything
+commercial; see conversation notes). Cloudflare auto-deploys on every push
+to `main`, same as GitHub Pages - no separate trigger needed beyond what's
+already documented above.
+
+### Bug: `[skip ci]` silently broke Cloudflare deploys (fixed 2026-10-04)
+
+Every refresh commit used to be `"chore: refresh videos [skip ci]"`.
+Cloudflare Pages treats `[skip ci]` (and variants like `[Skip CI]`,
+case-insensitive) anywhere in a commit message as a signal to skip the
+build entirely - confirmed via the project's Deployments tab, where every
+commit after the first successful deploy showed **"No deployment
+available"** instead of a build, while GitHub Pages (unaffected by this
+convention) kept updating normally on the same commits. The two sites
+silently diverged for several days before this was caught.
+
+`[skip ci]` had been added back when this workflow still had a `schedule:`
+trigger, specifically to stop a refresh commit from re-triggering another
+scheduled GitHub Actions run. That trigger was removed when the fetch
+cadence moved to the external cron-job.org + `workflow_dispatch` setup
+described above, so the flag had served no purpose since - only this
+unintended side effect on Cloudflare. Fixed by dropping it from the commit
+message entirely (now just `"chore: refresh videos"`).
+
+**Lesson**: a magic string adopted for one CI system (GitHub Actions) can
+collide with the same convention in an unrelated one (Cloudflare Pages) once
+multiple deploy targets watch the same repo. Worth checking commit-message
+conventions against every connected deploy target, not just the one that
+originally motivated them.
+
+### Build quota
+
+Cloudflare Pages' free tier allows **500 builds/month, per Cloudflare
+account** (not per project - shared across every Pages project on the
+account). Each refresh commit triggers one build. At 9 checkpoints/day (see
+above), that's roughly:
+
+```
+9/day x 30 days = 270 builds/month
+```
+
+- comfortably under the 500/month cap, with headroom for additional Pages
+projects on the same account later. These are near-instant static-asset
+uploads (no build command configured - the repo is plain HTML/CSS/JS), so
+each one barely registers against Cloudflare's actual compute, but still
+counts as one build toward the monthly quota regardless.
