@@ -80,6 +80,20 @@
     }
     .toolbar-search:focus { border-color: #16a085; width: 260px; }
     .toolbar-search::placeholder { color: #555; }
+    .exclude-group {
+      display: flex; align-items: center; gap: 6px;
+      background: #2a2d3a; border: 1px solid #3a3d4a; border-radius: 8px;
+      padding: 4px 10px 4px 8px;
+    }
+    .exclude-group input[type="checkbox"] { accent-color: #16a085; cursor: pointer; }
+    .exclude-group label { font-size: 0.78rem; color: #888; cursor: pointer; white-space: nowrap; }
+    .exclude-input {
+      background: transparent; border: none; color: #e0e0e0; outline: none;
+      font-size: 0.82rem; width: 110px;
+    }
+    .exclude-input::placeholder { color: #555; }
+    .exclude-group.active { border-color: #16a085; }
+    .exclude-group.active label { color: #16a085; }
     .export-btn {
       background: #0a1a18; border: 1px solid #16a085; color: #16a085;
       padding: 6px 12px; border-radius: 8px; font-size: 0.82rem; cursor: pointer;
@@ -372,6 +386,12 @@
 
   <input type="search" id="searchInput" class="toolbar-search" placeholder="Search title or channel…"
          oninput="setSearch(this.value)">
+  <div class="exclude-group" id="excludeGroup">
+    <input type="checkbox" id="excludeToggle" onchange="setExcludeEnabled(this.checked)">
+    <label for="excludeToggle">Exclude</label>
+    <input type="text" id="excludeInput" class="exclude-input" value="headlines"
+           oninput="setExcludeTerm(this.value)">
+  </div>
   <div class="export-dropdown">
     <button class="export-btn" onclick="toggleExportMenu(event,'meta')">Metadata &#9662;</button>
     <div class="export-menu" id="exportMenu-meta">
@@ -457,6 +477,8 @@ let currentMinViews = '0';
 let customMinViews  = 0;
 let currentDuration = DURATION_DEFAULTS[currentTab] || 'over3';
 let currentSearch   = '';
+let excludeEnabled  = false;
+let excludeTerm     = 'headlines';
 let channelView     = 'grid';
 let selectedChannel = null;
 let allData         = null;
@@ -526,9 +548,27 @@ function matchesDuration(v) {
   }
 }
 function searchVideos(videos) {
-  if (!currentSearch) return videos;
-  const q = currentSearch.toLowerCase();
-  return videos.filter(v => v.title.toLowerCase().includes(q) || v.channel_name.toLowerCase().includes(q));
+  let result = videos;
+  if (currentSearch) {
+    const q = currentSearch.toLowerCase();
+    result = result.filter(v => v.title.toLowerCase().includes(q) || v.channel_name.toLowerCase().includes(q));
+  }
+  if (excludeEnabled && excludeTerm) {
+    const x = excludeTerm.toLowerCase();
+    result = result.filter(v => !v.title.toLowerCase().includes(x));
+  }
+  return result;
+}
+
+function setExcludeEnabled(checked) {
+  excludeEnabled = checked;
+  document.getElementById('excludeGroup').classList.toggle('active', checked);
+  renderAll();
+}
+
+function setExcludeTerm(val) {
+  excludeTerm = val.trim();
+  if (excludeEnabled) renderAll();
 }
 function getVideos(videos, filter, sort, n = Infinity) {
   let pool = filterByRange(videos, filter).filter(v => v.live_broadcast !== 'live');
