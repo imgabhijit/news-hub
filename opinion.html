@@ -86,6 +86,14 @@
     .exclude-input::placeholder { color: #555; }
     .exclude-group.active { border-color: #9b59b6; }
     .exclude-group.active label { color: #9b59b6; }
+    .shorts-side-toggle { display: flex; gap: 8px; padding: 12px 0 4px; }
+    .side-btn {
+      background: #1a1d27; border: 1px solid #3a3d4a; color: #888;
+      padding: 6px 14px; border-radius: 20px; font-size: 0.82rem; cursor: pointer;
+      transition: all 0.2s;
+    }
+    .side-btn:hover { color: #ccc; border-color: #555; }
+    .side-btn.active { background: #1a0a2a; border-color: #9b59b6; color: #9b59b6; font-weight: 600; }
     .export-btn { background: #1a0a2a; border: 1px solid #9b59b6; color: #9b59b6; padding: 6px 12px; border-radius: 8px; font-size: 0.82rem; cursor: pointer; white-space: nowrap; transition: all 0.2s; }
     .export-btn:hover { background: #352046; color: #fff; }
 
@@ -444,12 +452,25 @@ const PERIODIC_NOTE = `<div class="periodic-note">⏱ Opinion data refreshes 3×
 
 // ── Long videos / Shorts / Topics tabs (assets/features.js) ─────────────────────
 function featurePool() { return [...(allData.hindi_right_opinion || []), ...(allData.hindi_left_opinion || [])]; }
+let shortsSide = 'all'; // 'all' | 'right' | 'left'
+function setShortsSide(side) { shortsSide = side; renderSplit('short'); }
+function shortsPool() {
+  if (shortsSide === 'right') return allData.hindi_right_opinion || [];
+  if (shortsSide === 'left')  return allData.hindi_left_opinion  || [];
+  return featurePool();
+}
 function renderSplit(kind) {
   const panel = document.getElementById('panel-' + kind);
   if (!panel) return;
-  const list = searchVideos(getVideos(featurePool(), currentFilter, currentSort));
+  const pool = kind === 'short' ? shortsPool() : featurePool();
+  const list = searchVideos(getVideos(pool, currentFilter, currentSort));
+  const sideToggle = kind === 'short' ? `<div class="shorts-side-toggle">
+    <button class="side-btn${shortsSide === 'all' ? ' active' : ''}" onclick="setShortsSide('all')">All</button>
+    <button class="side-btn${shortsSide === 'right' ? ' active' : ''}" onclick="setShortsSide('right')">🔶 Right</button>
+    <button class="side-btn${shortsSide === 'left' ? ' active' : ''}" onclick="setShortsSide('left')">🔷 Left</button>
+  </div>` : '';
   if (!list.length) {
-    panel.innerHTML = emptyState(kind === 'short' ? 'No shorts found' : 'No long videos found', currentSearch ? 'Try a different search.' : 'Try a wider time filter.');
+    panel.innerHTML = sideToggle + emptyState(kind === 'short' ? 'No shorts found' : 'No long videos found', currentSearch ? 'Try a different search.' : 'Try a wider time filter.');
     return;
   }
   const label = kind === 'short' ? 'Shorts (under 3 min)' : 'Long videos (3 min and over)';
@@ -462,7 +483,7 @@ function renderSplit(kind) {
       ? `<div class="show-more-wrap" id="smLong"><button class="show-more-btn" onclick="showMore('longGrid','smLong',20)">${list.length - 20} more</button><button class="show-more-btn show-all-btn" onclick="showAll('longGrid','smLong')">Show all</button></div>` : '';
     body = `<div class="video-grid" id="longGrid">${cards}</div>${more}`;
   }
-  panel.innerHTML = `<p class="section-label">${list.length} ${label} · ${filterLabel()}</p>${body}`;
+  panel.innerHTML = `${sideToggle}<p class="section-label">${list.length} ${label} · ${filterLabel()}</p>${body}`;
 }
 function renderTopicsTab() {
   const panel = document.getElementById('panel-topics');
