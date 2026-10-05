@@ -212,6 +212,7 @@
       body { padding-bottom: env(safe-area-inset-bottom); }
     }
   </style>
+  <link rel="stylesheet" href="assets/features.css">
 </head>
 <body>
 
@@ -231,6 +232,9 @@
 
 <div class="tabbar">
   <button class="tab-btn" id="btn-all"      onclick="switchTab('all')">💬 All Opinion</button>
+  <button class="tab-btn" id="btn-long"  onclick="switchTab('long')">🎬 Long videos (3m+)</button>
+  <button class="tab-btn" id="btn-short" onclick="switchTab('short')">⚡ Shorts (&lt; 3m)</button>
+  <button class="tab-btn" id="btn-topics" onclick="switchTab('topics')">🏷️ Topics</button>
   <button class="tab-btn" id="btn-right"    onclick="switchTab('right')">🔶 Right</button>
   <button class="tab-btn" id="btn-left"     onclick="switchTab('left')">🔷 Left</button>
   <button class="tab-btn" id="btn-live"     onclick="switchTab('live')">🔴 Live</button>
@@ -305,6 +309,9 @@
   <span id="metaInfo" style="display:none"></span>
 </div>
 
+<div class="tab-panel" id="panel-long"></div>
+<div class="tab-panel" id="panel-short"></div>
+<div class="tab-panel" id="panel-topics"></div>
 <div class="tab-panel" id="panel-all"></div>
 <div class="tab-panel" id="panel-right"></div>
 <div class="tab-panel" id="panel-left"></div>
@@ -335,15 +342,18 @@
 </div>
 
 <div id="toast"></div>
+<script src="assets/topics.js"></script>
+<script src="assets/features.js"></script>
+<script src="assets/shorts.js"></script>
 <script src="https://www.youtube.com/iframe_api"></script>
 <script>
 const MY_CHANNEL_URL    = '';
 const MY_CHANNEL_NAME   = '';
 const MY_CHANNEL_VIDEOS = [];
 
-const TAB_DEFAULTS      = { all: '24h', right: '24h', left: '24h', live: '1h', channels: '24h' };
-const SORT_DEFAULTS     = { all: 'views', right: 'views', left: 'views', live: 'views', channels: 'views' };
-const DURATION_DEFAULTS = { all: 'upto60', right: 'upto60', left: 'upto60', live: 'all', channels: 'upto60' };
+const TAB_DEFAULTS      = { all: '24h', long: '24h', short: '24h', topics: '24h', right: '24h', left: '24h', live: '1h', channels: '24h' };
+const SORT_DEFAULTS     = { long: 'velocity', short: 'velocity', topics: 'views', all: 'views', right: 'views', left: 'views', live: 'views', channels: 'views' };
+const DURATION_DEFAULTS = { long: 'all', short: 'all', topics: 'all', all: 'upto60', right: 'upto60', left: 'upto60', live: 'all', channels: 'upto60' };
 const THRESHOLDS = { lastnight:40000, today:25000, tonight:8000, '1h':3000, '3h':5000, '5h':10000, '24h':50000 };
 
 const params        = new URLSearchParams(location.search);
@@ -381,7 +391,7 @@ function sortedVideos(videos,filter,sort){
   }
 }
 function getMinViewsNum(f){if(currentMinViews==='auto')return THRESHOLDS[f]||5000;if(currentMinViews==='custom')return customMinViews||0;return parseInt(currentMinViews)||0;}
-function matchesDuration(v){const d=v.duration||0;switch(currentDuration){case 'upto60':return d > 180 && d < 3600; case 'upto60any': return d < 3600;case 'upto30':return d<1800;case 'upto3':return d <= 180;case 'over3':return d > 180;case '3to15':return d>=180&&d<900;case '15to30':return d>=900&&d<1800;case 'long':return d>=3600;default:return true;}}
+function matchesDuration(v){const d=v.duration||0;if (HubFeatures.matchSplit(d, currentTab, currentDuration) !== null) return HubFeatures.matchSplit(d, currentTab, currentDuration);switch(currentDuration){case 'upto60':return d > 180 && d < 3600; case 'upto60any': return d < 3600;case 'upto30':return d<1800;case 'upto3':return d <= 180;case 'over3':return d > 180;case '3to15':return d>=180&&d<900;case '15to30':return d>=900&&d<1800;case 'long':return d>=3600;default:return true;}}
 function searchVideos(v){if(!currentSearch)return v;const q=currentSearch.toLowerCase();return v.filter(x=>x.title.toLowerCase().includes(q)||x.channel_name.toLowerCase().includes(q));}
 function getVideos(videos,filter,sort,n=Infinity){let p=filterByRange(videos,filter).filter(v=>v.live_broadcast!=='live').filter(v=>v.view_count>=getMinViewsNum(filter)).filter(v=>matchesDuration(v));return searchVideos(sortedVideos(p,filter,sort)).slice(0,n);}
 function getVideosPerChannel(videos,filter,sort,n=10){const p=filterByRange(videos,filter).filter(v=>v.live_broadcast!=='live').filter(v=>matchesDuration(v));const b={};p.forEach(v=>{(b[v.channel_name]=b[v.channel_name]||[]).push(v);});const r={};Object.entries(b).forEach(([k,vs])=>{r[k]=sortedVideos(vs,filter,sort).slice(0,n);});return r;}
@@ -408,7 +418,35 @@ function cardHtml(v,rank,isLive,hidden){
 function emptyState(t,s){return`<div class="empty-state"><h3>${t}</h3><p>${s}</p></div>`;}
 const PERIODIC_NOTE = `<div class="periodic-note">⏱ Opinion data refreshes 3× daily — morning, evening &amp; night.</div>`;
 
-function renderAll(){if(!allData)return;renderAllOpinion();renderRight();renderLeft();renderLive();renderChannels();}
+// ── Long videos / Shorts / Topics tabs (assets/features.js) ─────────────────────
+function featurePool() { return [...(allData.hindi_right_opinion || []), ...(allData.hindi_left_opinion || [])]; }
+function renderSplit(kind) {
+  const panel = document.getElementById('panel-' + kind);
+  if (!panel) return;
+  const list = searchVideos(getVideos(featurePool(), currentFilter, currentSort));
+  if (!list.length) {
+    panel.innerHTML = emptyState(kind === 'short' ? 'No shorts found' : 'No long videos found', currentSearch ? 'Try a different search.' : 'Try a wider time filter.');
+    return;
+  }
+  const label = kind === 'short' ? 'Shorts (under 3 min)' : 'Long videos (3 min and over)';
+  let body;
+  if (kind === 'short') {
+    body = HubFeatures.shortsGrid(list);
+  } else {
+    const cards = list.map((v, i) => cardHtml(v, i + 1, false, i >= 20)).join('');
+    const more = list.length > 20
+      ? `<div class="show-more-wrap" id="smLong"><button class="show-more-btn" onclick="showMore('longGrid','smLong',20)">${list.length - 20} more</button><button class="show-more-btn show-all-btn" onclick="showAll('longGrid','smLong')">Show all</button></div>` : '';
+    body = `<div class="video-grid" id="longGrid">${cards}</div>${more}`;
+  }
+  panel.innerHTML = `<p class="section-label">${list.length} ${label} · ${filterLabel()}</p>${body}`;
+}
+function renderTopicsTab() {
+  const panel = document.getElementById('panel-topics');
+  if (!panel) return;
+  HubFeatures.renderTopics(panel, featurePool(), currentFilter, filterLabel(), renderTopicsTab);
+}
+
+function renderAll(){ renderSplit('long'); renderSplit('short'); renderTopicsTab();if(!allData)return;renderAllOpinion();renderRight();renderLeft();renderLive();renderChannels();}
 
 function renderAllOpinion(){
   const combined=(allData.hindi_right_opinion||[]).concat(allData.hindi_left_opinion||[]);
@@ -490,7 +528,7 @@ function renderToolbar(){
   document.getElementById('filterSelect').value=currentFilter;
   document.getElementById('sortSelect').value=currentSort;
   document.getElementById('viewsSelect').value=currentMinViews;
-  document.getElementById('durationSelect').value=currentDuration;
+  document.getElementById('durationSelect').value=currentDuration;HubFeatures.syncDuration(currentTab,currentDuration);
   document.getElementById('customViewsInput').style.display=currentMinViews==='custom'?'inline-block':'none';
 }
 function updateUrl(){history.replaceState(null,'',`?tab=${currentTab}&filter=${currentFilter}&sort=${currentSort}`);}
@@ -539,7 +577,7 @@ function copyUrls() {
   copyToClipboard(buildUrlsRows(vids));
 }
 
-function gatherExportVideos(){if(currentTab==='all'||currentTab==='channels')return getVideos([...(allData.hindi_right_opinion||[]),...(allData.hindi_left_opinion||[])],currentFilter,currentSort,Infinity);if(currentTab==='right')return getVideos(allData.hindi_right_opinion||[],currentFilter,currentSort,Infinity);if(currentTab==='left')return getVideos(allData.hindi_left_opinion||[],currentFilter,currentSort,Infinity);return [];}
+function gatherExportVideos(){if(currentTab==='all'||currentTab==='channels')return getVideos([...(allData.hindi_right_opinion||[]),...(allData.hindi_left_opinion||[])],currentFilter,currentSort,Infinity);if(currentTab==='long')return getVideos(featurePool(),currentFilter,currentSort,Infinity).filter(v=>(v.duration||0)>=180);if(currentTab==='right')return getVideos(allData.hindi_right_opinion||[],currentFilter,currentSort,Infinity);if(currentTab==='left')return getVideos(allData.hindi_left_opinion||[],currentFilter,currentSort,Infinity);return [];}
 function buildMetadataRows(vids){return ['channel\ttitle\turl\tviews\tduration\tpublished_at',...vids.map(v=>[v.channel_name,v.title,`https://www.youtube.com/watch?v=${v.video_id}`,viewsRaw(v.view_count||0),v.duration||0,publishTime(v.timestamp||0)].join('\t'))].join('\n');}
 function buildUrlsRows(vids){return vids.map(v=>`https://www.youtube.com/watch?v=${v.video_id}`).join('\n');}
 function downloadTxt(){closeAllExportMenus();const vids=gatherExportVideos();if(!vids.length)return;const blob=new Blob([buildMetadataRows(vids)],{type:'text/plain;charset=utf-8'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=`opinion-${currentTab}-${currentFilter}.txt`;a.click();URL.revokeObjectURL(a.href);}

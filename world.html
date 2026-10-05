@@ -313,6 +313,7 @@
       .modal-wrapper { max-width: min(1200px, 79vw); }
     }
   </style>
+  <link rel="stylesheet" href="assets/features.css">
 </head>
 <body>
 
@@ -332,6 +333,9 @@
 
 <div class="tabbar">
   <button class="tab-btn" id="btn-top"       onclick="switchTab('top')">🌐 Top News</button>
+  <button class="tab-btn" id="btn-long"  onclick="switchTab('long')">🎬 Long videos (3m+)</button>
+  <button class="tab-btn" id="btn-short" onclick="switchTab('short')">⚡ Shorts (&lt; 3m)</button>
+  <button class="tab-btn" id="btn-topics" onclick="switchTab('topics')">🏷️ Topics</button>
   <button class="tab-btn" id="btn-countries" onclick="switchTab('countries')">🗺️ By Country</button>
   <button class="tab-btn" id="btn-regions"   onclick="switchTab('regions')">🌍 By Region</button>
   <button class="tab-btn" id="btn-live"      onclick="switchTab('live')">🔴 Live</button>
@@ -417,6 +421,9 @@
   <span id="metaInfo" style="display:none"></span>
 </div>
 
+<div class="tab-panel" id="panel-long"></div>
+<div class="tab-panel" id="panel-short"></div>
+<div class="tab-panel" id="panel-topics"></div>
 <div class="tab-panel" id="panel-top"></div>
 <div class="tab-panel" id="panel-live"></div>
 <div class="tab-panel" id="panel-channels"></div>
@@ -449,6 +456,9 @@
 <div id="toast"></div>
 <script src="data/geo-utils.js"></script>
 <script src="data/geo-countries.js"></script>
+<script src="assets/topics.js"></script>
+<script src="assets/features.js"></script>
+<script src="assets/shorts.js"></script>
 <script src="https://www.youtube.com/iframe_api"></script>
 
 <script>
@@ -458,9 +468,9 @@ const MY_CHANNEL_NAME   = '';
 const MY_CHANNEL_VIDEOS = [];
 
 // ── Filter & sort setup ───────────────────────────────────────────────────────
-const TAB_DEFAULTS      = { top: 'today', live: '1h', channels: '24h', countries: '24h', regions: '24h' };
-const DURATION_DEFAULTS = { top: 'upto60', live: 'all', channels: 'upto60', countries: 'upto60', regions: 'upto60' };
-const SORT_DEFAULTS     = { top: 'velocity', live: 'views', channels: 'views', countries: 'views', regions: 'views' };
+const TAB_DEFAULTS      = { top: 'today', long: 'today', short: 'today', topics: 'today', live: '1h', channels: '24h', countries: '24h', regions: '24h' };
+const DURATION_DEFAULTS = { long: 'all', short: 'all', topics: 'all', top: 'upto60', live: 'all', channels: 'upto60', countries: 'upto60', regions: 'upto60' };
+const SORT_DEFAULTS     = { long: 'velocity', short: 'velocity', topics: 'views', top: 'velocity', live: 'views', channels: 'views', countries: 'views', regions: 'views' };
 
 const THRESHOLDS = {
   lastnight: 40000,
@@ -599,6 +609,8 @@ function getMinViewsNum(filter) {
 
 function matchesDuration(v) {
   const d = v.duration || 0;
+  const split = HubFeatures.matchSplit(d, currentTab, currentDuration);
+  if (split !== null) return split;
   switch (currentDuration) {
     case 'upto60': return d > 180 && d < 3600;
     case 'upto60any': return d < 3600;
@@ -725,7 +737,35 @@ function emptyState(title, sub) {
 }
 
 // ── Render ────────────────────────────────────────────────────────────────────
-function renderAll() {
+// ── Long videos / Shorts / Topics tabs (assets/features.js) ─────────────────────
+function featurePool() { return (allData.world_news || []); }
+function renderSplit(kind) {
+  const panel = document.getElementById('panel-' + kind);
+  if (!panel) return;
+  const list = searchVideos(getVideos(featurePool(), currentFilter, currentSort));
+  if (!list.length) {
+    panel.innerHTML = emptyState(kind === 'short' ? 'No shorts found' : 'No long videos found', currentSearch ? 'Try a different search.' : 'Try a wider time filter.');
+    return;
+  }
+  const label = kind === 'short' ? 'Shorts (under 3 min)' : 'Long videos (3 min and over)';
+  let body;
+  if (kind === 'short') {
+    body = HubFeatures.shortsGrid(list);
+  } else {
+    const cards = list.map((v, i) => cardHtml(v, i + 1, false, i >= 20)).join('');
+    const more = list.length > 20
+      ? `<div class="show-more-wrap" id="smLong"><button class="show-more-btn" onclick="showMore('longGrid','smLong',20)">${list.length - 20} more</button><button class="show-more-btn show-all-btn" onclick="showAll('longGrid','smLong')">Show all</button></div>` : '';
+    body = `<div class="video-grid" id="longGrid">${cards}</div>${more}`;
+  }
+  panel.innerHTML = `<p class="section-label">${list.length} ${label} · ${filterLabel()}</p>${body}`;
+}
+function renderTopicsTab() {
+  const panel = document.getElementById('panel-topics');
+  if (!panel) return;
+  HubFeatures.renderTopics(panel, featurePool(), currentFilter, filterLabel(), renderTopicsTab);
+}
+
+function renderAll() { renderSplit('long'); renderSplit('short'); renderTopicsTab();
   if (!allData) return;
   renderTop();
   renderLive();
@@ -864,6 +904,7 @@ function renderToolbar() {
   document.getElementById('sortSelect').value     = currentSort;
   document.getElementById('viewsSelect').value    = currentMinViews;
   document.getElementById('durationSelect').value = currentDuration;
+  HubFeatures.syncDuration(currentTab, currentDuration);
   const inp = document.getElementById('customViewsInput');
   inp.style.display = currentMinViews === 'custom' ? 'inline-block' : 'none';
   if (currentMinViews === 'custom') inp.value = customMinViews || '';
@@ -930,6 +971,7 @@ function gatherExportVideos() {
       .filter(v => (seen.has(v.video_id) ? false : (seen.add(v.video_id), true)))
       .sort((a, b) => b.view_count - a.view_count);
   }
+  if (currentTab === 'long' || currentTab === 'short') return getVideos(featurePool(), currentFilter, currentSort, Infinity).filter(v => (currentTab === 'short') === (v.duration > 0 && v.duration < 180));
   if (currentTab === 'top') return getVideos(allData.world_news || [], currentFilter, currentSort, Infinity);
   if (currentTab === 'channels') return getVideos(allData.world_news || [], currentFilter, currentSort, Infinity);
   return [];

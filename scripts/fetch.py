@@ -52,7 +52,7 @@ VIDEOS_FILE           = DATA_DIR / "videos.json"
 CACHE_FILE            = DATA_DIR / "video_id_cache.json"
 STATE_FILE            = DATA_DIR / "periodic_state.json"
 FETCH_DAYS            = 1
-MIN_DURATION          = 60
+MIN_DURATION          = 1     # seconds; drops only zero-length items (upcoming premieres). Shorts are kept: the pages split by length
 META_STALE_DAYS       = 7
 # View counts are refreshed for every video still inside the ranking window
 # (see FETCH_DAYS/the 24h `keep` cutoff in main()), so videos are never ranked
