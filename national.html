@@ -322,132 +322,8 @@
       body { padding-bottom: env(safe-area-inset-bottom); }
     }
 
-    /* ── Shorts / Reels Vertical Swipe Experience ──────────── */
-    .shorts-view-toggle {
-      display: flex; gap: 8px; margin-bottom: 12px; align-items: center; justify-content: space-between;
-    }
-    .shorts-mode-btn {
-      background: #2a2d3a; border: 1px solid #3a3d4a; color: #aaa;
-      padding: 6px 14px; border-radius: 20px; font-size: 0.8rem; cursor: pointer;
-      display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s;
-    }
-    .shorts-mode-btn.active {
-      background: #f4a261; color: #111; font-weight: 700; border-color: #f4a261;
-    }
-
-    /* Vertical Reels Feed Container */
-    .reels-feed {
-      display: flex; flex-direction: column; align-items: center;
-      gap: 0; max-width: 440px; margin: 0 auto;
-      height: calc(100vh - 140px); min-height: 520px;
-      overflow-y: scroll; scroll-snap-type: y mandatory;
-      border-radius: 16px; background: #000;
-      box-shadow: 0 10px 30px rgba(0,0,0,0.8);
-      position: relative; -webkit-overflow-scrolling: touch;
-      border: 1px solid #2a2d3a;
-      touch-action: pan-y;
-    }
-
-    /* Individual Reel Card */
-    .reel-card {
-      width: 100%; height: 100%; min-height: 100%;
-      scroll-snap-align: start; scroll-snap-stop: always;
-      position: relative; overflow: hidden; background: #111;
-      display: flex; flex-direction: column; justify-content: space-between;
-      flex-shrink: 0; box-sizing: border-box;
-    }
-
-    .reel-media {
-      position: absolute; inset: 0; width: 100%; height: 100%;
-      object-fit: cover; background: #050505; opacity: 0.85;
-      transition: opacity 0.3s;
-    }
-    .reel-card:hover .reel-media { opacity: 0.95; }
-
-    .reel-overlay-top {
-      position: absolute; top: 0; left: 0; right: 0; padding: 14px 16px;
-      background: linear-gradient(to bottom, rgba(0,0,0,0.85), transparent);
-      z-index: 10; display: flex; justify-content: space-between; align-items: center;
-    }
-
-    .reel-overlay-bottom {
-      position: absolute; bottom: 0; left: 0; right: 64px; padding: 24px 16px;
-      background: linear-gradient(to top, rgba(0,0,0,0.95) 20%, rgba(0,0,0,0.6) 70%, transparent);
-      z-index: 10; pointer-events: none; text-align: left;
-    }
-
-    .reel-overlay-bottom * { pointer-events: auto; }
-
-    .reel-channel-row {
-      display: flex; align-items: center; gap: 8px; margin-bottom: 8px; flex-wrap: wrap;
-    }
-
-    .reel-channel-badge {
-      background: #f4a261; color: #111; font-weight: 800; font-size: 0.7rem;
-      padding: 3px 8px; border-radius: 12px; text-transform: uppercase; letter-spacing: 0.04em;
-    }
-
-    .reel-lang-tag {
-      font-size: 0.65rem; font-weight: 800; padding: 2px 6px; border-radius: 4px; color: #fff;
-    }
-    .reel-lang-tag.eng { background: #3a86ff; }
-    .reel-lang-tag.hin { background: #e63946; }
-
-    .reel-channel-name {
-      font-size: 0.92rem; font-weight: 700; color: #fff; text-shadow: 0 1px 4px rgba(0,0,0,0.9);
-    }
-
-    .reel-title {
-      font-size: 0.95rem; line-height: 1.35; color: #fff; font-weight: 600;
-      display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
-      overflow: hidden; text-shadow: 0 2px 6px rgba(0,0,0,0.9); margin-bottom: 10px;
-    }
-
-    .reel-meta-row {
-      display: flex; align-items: center; gap: 10px; font-size: 0.78rem; color: #ddd;
-    }
-
-    .reel-views-pill {
-      background: rgba(255,255,255,0.18); backdrop-filter: blur(8px);
-      padding: 3px 9px; border-radius: 12px; font-weight: 700; color: #ffd166;
-    }
-
-    /* Vertical Right Action Bar */
-    .reel-actions {
-      position: absolute; right: 10px; bottom: 30px;
-      z-index: 12; display: flex; flex-direction: column; gap: 16px; align-items: center;
-    }
-
-    .reel-action-btn {
-      background: rgba(20,20,25,0.65); backdrop-filter: blur(12px);
-      border: 1px solid rgba(255,255,255,0.2); color: #fff;
-      width: 44px; height: 44px; border-radius: 50%; display: flex;
-      flex-direction: column; align-items: center; justify-content: center;
-      cursor: pointer; transition: all 0.2s; font-size: 1.1rem;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.6);
-    }
-    .reel-action-btn:hover, .reel-action-btn:active {
-      background: #f4a261; color: #111; transform: scale(1.1); border-color: #f4a261;
-    }
-
-    .reel-play-btn {
-      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      z-index: 11; width: 68px; height: 68px; background: rgba(244, 162, 97, 0.9);
-      border-radius: 50%; border: none; color: #fff; font-size: 1.8rem;
-      display: flex; align-items: center; justify-content: center;
-      box-shadow: 0 0 24px rgba(244, 162, 97, 0.7); cursor: pointer;
-      transition: transform 0.2s, background 0.2s;
-    }
-    .reel-play-btn:hover { transform: translate(-50%, -50%) scale(1.1); background: #f4a261; }
-
-    @media (max-width: 600px) {
-      .reels-feed {
-        max-width: 100%; width: 100%; height: calc(100vh - 110px);
-        border-radius: 0; border: none;
-      }
-      #panel-shorts { padding: 0 !important; }
-    }
   </style>
+  <link rel="stylesheet" href="assets/features.css">
 </head>
 <body>
 
@@ -466,14 +342,15 @@
 </nav>
 
 <div class="tabbar">
+  <button class="tab-btn" id="btn-long"  onclick="switchTab('long')">🎬 Long videos (3m+)</button>
+  <button class="tab-btn" id="btn-short" onclick="switchTab('short')">⚡ Shorts (&lt; 3m)</button>
+  <button class="tab-btn" id="btn-topics" onclick="switchTab('topics')">🏷️ Topics</button>
   <button class="tab-btn" id="btn-english"       onclick="switchTab('english')">🇬🇧 English News</button>
   <button class="tab-btn" id="btn-hindi"         onclick="switchTab('hindi')">🇮🇳 Hindi News</button>
-  <button class="tab-btn" id="btn-shorts"        onclick="switchTab('shorts')">⚡ Shorts (< 3m)</button>
   <button class="tab-btn" id="btn-states"        onclick="switchTab('states')">🗺️ By State/UT</button>
   <button class="tab-btn" id="btn-regions"       onclick="switchTab('regions')">🌐 By Region</button>
   <button class="tab-btn" id="btn-live"          onclick="switchTab('live')">🔴 Live</button>
   <button class="tab-btn" id="btn-channels"      onclick="switchTab('channels')">📺 By Channel</button>
-
 </div>
 
 <div class="toolbar-wrap" id="toolbarWrap">
@@ -555,9 +432,11 @@
   <span id="metaInfo" style="display:none"></span>
 </div>
 
+<div class="tab-panel" id="panel-long"></div>
+<div class="tab-panel" id="panel-topics"></div>
 <div class="tab-panel" id="panel-english"></div>
 <div class="tab-panel" id="panel-hindi"></div>
-<div class="tab-panel" id="panel-shorts"></div>
+<div class="tab-panel" id="panel-short"></div>
 <div class="tab-panel" id="panel-live"></div>
 <div class="tab-panel" id="panel-channels"></div>
 <div class="tab-panel" id="panel-states"></div>
@@ -590,6 +469,9 @@
 <div id="toast"></div>
 <script src="data/geo-utils.js"></script>
 <script src="data/geo-states.js"></script>
+<script src="assets/topics.js"></script>
+<script src="assets/features.js"></script>
+<script src="assets/shorts.js"></script>
 <script src="https://www.youtube.com/iframe_api"></script>
 
 <script>
@@ -599,9 +481,9 @@ const MY_CHANNEL_NAME   = '';
 const MY_CHANNEL_VIDEOS = [];
 
 // ── Filter & sort setup ───────────────────────────────────────────────────────
-const TAB_DEFAULTS      = { english: 'today', hindi: 'today', shorts: 'today', live: '1h', channels: '24h', states: '24h', regions: '24h' };
-const DURATION_DEFAULTS = { english: 'upto60', hindi: 'upto60', shorts: 'upto3', live: 'all', channels: 'upto60', states: 'upto60', regions: 'upto60' };
-const SORT_DEFAULTS     = { english: 'velocity', hindi: 'velocity', shorts: 'views', live: 'views', channels: 'views', states: 'views', regions: 'views' };
+const TAB_DEFAULTS      = { english: 'today', long: 'today', short: 'today', topics: 'today', hindi: 'today', live: '1h', channels: '24h', states: '24h', regions: '24h' };
+const DURATION_DEFAULTS = { long: 'all', short: 'all', topics: 'all', english: 'upto60', hindi: 'upto60', live: 'all', channels: 'upto60', states: 'upto60', regions: 'upto60' };
+const SORT_DEFAULTS     = { long: 'velocity', short: 'velocity', topics: 'views', english: 'velocity', hindi: 'velocity', live: 'views', channels: 'views', states: 'views', regions: 'views' };
 
 const THRESHOLDS = {
   lastnight: 40000,
@@ -615,7 +497,7 @@ const THRESHOLDS = {
 
 // ── State ─────────────────────────────────────────────────────────────────────
 const params       = new URLSearchParams(location.search);
-let currentTab      = params.get('tab')    || 'english';
+let currentTab      = params.get('tab')    || 'long';
 let currentFilter   = params.get('filter') || TAB_DEFAULTS[currentTab];
 let currentSort     = params.get('sort')   || SORT_DEFAULTS[currentTab];
 let currentMinViews = '0';
@@ -740,6 +622,8 @@ function getMinViewsNum(filter) {
 
 function matchesDuration(v) {
   const d = v.duration || 0;
+  const split = HubFeatures.matchSplit(d, currentTab, currentDuration);
+  if (split !== null) return split;
   switch (currentDuration) {
     case 'upto60': return d > 180 && d < 3600;
     case 'upto60any': return d < 3600;
@@ -861,128 +745,44 @@ function emptyState(title, sub) {
 }
 
 // ── Render ────────────────────────────────────────────────────────────────────
-function renderAll() {
+// ── Long videos / Shorts / Topics tabs (assets/features.js) ─────────────────────
+function featurePool() { return [...(allData.national_english || []), ...(allData.national_hindi || [])]; }
+function renderSplit(kind) {
+  const panel = document.getElementById('panel-' + kind);
+  if (!panel) return;
+  const list = searchVideos(getVideos(featurePool(), currentFilter, currentSort));
+  if (!list.length) {
+    panel.innerHTML = emptyState(kind === 'short' ? 'No shorts found' : 'No long videos found', currentSearch ? 'Try a different search.' : 'Try a wider time filter.');
+    return;
+  }
+  const label = kind === 'short' ? 'Shorts (under 3 min)' : 'Long videos (3 min and over)';
+  let body;
+  if (kind === 'short') {
+    body = HubFeatures.shortsGrid(list);
+  } else {
+    const cards = list.map((v, i) => cardHtml(v, i + 1, false, i >= 20)).join('');
+    const more = list.length > 20
+      ? `<div class="show-more-wrap" id="smLong"><button class="show-more-btn" onclick="showMore('longGrid','smLong',20)">${list.length - 20} more</button><button class="show-more-btn show-all-btn" onclick="showAll('longGrid','smLong')">Show all</button></div>` : '';
+    body = `<div class="video-grid" id="longGrid">${cards}</div>${more}`;
+  }
+  panel.innerHTML = `<p class="section-label">${list.length} ${label} · ${filterLabel()}</p>${body}`;
+}
+function renderTopicsTab() {
+  const panel = document.getElementById('panel-topics');
+  if (!panel) return;
+  HubFeatures.renderTopics(panel, featurePool(), currentFilter, filterLabel(), renderTopicsTab);
+}
+
+function renderAll() { renderSplit('long'); renderTopicsTab();
   if (!allData) return;
   renderEnglish();
   renderHindi();
-  renderShorts();
+  renderSplit('short');
   renderLive();
   renderChannels();
   renderStates();
   renderRegions();
 }
-
-let shortsViewMode = 'reels'; // 'reels' or 'grid'
-
-function setShortsViewMode(mode) {
-  shortsViewMode = mode;
-  renderShorts();
-}
-
-function scrollReel(direction) {
-  const container = document.getElementById('reelsFeedContainer');
-  if (!container) return;
-  const cardHeight = container.clientHeight;
-  container.scrollBy({ top: direction * cardHeight, behavior: 'smooth' });
-}
-
-function shareShort(video_id, title) {
-  const url = `https://www.youtube.com/watch?v=${video_id}`;
-  if (navigator.share) {
-    navigator.share({ title: title, url: url }).catch(() => {});
-  } else {
-    navigator.clipboard.writeText(url).then(() => {
-      showToast('Video link copied!');
-    }).catch(() => {});
-  }
-}
-
-function renderShorts() {
-  const panel  = document.getElementById('panel-shorts');
-  if (!allData) return;
-
-  const eng = allData.national_english || [];
-  const hin = allData.national_hindi   || [];
-  const combined = eng.concat(hin);
-
-  // Quick clips: duration > 0 and <= 180 seconds (3 mins), non-live
-  let shorts = combined.filter(v => (v.duration || 0) <= 180 && v.live_broadcast !== 'live');
-  shorts = filterByRange(shorts, currentFilter);
-
-  const minViews = getMinViewsNum(currentFilter);
-  const withThreshold = shorts.filter(v => v.view_count >= minViews);
-  shorts = withThreshold.length > 0 ? withThreshold : shorts;
-
-  shorts = searchVideos(shorts);
-  shorts = sortedVideos(shorts, currentFilter, currentSort);
-
-  if (!shorts.length) {
-    panel.innerHTML = emptyState('No quick stories under 3 min found', currentSearch ? 'Try a different search query.' : 'Try a wider time filter (e.g. 24 hours).');
-    return;
-  }
-
-  const toggleHeader = `
-    <div class="shorts-view-toggle">
-      <span class="section-label" style="margin:0">⚡ ${shorts.length} Quick Clips (< 3 min)</span>
-      <div style="display:flex;gap:6px">
-        <button class="shorts-mode-btn ${shortsViewMode === 'reels' ? 'active' : ''}" onclick="setShortsViewMode('reels')">📱 Reels Feed</button>
-        <button class="shorts-mode-btn ${shortsViewMode === 'grid' ? 'active' : ''}" onclick="setShortsViewMode('grid')">⊞ Grid</button>
-      </div>
-    </div>`;
-
-  if (shortsViewMode === 'grid') {
-    const cards = shorts.map((v, i) => cardHtml(v, i + 1, false, i >= 20, true)).join('');
-    const more  = shorts.length > 20
-      ? `<div class="show-more-wrap" id="smShorts"><button class="show-more-btn" onclick="showMore('shortsGrid','smShorts',20)">${shorts.length - 20} more shorts</button><button class="show-more-btn show-all-btn" onclick="showAll('shortsGrid','smShorts')">Show all</button></div>` : '';
-    panel.innerHTML = toggleHeader + `<div class="video-grid" id="shortsGrid">${cards}</div>${more}`;
-    return;
-  }
-
-  // Vertical Reels Swipe Feed
-  const reelCards = shorts.map((v, i) => {
-    const safeCh = v.channel_name.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-    const safeTitle = v.title.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
-    const isEng = v.channel_type === 'national_english';
-    const langTag = `<span class="reel-lang-tag ${isEng ? 'eng' : 'hin'}">${isEng ? 'EN' : 'HI'}</span>`;
-    const durStr = fmtDuration(v.duration);
-
-    return `
-      <div class="reel-card" id="reel-${i}">
-        <img class="reel-media" src="${v.thumbnail}" alt="" loading="lazy" onerror="this.src='https://i.ytimg.com/vi/${v.video_id}/hqdefault.jpg'">
-        
-        <div class="reel-overlay-top">
-          <span class="reel-channel-badge">Clip #${i + 1}</span>
-          ${langTag}
-        </div>
-
-        <button class="reel-play-btn" onclick="openPlayer('${v.video_id}','${safeCh}')">▶</button>
-
-        <div class="reel-overlay-bottom">
-          <div class="reel-channel-row">
-            <span class="reel-channel-name">${v.channel_name}</span>
-          </div>
-          <div class="reel-title">${v.title}</div>
-          <div class="reel-meta-row">
-            <span class="reel-views-pill">👁 ${fmtViews(v.view_count)}</span>
-            <span>⏱ ${durStr}</span>
-            <span>· ${formatAgo(v.timestamp)}</span>
-          </div>
-        </div>
-
-        <div class="reel-actions">
-          <button class="reel-action-btn" onclick="scrollReel(-1)" title="Previous Short">▲<span class="reel-action-label">Prev</span></button>
-          <button class="reel-action-btn" onclick="scrollReel(1)" title="Next Short">▼<span class="reel-action-label">Next</span></button>
-          <button class="reel-action-btn" onclick="openPlayer('${v.video_id}','${safeCh}')" title="Play Full Screen">▶<span class="reel-action-label">Play</span></button>
-          <button class="reel-action-btn" onclick="openInNewTab(event,'${v.video_id}','${safeTitle}','${safeCh}')" title="Open YouTube">↗<span class="reel-action-label">YT</span></button>
-          <button class="reel-action-btn" onclick="shareShort('${v.video_id}','${safeTitle}')" title="Share Clip">🔗<span class="reel-action-label">Share</span></button>
-        </div>
-      </div>`;
-  }).join('');
-
-  panel.innerHTML = toggleHeader + `<div class="reels-feed" id="reelsFeedContainer">${reelCards}</div>`;
-}
-
-
 
 function renderEnglish() {
   const panel  = document.getElementById('panel-english');
@@ -1156,6 +956,7 @@ function renderToolbar() {
   document.getElementById('sortSelect').value     = currentSort;
   document.getElementById('viewsSelect').value    = currentMinViews;
   document.getElementById('durationSelect').value = currentDuration;
+  HubFeatures.syncDuration(currentTab, currentDuration);
   const inp = document.getElementById('customViewsInput');
   inp.style.display = currentMinViews === 'custom' ? 'inline-block' : 'none';
   if (currentMinViews === 'custom') inp.value = customMinViews || '';
@@ -1210,6 +1011,7 @@ function copyUrls() {
 }
 
 function gatherExportVideos() {
+  if (currentTab === 'long') return getVideos(featurePool(), currentFilter, currentSort, Infinity).filter(v => (v.duration || 0) >= 180);
   if (currentTab === 'live') return [];
   if (currentTab === 'states' || currentTab === 'regions') {
     const pool     = (allData.national_english||[]).concat(allData.national_hindi||[]);
@@ -1226,7 +1028,7 @@ function gatherExportVideos() {
   const pool = [];
   if (currentTab === 'english') pool.push(...(allData.national_english || []));
   if (currentTab === 'hindi') pool.push(...(allData.national_hindi || []));
-  if (currentTab === 'shorts' || currentTab === 'channels') pool.push(...(allData.national_english || []), ...(allData.national_hindi || []));
+  if (currentTab === 'short' || currentTab === 'channels') pool.push(...(allData.national_english || []), ...(allData.national_hindi || []));
   return getVideos(pool.length ? pool : [...(allData.national_english || []), ...(allData.national_hindi || [])], currentFilter, currentSort, Infinity);
 }
 function buildMetadataRows(vids) {

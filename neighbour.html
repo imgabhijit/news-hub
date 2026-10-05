@@ -281,6 +281,7 @@
       body { padding-bottom: env(safe-area-inset-bottom); }
     }
   </style>
+  <link rel="stylesheet" href="assets/features.css">
 </head>
 <body>
 
@@ -299,6 +300,9 @@
 </nav>
 
 <div class="tabbar">
+  <button class="tab-btn" id="btn-long"  onclick="switchTab('long')">🎬 Long videos (3m+)</button>
+  <button class="tab-btn" id="btn-short" onclick="switchTab('short')">⚡ Shorts (&lt; 3m)</button>
+  <button class="tab-btn" id="btn-topics" onclick="switchTab('topics')">🏷️ Topics</button>
   <button class="tab-btn" id="btn-bangladesh" onclick="switchTab('bangladesh')">🇧🇩 Bangladesh</button>
   <button class="tab-btn" id="btn-pakistan"   onclick="switchTab('pakistan')">🇵🇰 Pakistan</button>
   <button class="tab-btn" id="btn-nepal"     onclick="switchTab('nepal')">🇳🇵 Nepal</button>
@@ -385,6 +389,9 @@
   <span id="metaInfo" style="display:none"></span>
 </div>
 
+<div class="tab-panel" id="panel-long"></div>
+<div class="tab-panel" id="panel-short"></div>
+<div class="tab-panel" id="panel-topics"></div>
 <div class="tab-panel" id="panel-bangladesh"></div>
 <div class="tab-panel" id="panel-pakistan"></div>
 <div class="tab-panel" id="panel-nepal"></div>
@@ -417,6 +424,9 @@
 </div>
 
 <div id="toast"></div>
+<script src="assets/topics.js"></script>
+<script src="assets/features.js"></script>
+<script src="assets/shorts.js"></script>
 <script src="https://www.youtube.com/iframe_api"></script>
 
 <script>
@@ -426,12 +436,12 @@ const MY_CHANNEL_NAME   = '';
 const MY_CHANNEL_VIDEOS = [];
 
 // ── Defaults ──────────────────────────────────────────────────────────────────
-const TAB_DEFAULTS      = { bangladesh: '24h', pakistan: '24h', nepal: '24h', srilanka: '24h', myanmar: '24h', live: '1h', channels: '24h' };
+const TAB_DEFAULTS      = { bangladesh: '24h', long: '24h', short: '24h', topics: '24h', pakistan: '24h', nepal: '24h', srilanka: '24h', myanmar: '24h', live: '1h', channels: '24h' };
 
 // Sri Lanka channels already in world_news — filter by channel_id
 const SRILANKA_CHANNEL_IDS = new Set(['UCuOtdpOPjHeoEAT4i44mVOg']); // Ada Derana English
-const SORT_DEFAULTS     = { bangladesh: 'views', pakistan: 'views', nepal: 'views', srilanka: 'views', myanmar: 'views', live: 'views', channels: 'views' };
-const DURATION_DEFAULTS = { bangladesh: 'upto60', pakistan: 'upto60', nepal: 'upto60', srilanka: 'upto60', myanmar: 'upto60', live: 'all', channels: 'upto60' };
+const SORT_DEFAULTS     = { long: 'velocity', short: 'velocity', topics: 'views', bangladesh: 'views', pakistan: 'views', nepal: 'views', srilanka: 'views', myanmar: 'views', live: 'views', channels: 'views' };
+const DURATION_DEFAULTS = { long: 'all', short: 'all', topics: 'all', bangladesh: 'upto60', pakistan: 'upto60', nepal: 'upto60', srilanka: 'upto60', myanmar: 'upto60', live: 'all', channels: 'upto60' };
 
 const THRESHOLDS = {
   lastnight: 40000, today: 25000, tonight: 8000,
@@ -440,7 +450,7 @@ const THRESHOLDS = {
 
 // ── State ─────────────────────────────────────────────────────────────────────
 const params        = new URLSearchParams(location.search);
-let currentTab      = params.get('tab')    || 'bangladesh';
+let currentTab      = params.get('tab')    || 'long';
 let currentFilter   = params.get('filter') || TAB_DEFAULTS[currentTab];
 let currentSort     = params.get('sort')   || SORT_DEFAULTS[currentTab];
 let currentMinViews = '0';
@@ -501,6 +511,8 @@ function getMinViewsNum(filter) {
 }
 function matchesDuration(v) {
   const d = v.duration || 0;
+  const split = HubFeatures.matchSplit(d, currentTab, currentDuration);
+  if (split !== null) return split;
   switch (currentDuration) {
     case 'upto60': return d > 180 && d < 3600;
     case 'upto60any': return d < 3600;
@@ -592,7 +604,35 @@ function comingSoon(flag, country) {
 }
 
 // ── Render ────────────────────────────────────────────────────────────────────
-function renderAll() {
+// ── Long videos / Shorts / Topics tabs (assets/features.js) ─────────────────────
+function featurePool() { return ['bangladesh','pakistan','nepal','srilanka','myanmar'].flatMap(k => allData[k] || []); }
+function renderSplit(kind) {
+  const panel = document.getElementById('panel-' + kind);
+  if (!panel) return;
+  const list = searchVideos(getVideos(featurePool(), currentFilter, currentSort));
+  if (!list.length) {
+    panel.innerHTML = emptyState(kind === 'short' ? 'No shorts found' : 'No long videos found', currentSearch ? 'Try a different search.' : 'Try a wider time filter.');
+    return;
+  }
+  const label = kind === 'short' ? 'Shorts (under 3 min)' : 'Long videos (3 min and over)';
+  let body;
+  if (kind === 'short') {
+    body = HubFeatures.shortsGrid(list);
+  } else {
+    const cards = list.map((v, i) => cardHtml(v, i + 1, false, i >= 20)).join('');
+    const more = list.length > 20
+      ? `<div class="show-more-wrap" id="smLong"><button class="show-more-btn" onclick="showMore('longGrid','smLong',20)">${list.length - 20} more</button><button class="show-more-btn show-all-btn" onclick="showAll('longGrid','smLong')">Show all</button></div>` : '';
+    body = `<div class="video-grid" id="longGrid">${cards}</div>${more}`;
+  }
+  panel.innerHTML = `<p class="section-label">${list.length} ${label} · ${filterLabel()}</p>${body}`;
+}
+function renderTopicsTab() {
+  const panel = document.getElementById('panel-topics');
+  if (!panel) return;
+  HubFeatures.renderTopics(panel, featurePool(), currentFilter, filterLabel(), renderTopicsTab);
+}
+
+function renderAll() { renderSplit('long'); renderSplit('short'); renderTopicsTab();
   if (!allData) return;
   renderBangladesh();
   renderPakistan();
@@ -761,6 +801,7 @@ function renderToolbar() {
   document.getElementById('sortSelect').value     = currentSort;
   document.getElementById('viewsSelect').value    = currentMinViews;
   document.getElementById('durationSelect').value = currentDuration;
+  HubFeatures.syncDuration(currentTab, currentDuration);
   const inp = document.getElementById('customViewsInput');
   inp.style.display = currentMinViews==='custom' ? 'inline-block' : 'none';
 }
@@ -820,6 +861,7 @@ function gatherExportVideos() {
     srilanka: allData.srilanka || [],
     myanmar: allData.myanmar || []
   };
+  if (currentTab === 'long') return getVideos(featurePool(), currentFilter, currentSort, Infinity).filter(v => (v.duration || 0) >= 180);
   if (!map[currentTab]) return [];
   return getVideos(map[currentTab], currentFilter, currentSort, Infinity);
 }

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Topic</title>
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f1117">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'Segoe UI', sans-serif; background: #0f1117; color: #e0e0e0; min-height: 100vh; padding: 20px 16px; }
+    .wrap { max-width: 1280px; margin: 0 auto; }
+    .back-btn { background: none; border: none; color: #888; cursor: pointer; font-size: 0.9rem; padding: 4px 0 14px 0; }
+    .back-btn:hover { color: #fff; }
+
+    .topic-head { border-bottom: 1px solid #2a2d3a; padding-bottom: 14px; margin-bottom: 16px; }
+    .topic-kicker { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.08em; color: #888; }
+    .topic-title { font-size: 1.6rem; color: #fff; margin-top: 4px; }
+    .topic-meta { margin-top: 6px; font-size: 0.85rem; color: #aaa; }
+    .section-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+    .section-chip { font-size: 0.75rem; background: #1a1d27; border: 1px solid #2a2d3a; color: #bbb; padding: 3px 10px; border-radius: 14px; }
+
+    .video-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
+    .video-card { display: block; background: #1a1d27; border: 1px solid #2a2d3a; border-radius: 10px; overflow: hidden; color: inherit; text-decoration: none; transition: transform 0.2s, border-color 0.2s; }
+    .video-card:hover { transform: translateY(-2px); border-color: #3a86ff; }
+    .thumb-wrap { position: relative; aspect-ratio: 16 / 9; background: #000; }
+    .thumb-wrap img { width: 100%; height: 100%; object-fit: cover; display: block; }
+    .duration-badge { position: absolute; bottom: 6px; right: 6px; background: rgba(0,0,0,0.8); color: #fff; font-size: 0.72rem; padding: 2px 6px; border-radius: 4px; }
+    .card-body { padding: 10px 12px 12px; }
+    .card-channel { font-size: 0.72rem; color: #3a86ff; text-transform: uppercase; letter-spacing: 0.03em; }
+    .card-title { margin-top: 4px; font-size: 0.92rem; line-height: 1.4; color: #e0e0e0; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    .card-meta { margin-top: 6px; font-size: 0.78rem; color: #888; display: flex; justify-content: space-between; }
+    .empty { padding: 40px 0; text-align: center; color: #888; }
+    .notice { font-size: 0.82rem; color: #888; margin-bottom: 12px; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <button class="back-btn" onclick="history.back()">← Back</button>
+    <div class="topic-head">
+      <div class="topic-kicker">Topic</div>
+      <div class="topic-title" id="topicTitle">Loading…</div>
+      <div class="topic-meta" id="topicMeta"></div>
+      <div class="section-chips" id="sectionChips"></div>
+    </div>
+    <p class="notice">Every video in the data whose title contains this topic, across all sections. Live streams are not listed.</p>
+    <div id="results"></div>
+  </div>
+
+  <script src="assets/topics.js"></script>
+  <script>
+    // Dynamic topic page: ?k=<topic key>&l=<topic label>. The key is the same key the Topics tab uses,
+    // so the page matches titles exactly the way the tab counted them.
+    const params = new URLSearchParams(location.search);
+    const topicKey   = params.get('k') || '';
+    const topicLabel = params.get('l') || topicKey;
+
+    const esc = s => String(s ?? '').replace(/[&<>"']/g, c =>
+      ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+    const fmtViews = n => n >= 1e6 ? (n / 1e6).toFixed(1) + 'M' : n >= 1e3 ? (n / 1e3).toFixed(1) + 'K' : String(n || 0);
+    const fmtDur = s => {
+      if (!s) return '';
+      const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), sec = s % 60;
+      return h ? `${h}:${String(m).padStart(2, '0')}:${String(sec).padStart(2, '0')}` : `${m}:${String(sec).padStart(2, '0')}`;
+    };
+    const fmtAgo = ts => {
+      const d = Math.floor(Date.now() / 1000 - ts);
+      if (d < 3600) return Math.floor(d / 60) + 'm ago';
+      if (d < 86400) return Math.floor(d / 3600) + 'h ago';
+      return Math.floor(d / 86400) + 'd ago';
+    };
+    const SECTION_NAMES = {
+      bengali: 'Bengali', opinion: 'Bengali opinion', national_english: 'National English', national_hindi: 'National Hindi',
+      world_news: 'World', hindi_right_opinion: 'Hindi right opinion', hindi_left_opinion: 'Hindi left opinion',
+      bangladesh: 'Bangladesh', pakistan: 'Pakistan', nepal: 'Nepal', srilanka: 'Sri Lanka', myanmar: 'Myanmar',
+      wb: 'West Bengal', india: 'India',
+    };
+
+    function getJson(url) { return fetch(url).then(r => r.json()).catch(() => ({})); }
+
+    async function load() {
+      document.getElementById('topicTitle').textContent = topicLabel;
+      document.title = topicLabel + ' · Topic';
+      if (!topicKey) { document.getElementById('results').innerHTML = '<div class="empty">No topic given.</div>'; return; }
+
+      const [data, rules] = await Promise.all([getJson('data/videos.json'), getJson('data/topic_rules.json')]);
+      const bank = await getJson('data/function_words.json');
+      HubTopics.addStopwords(bank);
+
+      // every section's videos, each video once
+      const seen = new Map(), sectionOf = new Map();
+      for (const [slug, list] of Object.entries(data)) {
+        if (!Array.isArray(list)) continue;
+        for (const v of list) {
+          if (v.live_broadcast === 'live' || seen.has(v.video_id)) continue;
+          seen.set(v.video_id, v); sectionOf.set(v.video_id, slug);
+        }
+      }
+      const all = [...seen.values()];
+
+      // the same matching the Topics tab uses: the same common words, rules and alias merging
+      const R = HubTopics.normalizeRules(rules);
+      const common = new Set([...HubTopics.commonWords(all), ...R.ignoreWords]);
+      const hits = all.filter(v => HubTopics.ngrams(v.title, v.channel_name, common, R.alias).has(topicKey));
+      hits.sort((a, b) => b.view_count - a.view_count);
+
+      const bySection = {};
+      hits.forEach(v => { const s = sectionOf.get(v.video_id); bySection[s] = (bySection[s] || 0) + 1; });
+      const totalViews = hits.reduce((n, v) => n + (v.view_count || 0), 0);
+      document.getElementById('topicMeta').textContent =
+        `${hits.length} video${hits.length === 1 ? '' : 's'} · ${fmtViews(totalViews)} views in total · ${new Set(hits.map(v => v.channel_name)).size} channels`;
+      document.getElementById('sectionChips').innerHTML = Object.entries(bySection)
+        .sort((a, b) => b[1] - a[1])
+        .map(([s, n]) => `<span class="section-chip">${esc(SECTION_NAMES[s] || s)} · ${n}</span>`).join('');
+
+      const results = document.getElementById('results');
+      if (!hits.length) { results.innerHTML = '<div class="empty">No videos match this topic right now.</div>'; return; }
+      results.innerHTML = '<div class="video-grid">' + hits.map(v => `
+        <a class="video-card" href="player.html?v=${encodeURIComponent(v.video_id)}&t=${encodeURIComponent(v.title)}&c=${encodeURIComponent(v.channel_name)}">
+          <div class="thumb-wrap">
+            <img src="${esc(v.thumbnail)}" alt="" loading="lazy" onerror="this.src='https://i.ytimg.com/vi/${esc(v.video_id)}/mqdefault.jpg'">
+            ${v.duration ? `<span class="duration-badge">${fmtDur(v.duration)}</span>` : ''}
+          </div>
+          <div class="card-body">
+            <div class="card-channel">${esc(v.channel_name)}</div>
+            <div class="card-title">${esc(v.title)}</div>
+            <div class="card-meta"><span>👁 ${fmtViews(v.view_count)}</span><span>${fmtAgo(v.timestamp)}</span></div>
+          </div>
+        </a>`).join('') + '</div>';
+    }
+    load();
+  </script>
+</body>
+</html>
