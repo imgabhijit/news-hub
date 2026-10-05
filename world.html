@@ -421,7 +421,7 @@
   <div class="exclude-group" id="excludeGroup">
     <input type="checkbox" id="excludeToggle" onchange="setExcludeEnabled(this.checked)">
     <label for="excludeToggle">Exclude</label>
-    <input type="text" id="excludeInput" class="exclude-input" value="headlines"
+    <input type="text" id="excludeInput" class="exclude-input" value="headline"
            oninput="setExcludeTerm(this.value)">
   </div>
   <div class="export-dropdown">
@@ -514,7 +514,7 @@ let channelView     = 'grid';
 let selectedChannel = null;
 let currentSearch   = '';
 let excludeEnabled  = false;
-let excludeTerm     = 'headlines';
+let excludeTerm     = 'headline';
 let allData         = null;
 let ytPlayer        = null;
 let ytPlayerReady   = false;
